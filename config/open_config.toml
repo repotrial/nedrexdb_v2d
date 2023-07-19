@@ -1,0 +1,204 @@
+[api]
+mode="live"
+port=7123
+host="127.0.0.1"
+base="/"
+
+rate_limiting_enabled = false
+rate_limit = "1/second"
+require_api_keys = false
+pagination_max = 10000
+
+redis_port = 5379
+redis_nedrex_db = 1
+redis_rate_limit_db = 2
+redis_queue_db = 3
+
+mongo_port=26018
+mongo_db = "nedrexapi"
+network = "nedrexdb_default"
+
+node_collections = [
+    "disorder",
+    "drug",
+    "gene",
+    "genomic_variant",
+    "go",
+    "pathway",
+    "protein",
+    "phenotype",
+    "tissue",
+    "side_effect",
+    "signature",
+    ]
+
+edge_collections = [
+    "disorder_has_phenotype",
+    "disorder_is_subtype_of_disorder",
+    "drug_has_contraindication",
+    "drug_has_indication",
+    "drug_has_target",
+    "drug_has_side_effect",
+    "gene_associated_with_disorder",
+    "go_is_subtype_of_go",
+    "molecule_similarity_molecule",
+    "protein_encoded_by_gene",
+    "protein_has_go_annotation",
+    "protein_has_signature",
+    "protein_in_pathway",
+    "protein_interacts_with_protein",
+    "protein_expressed_in_tissue",
+    "gene_expressed_in_tissue",
+    "side_effect_same_as_phenotype",
+    "variant_affects_gene",
+    "variant_associated_with_disorder",
+]
+
+[api.directories]
+static = "/data/nedrex_files/nedrex_api/static"
+data = "/data/nedrex_files/nedrex_api/data"
+scripts = "/app/nedrexdb/nedrexdb/scripts"
+
+[tools]
+bicon_python = "/opt/conda/miniconda3/envs/bicon/bin/python3"
+
+
+[db]
+version = "open"
+neo4j_image = "neo4j:3.5.34"
+mongo_image = "mongo:4.4.10"
+mongo_express_image = "mongo-express:0.54.0"
+mongo_db = "nedrex"
+root_directory = "/data/nedrex_files/nedrex_data"
+volume_root = "open_nedrex"
+
+[db.dev]
+mongo_port = 26017
+mongo_name = "open_nedrex_dev"
+mongo_express_port = 7081
+neo4j_http_port = 6478
+neo4j_bolt_port = 6688
+neo4j_name = "open_nedrex_dev_neo4j"
+network = "nedrexdb_default"
+container_name = "open_nedrex_dev"
+express_container_name = "open_nedrex_dev_express"
+
+[db.live]
+mongo_port = 26018
+mongo_express_port = 7082
+mongo_name = "open_nedrex_live"
+neo4j_http_port = 6479
+neo4j_bolt_port = 6689
+neo4j_name = "open_nedrex_neo4j_live"
+network = "nedrexdb_default"
+container_name = "open_nedrex_live"
+express_container_name = "open_nedrex_live_express"
+
+[sources]
+directory = "downloads"
+
+[sources.biogrid]
+[sources.biogrid.human_data]
+filename = "homo_sapiens.tab3"
+
+[sources.bioontology]
+[sources.bioontology.meddra_mappings]
+filename = "meddra.json"
+
+[sources.chembl]
+[sources.chembl.sqlite]
+url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_33_sqlite.tar.gz"
+
+[sources.chembl.unichem]
+url = "https://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id1/src1src2.txt.gz"
+
+[sources.clinvar]
+[sources.clinvar.human_data]
+url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz"
+
+[sources.clinvar.human_data_xml]
+url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz"
+
+[sources.ctd]
+[sources.ctd.chemical_disease_relationships]
+url = "https://ctdbase.org/reports/CTD_chemicals_diseases.tsv.gz"
+
+[sources.disgenet]
+[sources.disgenet.gene_disease_associations]
+url = "https://www.disgenet.org/static/disgenet_ap1/files/downloads/curated_gene_disease_associations.tsv.gz"
+
+[sources.drugbank]
+[sources.drugbank.open]
+filename = "all-drugbank-vocabulary.zip"
+
+[sources.drug_central]
+[sources.drug_central.postgres_dump]
+url = "https://unmtid-shinyapps.net/download/drugcentral.dump.010_05_2021.sql.gz"
+filename = "drug_central.sql.gz"
+
+[sources.go]
+[sources.go.go_core_owl]
+url = "http://purl.obolibrary.org/obo/go.owl"
+
+[sources.go.go_annotations]
+url = "http://geneontology.org/gene-associations/goa_human.gaf.gz"
+
+[sources.hpa]
+[sources.hpa.all]
+url = "https://www.proteinatlas.org/download/proteinatlas.xml.gz"
+
+[sources.hpo]
+[sources.hpo.obo]
+url = "http://purl.obolibrary.org/obo/hp.obo"
+
+[sources.hpo.annotations]
+url = "http://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa"
+
+[sources.iid]
+[sources.iid.human]
+url = "http://iid.ophid.utoronto.ca/static/download/human_annotated_PPIs.txt.gz"
+
+[sources.intact]
+[sources.intact.psimitab]
+url = "http://ftp.ebi.ac.uk/pub/databases/intact/current/psimitab/intact.zip"
+
+[sources.mondo]
+[sources.mondo.json]
+url = "http://purl.obolibrary.org/obo/mondo.json"
+
+[sources.ncbi]
+[sources.ncbi.gene_info]
+url = "https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz"
+
+[sources.sider]
+[sources.sider.frequency_data]
+url = "http://sideeffects.embl.de/media/download/meddra_freq.tsv.gz"
+
+[sources.repotrial]
+[sources.repotrial.mappings]
+filename = "repotrial_mappings.tsv"
+
+[sources.repotrial.icd10_overlap]
+filename = "matching_icd10_cmwho.json"
+
+[sources.unichem]
+[sources.unichem.pubchem_drugbank_map]
+url = "http://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id2/src2src22.txt.gz"
+
+[sources.uberon]
+[sources.uberon.ext]
+url = "https://github.com/obophenotype/uberon/releases/download/v2022-04-05/ext.json"
+
+[sources.reactome]
+[sources.reactome.uniprot_annotations]
+url = "https://reactome.org/download/current/UniProt2Reactome_PE_All_Levels.txt"
+
+[sources.uniprot]
+[sources.uniprot.swissprot]
+url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz"
+
+[sources.uniprot.trembl]
+url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_trembl_human.dat.gz"
+
+[sources.uniprot.idmapping]
+url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping_selected.tab.gz"
