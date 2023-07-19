@@ -1,0 +1,17 @@
+version: '3.3'
+
+services:
+  db:
+    image: nedrexdb_v2
+    container_name: nedrexdb_v2
+    build: .
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/nedrexdb_v2:/tmp
+      - ./config/licensed_config.toml:/app/nedrexdb/.licensed_config.toml
+      - ./config/open_config.toml:/app/nedrexdb/.open_config.toml
+      - /srv/projects/nedrex/nedrex_files:/data/nedrex_files
+#    restart: always
+    command:
+      - "bash"
+      - "./build.sh"
