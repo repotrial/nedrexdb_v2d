@@ -148,7 +148,3 @@ The models defining the attributes of nodes like [Protein](https://github.com/re
 **_NOTE FOR CONTRIBUTORS: If you do not have access to the [nedrexdb](https://github.com/repotrial/nedrexdb_v2d) and/or [nedrexapi](https://github.com/repotrial/api_v2d) GitHub repositories to see and contribute to them, [contact me](mailto:andreas.maier-1@uni-hamburg.de)_** **and tell me your GitHub user/email. A branch for you might be created and/or you can create a pull request to add your parsers and models to the project and to adjust the [update()](https://github.com/repotrial/nedrexdb_v2d/blob/master/build.py) function in the build.py file.**
 
 
-# **_Related documents:_**
-
-[NeDRexDB types](https://docs.google.com/document/d/1YWBXAiPb2eW5H5KNkrMX_nbFK3G0tX5vPRB774k_Nn0/edit#heading=h.cf33qolywsm5)
-
