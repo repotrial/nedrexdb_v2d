@@ -11,7 +11,6 @@
 * [Parsers](#parsers)
   * [Specialized data](#specialized-data)
   * [Integrated data](#integrated-data)
-* [Related documents](#related-documents)
 
 
 
