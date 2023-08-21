@@ -100,7 +100,7 @@ class DrugCentralContainer:
             environment={"POSTGRES_PASSWORD": self._password},
             ports={5432: self._port},
             name=self._container_name,
-            remove=True,
+            remove=False,
             detach=True,
             restart_policy={"Name":"always"}
         )
