@@ -102,7 +102,7 @@ class DrugCentralContainer:
             name=self._container_name,
             remove=True,
             detach=True,
-            restart_policy="always"
+            restart_policy={"Name":"always"}
         )
 
         while not self.is_ready:
