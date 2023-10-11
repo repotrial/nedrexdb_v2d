@@ -19,7 +19,7 @@
 
 ### Single file download:
 
-Data sources are downloaded in one of two ways. The first, and simplest, is to add a section in the config TOML file. **The TOML files are the master config files of the database and API services and the default files can be downloaded from here**: [https://wolken.zbh.uni-hamburg.de/index.php/s/gDmcbc876rwBaFq](https://wolken.zbh.uni-hamburg.de/index.php/s/gDmcbc876rwBaFq)
+Data sources are downloaded in one of two ways. The first, and simplest, is to add a section in the config TOML file. **The TOML files are the master config files of the database and API services and the default files can be downloaded from here**: [https://cloud.uni-hamburg.de/s/zBT3j8Srn6pJXHc](https://cloud.uni-hamburg.de/s/zBT3j8Srn6pJXHc)
 
 The simplest example of this is given below but you will see many more in the .toml files:
 
@@ -36,7 +36,7 @@ The sources section of the config is formatted as `[sources.<database>.<descript
 
 Additionally, if a username and password are required to access the file, these too can be added to the config (using `username=` and `password=`). Where a username and password are passed, then downloads are carried out using the Python `requests` library. If a username and password are not carried out, then the download is carried out using `wget` via a subprocess call. 
 
-**_NOTE FOR CONTRIBUTORS: Download the TOML file from the [nextcloud](https://wolken.zbh.uni-hamburg.de/index.php/s/gDmcbc876rwBaFq) folder, add your lines and send them to [me](mailto:andreas.maier-1@uni-hamburg.de) with whatever additional information necessary to test and add this to the live version!_**
+**_NOTE FOR CONTRIBUTORS: Download the TOML file from the [nextcloud](https://cloud.uni-hamburg.de/s/zBT3j8Srn6pJXHc) folder, add your lines and send them to [me](mailto:andreas.maier-1@uni-hamburg.de) with whatever additional information necessary to test and add this to the live version!_**
 
 <span style="color:red">**Note for future developers**: The BioGRID downloader will likely break at some point in the future – for example, if BioGRID changes the layout of their statistics page.</span>
 
