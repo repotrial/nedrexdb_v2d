@@ -133,7 +133,7 @@ filename = "all-drugbank-vocabulary.zip"
 
 [sources.drug_central]
 [sources.drug_central.postgres_dump]
-url = "https://unmtid-shinyapps.net/download/drugcentral.dump.010_05_2021.sql.gz"
+url = "https://unmtid-shinyapps.net/download/drugcentral.dump.11012023.sql.gz"
 filename = "drug_central.sql.gz"
 
 [sources.go]

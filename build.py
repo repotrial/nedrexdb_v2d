@@ -94,9 +94,9 @@ def update(conf, download):
     ctd.parse()
     disgenet.parse_gene_disease_associations()
     go.parse_goa()
-    hpa.parse_hpa()
-    iid.parse_ppis()
-    intact.parse()
+    # hpa.parse_hpa()
+    # iid.parse_ppis()
+    # intact.parse()
 
     if version == "licensed":
         omim.parse_gene_disease_associations()
@@ -106,7 +106,7 @@ def update(conf, download):
 
     from nedrexdb.analyses import molecule_similarity
 
-    molecule_similarity.run()
+    # molecule_similarity.run()
 
     # Post-processing
     trim_uberon.trim_uberon()

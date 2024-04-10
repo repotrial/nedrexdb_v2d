@@ -1,5 +1,5 @@
-FROM andimajore/miniconda3_mantic:latest
-RUN apt-get update && apt-get dist-upgrade -y
+FROM andimajore/mamba_mantic:latest
+RUN apt-get update && apt-get upgrade -y
 
 RUN apt-get update \
     && apt-get install -y \
@@ -20,8 +20,8 @@ RUN add-apt-repository \
 RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
 
 RUN apt-get update && apt-get install -y unzip
-RUN conda install python=3.10
-RUN pip install --upgrade pip
+RUN mamba install python=3.10
+RUN mamba upgrade pip tqdm cryptography
 
 WORKDIR /data/nedrex_files/
 RUN mkdir -p nedrex_api/static
