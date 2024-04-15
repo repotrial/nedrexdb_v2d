@@ -8,7 +8,8 @@ RUN apt-get update \
     curl \
     gnupg \
     lsb-release \
-    software-properties-common
+    software-properties-common \
+    cron
 
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 
@@ -29,8 +30,16 @@ RUN mkdir -p nedrex_api/data
 RUN mkdir -p nedrex_data/downloads
 
 WORKDIR /app/nedrexdb
+COPY cron/cron.dev /etc/cron.d/cron-nedrex
+RUN chmod 0644 /etc/cron.d/cron-nedrex
+RUN crontab /etc/cron.d/cron-nedrex
+RUn touch /var/log/nedrexdb.log
+
 COPY . ./
+RUN rm -rf cron
 
 RUN pip install .
 RUN pip install rdkit
+#CMD ["cron"," &&", "bash", "build.sh", ">>", "/var/log/nedrexdb.log", "2>&1", "&", "tail", "-f", "/var/log/nedrexdb.log"]
+CMD cron && bash build.sh >> /var/log/nedrexdb.log 2>&1 & tail -f /var/log/nedrexdb.log
 

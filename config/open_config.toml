@@ -15,6 +15,7 @@ redis_rate_limit_db = 2
 redis_queue_db = 3
 
 mongo_port=26018
+mongo_port_internal=27017
 mongo_db = "nedrexapi"
 network = "nedrexdb_default"
 
@@ -85,6 +86,7 @@ express_container_name = "open_nedrex_dev_express"
 
 [db.live]
 mongo_port = 26018
+mongo_port_internal = 27017
 mongo_express_port = 7082
 mongo_name = "open_nedrex_live"
 neo4j_http_port = 6479
@@ -117,7 +119,7 @@ url = "https://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMappin
 url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz"
 
 [sources.clinvar.human_data_xml]
-url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz"
+url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarVCVRelease_00-latest.xml.gz"
 
 [sources.ctd]
 [sources.ctd.chemical_disease_relationships]
@@ -183,7 +185,7 @@ filename = "matching_icd10_cmwho.json"
 
 [sources.unichem]
 [sources.unichem.pubchem_drugbank_map]
-url = "http://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id2/src2src22.txt.gz"
+url = "http://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id2/src2src33.txt.gz"
 
 [sources.uberon]
 [sources.uberon.ext]

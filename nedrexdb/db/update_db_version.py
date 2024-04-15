@@ -86,9 +86,8 @@ def update_db_version(default_version="2.0.0"):
     logger.info("Updating NeDRexDB version number")
 
     mongo_dbname = _config["db.mongo_db"]
-    mongo_dev_port = _config["db.dev.mongo_port"]
     mongo_dev_name = _config["db.dev.mongo_name"]
-    mongo_live_port = _config["db.live.mongo_port"]
+    mongo_live_port = _config["db.live.mongo_port_internal"]
     mongo_host = _config["db.live.mongo_name"]
 
     download_directory = Path(_config["db.root_directory"]) / _config["sources.directory"]
