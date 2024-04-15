@@ -37,9 +37,7 @@ RUn touch /var/log/nedrexdb.log
 
 COPY . ./
 RUN rm -rf cron
-
 RUN pip install .
-RUN pip install rdkit
-#CMD ["cron"," &&", "bash", "build.sh", ">>", "/var/log/nedrexdb.log", "2>&1", "&", "tail", "-f", "/var/log/nedrexdb.log"]
+
 CMD cron && bash build.sh >> /var/log/nedrexdb.log 2>&1 & tail -f /var/log/nedrexdb.log
 
