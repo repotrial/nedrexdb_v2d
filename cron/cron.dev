@@ -1,3 +1,4 @@
 #HOME=/app/nedrexdb/
 #SHELL=/usr/bin/bash
-*/20 * * * * cd /app/nedrexdb/ && bash update.sh >>/var/log/nedrexdb.log 2>&1
+#* * * * * cd /app/nedrexdb/ && bash update.sh >>/var/log/nedrexdb.log 2>&1
+#0 20 * * 7 cd /app/nedrexdb/ && bash update.sh >>/var/log/nedrexdb.log 2>&1

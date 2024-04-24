@@ -1,8 +1,8 @@
 #!/bin/bash
 
 echo "Starting setup of licensed DB"
-#./build.py update --conf .licensed_config.toml --download
-./build.py update --conf .licensed_config.toml
+./setup_data.sh /data/nedrex_files; ./build.py update --conf .licensed_config.toml --download
+#./build.py update --conf .licensed_config.toml
 ./set_metadata.py --config .licensed_config.toml --version live
 ./clean_volumes.sh licensed
 echo "Finished setup of licensed DB"

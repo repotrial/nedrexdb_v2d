@@ -30,7 +30,7 @@ RUN mkdir -p nedrex_api/data
 RUN mkdir -p nedrex_data/downloads
 
 WORKDIR /app/nedrexdb
-COPY cron/cron.dev /etc/cron.d/cron-nedrex
+COPY cron/cron.prod /etc/cron.d/cron-nedrex
 RUN chmod 0644 /etc/cron.d/cron-nedrex
 RUN crontab /etc/cron.d/cron-nedrex
 RUn touch /var/log/nedrexdb.log
