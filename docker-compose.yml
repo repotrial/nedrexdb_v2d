@@ -11,7 +11,9 @@ services:
       - ./config/licensed_config.toml:/app/nedrexdb/.licensed_config.toml
       - ./config/open_config.toml:/app/nedrexdb/.open_config.toml
       - /srv/projects/nedrex/nedrex_files:/data/nedrex_files
-#    restart: always
-    command:
-      - "bash"
-      - "./build.sh"
+    restart: always
+    networks:
+      - nedrexdb_default
+networks:
+  nedrexdb_default:
+    external: true

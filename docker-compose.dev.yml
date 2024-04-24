@@ -12,9 +12,6 @@ services:
       - ./config/open_config.toml:/app/nedrexdb/.open_config.toml
       - ./nedrex_files:/data/nedrex_files
 #    restart: always
-#    command:
-#      - "bash"
-#      - "./build.sh"
     networks:
       - nedrexdb_default
 networks:
