@@ -202,7 +202,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             image=get_mongo_express_image(),
             detach=True,
             name=self.express_container_name,
-            ports={8081: ("127.0.0.1", self.express_port)},
+            ports={_config["db.dev.mongo_express_port"]: ("127.0.0.1", self.express_port)},
             network=self.network_name,
             environment={"ME_CONFIG_MONGODB_SERVER": self.mongo_container_name},
             remove=False,
