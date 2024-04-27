@@ -32,6 +32,7 @@ class Protein(_BaseModel, ProteinBase):
     synonyms: list[str] = _Field(default_factory=list)
     comments: _StrictStr = ""
     geneName: _StrictStr = ""
+    is_reviewed: _StrictStr = ""
 
     taxid: int = -1
     sequence: _StrictStr = ""
@@ -56,6 +57,7 @@ class Protein(_BaseModel, ProteinBase):
                 "sequence": self.sequence,
                 "type": self.node_type,
                 "updated": tnow,
+                "is_reviewed": self.is_reviewed,
             },
             "$setOnInsert": {"created": tnow},
         }
