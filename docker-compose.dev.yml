@@ -6,13 +6,13 @@ services:
     container_name: nedrexdb_v2
     build: .
     environment:
-      - DOWNLOAD_ON STARTUP=0
+      - DOWNLOAD_ON STARTUP=1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/nedrexdb_v2:/tmp
       - ./config/licensed_config.toml:/app/nedrexdb/.licensed_config.toml
       - ./config/open_config.toml:/app/nedrexdb/.open_config.toml
-      - /home/hoel/Projects/NeDRex/nedrex_files:/data/nedrex_files
+      - ./nedrex_files:/data/nedrex_files:/data/nedrex_files
 #    restart: always
     networks:
       - nedrexdb_default
