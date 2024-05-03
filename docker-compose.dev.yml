@@ -2,15 +2,17 @@ version: '3.3'
 
 services:
   db:
-    image: ghcr.io/repotrial/nedrexdb_v2d:master
+    #image: ghcr.io/repotrial/nedrexdb_v2d:master
     container_name: nedrexdb_v2
     build: .
+    environment:
+      - DOWNLOAD_ON STARTUP=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/nedrexdb_v2:/tmp
       - ./config/licensed_config.toml:/app/nedrexdb/.licensed_config.toml
       - ./config/open_config.toml:/app/nedrexdb/.open_config.toml
-      - ./nedrex_files:/data/nedrex_files
+      - /home/hoel/Projects/NeDRex/nedrex_files:/data/nedrex_files
 #    restart: always
     networks:
       - nedrexdb_default
