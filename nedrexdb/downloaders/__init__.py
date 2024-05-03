@@ -6,6 +6,7 @@ from nedrexdb import config as _config
 from nedrexdb.common import Downloader
 from nedrexdb.db import MongoInstance
 from nedrexdb.downloaders.biogrid import download_biogrid as _download_biogrid
+from nedrexdb.downloaders.chembl import download_chembl as _download_chembl
 
 
 class Version:
@@ -33,13 +34,18 @@ def download_all(force=False):
     download_dir.mkdir(exist_ok=True, parents=True)
 
     sources = _config["sources"]
-    # Remove the source keys
+    # Remove the source keys (in filter)
     exclude_keys = {"directory", "username", "password"}
 
     metadata = {"source_databases": {}}
 
-    metadata["source_databases"]["biogrid"] = {"date": f"{_datetime.datetime.now().date()}", "version": None}
-    _download_biogrid()
+    chembl_date = _datetime.datetime.now().date()
+    chembl_version = _download_chembl()
+    metadata["source_databases"]["chembl"] = {"date": f"{chembl_date}", "version": chembl_version}
+
+    biogrid_date = _datetime.datetime.now().date()
+    biogrid_version = _download_biogrid()
+    metadata["source_databases"]["biogrid"] = {"date": f"{biogrid_date}", "version": biogrid_version}
 
     for source in filter(lambda i: i not in exclude_keys, sources):
         metadata["source_databases"][source] = {"date": f"{_datetime.datetime.now().date()}", "version": None}
@@ -48,6 +54,7 @@ def download_all(force=False):
         if source in {
             "biogrid",
             "drugbank",
+            "chembl",
         }:
             continue
         (download_dir / source).mkdir(exist_ok=True)
