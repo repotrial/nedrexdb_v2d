@@ -97,6 +97,9 @@ class UniProtRecord:
     def get_comments(self) -> str:
         return self._record.annotations.get("comment", "")
 
+    def is_reviewed(self) -> str:
+        return self._record.annotations["reviewed"]
+
     def parse(self):
         p = Protein()
 
@@ -110,6 +113,7 @@ class UniProtRecord:
 
         p.taxid = self.get_taxid()
         p.sequence = self.get_sequence()
+        p.is_reviewed = self.is_reviewed()
 
         p.dataSources = ["uniprot"]
 
@@ -137,16 +141,17 @@ class IDMapRow:
             pebg.targetDomainId = gene
             yield pebg
 
-
-def _iter_gzipped_swiss(fname):
+# apparently SeqIO.parse does not parse (UN)REVIEWED in the ID line... therefore manually added here
+def _iter_gzipped_swiss(fname, reviewed):
     with _gzip.open(fname, "rt") as f:
         for record in _SeqIO.parse(f, "swiss"):
+            record.annotations["reviewed"] = str(reviewed)
             yield record
 
 
 def parse_proteins():
     filenames = [get_file_location("trembl"), get_file_location("swissprot")]
-    uniprot_records = _itertools.chain(*[_iter_gzipped_swiss(filename) for filename in filenames])
+    uniprot_records = _itertools.chain(*[_iter_gzipped_swiss(filenames[filenum], bool(filenum)) for filenum in (0, 1)])
     updates = (UniProtRecord(record).parse().generate_update() for record in uniprot_records)
 
     for chunk in _tqdm(

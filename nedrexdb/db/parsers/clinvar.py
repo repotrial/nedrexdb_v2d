@@ -68,8 +68,10 @@ class ClinVarXMLParser:
         variant_ids = get_variant_list()
         disorder_domain_id_map = disorder_domain_id_to_primary_id_map()
 
+        # throws an error if variant_ids is None
         assert None not in variant_ids
 
+        # opens gz file, takes its xml file. Fails, if it is empty
         with _gzip.open(self.fname, "rt") as f:
             for _, elem in _et.iterparse(f, events=("end",)):
                 if elem.tag == "ReferenceClinVarAssertion":
