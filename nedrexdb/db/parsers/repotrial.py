@@ -15,8 +15,8 @@ def parse():
     with open(fname) as f:
         reader = csv.reader(f, delimiter="\t")
         for omim, icd10 in reader:
-            dcoll.update(
-                {"domainIds": omim},
+            dcoll.update_one(
+                {"domainIds": {"$in": [omim]}},
                 {
                     "$addToSet": {
                         "icd10": {"$each": icd10.split("|")},

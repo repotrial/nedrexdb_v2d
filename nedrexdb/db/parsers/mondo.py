@@ -103,7 +103,6 @@ class MondoRecord:
         d = Disorder()
         d.primaryDomainId = self.get_id()
         d.domainIds = self.get_domain_ids()
-
         if d.primaryDomainId not in d.domainIds:
             d.domainIds.append(d.primaryDomainId)
 
