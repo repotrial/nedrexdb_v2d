@@ -6,7 +6,7 @@ services:
     container_name: nedrexdb_v2
     build: .
     environment:
-      - DOWNLOAD_ON_STARTUP=1
+      - DOWNLOAD_ON_STARTUP=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/nedrexdb_v2:/tmp

@@ -6,10 +6,10 @@ if [ "${DOWNLOAD_ON_STARTUP}" == "1" ]; then
      ./setup_data.sh /data/nedrex_files; ./build.py update --conf .licensed_config.toml --download
   else
      echo "Download: OFF"
-     ./setup_data.sh /data/nedrex_files; ./build.py update --conf .licensed_config.toml
+     ./build.py update --conf .licensed_config.toml
   fi
 
-#./build.py update --conf .licensed_config.toml
+./build.py update --conf .licensed_config.toml
 ./set_metadata.py --config .licensed_config.toml --version live
 ./clean_volumes.sh licensed
 echo "Finished setup of licensed DB"
