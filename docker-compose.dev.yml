@@ -2,9 +2,11 @@ version: '3.3'
 
 services:
   db:
-    image: ghcr.io/repotrial/nedrexdb_v2d:master
+    #image: ghcr.io/repotrial/nedrexdb_v2d:master
     container_name: nedrexdb_v2
     build: .
+    environment:
+      - DOWNLOAD_ON_STARTUP=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/nedrexdb_v2:/tmp
