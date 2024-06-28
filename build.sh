@@ -6,16 +6,36 @@ if [ "${DOWNLOAD_ON_STARTUP}" == "1" ]; then
      ./setup_data.sh /data/nedrex_files; ./build.py update --conf .licensed_config.toml --download
   else
      echo "Download: OFF"
-     ./build.py update --conf .licensed_config.toml
+     if [ "${SKIP_UPDATE}" == "1" ]; then
+       echo "only restarting"
+       ./build.py restart-live --conf .licensed_config.toml
+     else
+       ./build.py update --conf .licensed_config.toml
+       ./set_metadata.py --config .licensed_config.toml --version live
+     fi
+     if [ "${SKIP_CLEAN}" == "1" ]; then
+        echo "Skipping clean"
+      else
+        ./clean_volumes.sh licensed
+      fi
   fi
 
-./build.py update --conf .licensed_config.toml
-./set_metadata.py --config .licensed_config.toml --version live
-./clean_volumes.sh licensed
 echo "Finished setup of licensed DB"
 
+
+if [ "${SKIP_OPEN}" == "1" ]; then
+  exit 0
+fi
 echo "Starting setup of open DB"
-./build.py update --conf .open_config.toml
-./set_metadata.py --config .open_config.toml --version live
-./clean_volumes.sh open
+if [ "${SKIP_UPDATE}" == "1" ]; then
+  ./build.py restart-live --conf .open_config.toml
+else
+  ./build.py update --conf .open_config.toml
+  ./set_metadata.py --config .open_config.toml --version live
+fi
+if [ "${SKIP_CLEAN}" == "1" ]; then
+  echo "Skipping clean"
+else
+  ./clean_volumes.sh open
+fi
 echo "Finished setup of open DB"
