@@ -19,6 +19,7 @@ if [ "${DOWNLOAD_ON_STARTUP}" == "1" ]; then
         ./clean_volumes.sh licensed
       fi
   fi
+
 echo "Finished setup of licensed DB"
 
 
