@@ -2,7 +2,6 @@ version: '3.3'
 
 services:
   db:
-    #image: ghcr.io/repotrial/nedrexdb_v2d:master
     container_name: nedrexdb_v2
     build: .
     environment:
@@ -15,7 +14,7 @@ services:
       - /tmp/nedrexdb_v2:/tmp
       - ./config/licensed_config.toml:/app/nedrexdb/.licensed_config.toml
       - ./config/open_config.toml:/app/nedrexdb/.open_config.toml
-      - ./nedrex_files:/data/nedrex_files
+      - /nfs/scratch/nedrex_files:/data/nedrex_files
 #    restart: always
     networks:
       - nedrexdb_default
