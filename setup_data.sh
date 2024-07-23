@@ -4,9 +4,12 @@ DOWNLOADS=$NEDREX_FILES/nedrex_data/downloads
 
 mkdir -p $DOWNLOADS
 cd $DOWNLOADS
-wget https://cloud.uni-hamburg.de/s/RiAtjZC3bb7bg7n/download/bioontology.zip -O bioontology.zip
-wget https://cloud.uni-hamburg.de/s/5meqDbTbgydo6Tj/download/drugbank.zip -O drugbank.zip
-wget https://cloud.uni-hamburg.de/s/PxWXAMY5bfS3ZcA/download/repotrial.zip -O repotrial.zip
+wget -nv https://zenodo.org/records/12800929/files/cosmic.zip?download=1 -O cosmic.zip
+wget -nv https://zenodo.org/records/12800929/files/intogen.zip?download=1 -O intogen.zip
+wget -nv https://zenodo.org/records/12800929/files/ncg.zip?download=1 -O ncg.zip
+wget -nv https://cloud.uni-hamburg.de/s/RiAtjZC3bb7bg7n/download/bioontology.zip -O bioontology.zip
+wget -nv https://cloud.uni-hamburg.de/s/5meqDbTbgydo6Tj/download/drugbank.zip -O drugbank.zip
+wget -nv https://cloud.uni-hamburg.de/s/PxWXAMY5bfS3ZcA/download/repotrial.zip -O repotrial.zip
 
 for file in *.zip; do
     echo "Unzipping $file..."
