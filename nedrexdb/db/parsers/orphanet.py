@@ -124,6 +124,7 @@ class OrphanetParser:
 
 
 def parse_gene_disease_associations():
+    logger.info("Parsing orphanet")
     fname = get_file_location("data")
     mapping_fname = get_file_location("mapping")
     OrphanetParser(fname, mapping_fname).parse()

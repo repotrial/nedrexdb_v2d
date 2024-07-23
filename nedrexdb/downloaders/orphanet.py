@@ -38,7 +38,7 @@ def download_orphanet():
     try:
         d.download()
     except _HTTPError as E:
-        logger.warning(f"Unable to download DrugBank: {E}")
+        logger.warning(f"Unable to download Orphanet mapping: {E}")
         return
     files = list(target_dir.iterdir())
     print(files)
@@ -80,5 +80,5 @@ def download_orphanet():
     try:
         d.download()
     except _HTTPError as E:
-        logger.warning(f"Unable to download DrugBank: {E}")
+        logger.warning(f"Unable to download Orphanet data: {E}")
         return

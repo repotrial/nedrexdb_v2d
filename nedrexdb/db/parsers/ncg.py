@@ -12,6 +12,7 @@ from nedrexdb.db.models.edges.gene_associated_with_disorder import GeneAssociate
 from nedrexdb.db.models.nodes.disorder import Disorder
 from nedrexdb.db.models.nodes.gene import Gene
 from nedrexdb.db.parsers import _get_file_location_factory
+from nedrexdb.logger import logger
 
 get_file_location = _get_file_location_factory("ncg")
 
@@ -93,6 +94,7 @@ class NCGParser:
 
 
 def parse_gene_disease_associations():
+    logger.info("Parsing NCG")
     fname = get_file_location("annotation")
     mapping_fname = get_file_location("mapping")
     NCGParser(fname, mapping_fname).parse()

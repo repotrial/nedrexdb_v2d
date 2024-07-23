@@ -11,6 +11,7 @@ from nedrexdb.db import MongoInstance
 from nedrexdb.db.models.edges.gene_associated_with_disorder import GeneAssociatedWithDisorder
 from nedrexdb.db.models.nodes.gene import Gene
 from nedrexdb.db.parsers import _get_file_location_factory
+from nedrexdb.logger import logger
 
 get_file_location = _get_file_location_factory("intogen")
 
@@ -100,6 +101,7 @@ class IntOGenParser:
 
 
 def parse_gene_disease_associations():
+    logger.info("Parsing intogen")
     fname = get_file_location("drivers")
     mapping_fname = get_file_location("mapping")
     IntOGenParser(fname, mapping_fname).parse()
