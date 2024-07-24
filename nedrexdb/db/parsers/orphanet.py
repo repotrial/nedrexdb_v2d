@@ -113,14 +113,26 @@ class OrphanetParser:
                 for disorder in mondo_ids:
                     dict_disorder_genes[disorder] = ordered_associatedGenes[i] # key: disorder id, value: array of genes that are associated with this disorder
 
+        # get gene id mapping
+        symbol2entrez = {gene["approvedSymbol"]: gene["primaryDomainId"] for gene in Gene.find(MongoInstance.DB)}
+        n_unmapped = 0
+        n_added = 0
+
         for d, gs in dict_disorder_genes.items():
             for g in gs:
-                chunk.append(GeneAssociatedWithDisorder(
-                        sourceDomainId = g,
-                        targetDomainId = d,
-                        dataSources = ["orphanet"]
-                    ).generate_update())
+                if g in symbol2entrez:
+                    n_added += 1
+                    chunk.append(GeneAssociatedWithDisorder(
+                            sourceDomainId = symbol2entrez[g],
+                            targetDomainId = d,
+                            dataSources = ["orphanet"]
+                        ).generate_update())
+                else:
+                    n_unmapped += 1
         MongoInstance.DB[GeneAssociatedWithDisorder.collection_name].bulk_write(chunk)
+
+        if n_unmapped:
+            logger.info(f"Orphanet added {n_added} disease gene associations ({n_unmapped} skipped) ")
 
 
 def parse_gene_disease_associations():
