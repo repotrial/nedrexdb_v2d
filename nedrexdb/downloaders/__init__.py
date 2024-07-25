@@ -44,7 +44,7 @@ def download_all(force=False):
     metadata = {"source_databases": {}}
 
     _download_ncg()
-    _download_cosmic()
+    #_download_cosmic()
     _download_intogen()
     _download_orphanet()
 
