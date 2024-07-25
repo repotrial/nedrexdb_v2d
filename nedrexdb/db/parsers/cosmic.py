@@ -40,8 +40,10 @@ def get_cancer2mondo(mapping_fname: _Path) -> dict[tuple: str]:
     cancer2mondo = {}
     with open(mapping_fname, newline='') as mapping_file:
         reader = _DictReader(mapping_file, delimiter="\t")
-        cancer2mondo = {tuple(
-            row[column] for column in mapping_columns): row['mapped_curie'] for row in reader}
+        cancer2mondo = {
+            tuple(row[column] for column in mapping_columns): row['mapped_curie'] 
+            for row in reader if row['mapped_curie'] != "NO_MATCH"
+        }
     return cancer2mondo
 
 
@@ -134,13 +136,11 @@ class COSMICRow:
             variant_gene = VariantAffectsGene(sourceDomainId=variant_id, targetDomainId=gene_id,
                                               dataSources=asserted_by)
             mondo_id = cancer2mondo.get(self.get_cancer_tuple())
-            # if mondo_id:
-            variant_disorder = VariantAssociatedWithDisorder(accession=cosmic_id, dataSources=asserted_by,
-                                                             sourceDomainId=variant_id,
-                                                             targetDomainId=mondo_id,
-                                                             reviewStatus=self.get_mutation_status())
-            # else:
-            #     variant_disorder = None
+            if mondo_id:
+                variant_disorder = VariantAssociatedWithDisorder(accession=cosmic_id, dataSources=asserted_by,
+                                                                sourceDomainId=variant_id,
+                                                                targetDomainId=mondo_id,
+                                                                reviewStatus=self.get_mutation_status())
 
         return genomic_variant, variant_gene, variant_disorder
 
@@ -195,8 +195,11 @@ class COSMICParser:
             get_clinvar_file_location("human_data"))
         cancer2mondo = get_cancer2mondo(mapping_fname)
 
-        updates = (COSMICRow(row).parse(
-            gdot2clinvar, symbol2entrez, cancer2mondo) for row in f_dict)
+        updates = (
+            COSMICRow(row).parse(gdot2clinvar, symbol2entrez, cancer2mondo) 
+            for row in f_dict
+        )
+
         for chunk in _tqdm(_chunked(updates, 10_000), leave=False, desc="Parsing COSMIC"):
             if not chunk:
                 continue
