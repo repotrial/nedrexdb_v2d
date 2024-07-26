@@ -69,6 +69,7 @@ def download_all(force=False):
             "cosmic",
             "intogen",
             "orphanet",
+            "opentargets",
         }:
             continue
         (download_dir / source).mkdir(exist_ok=True)
