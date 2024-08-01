@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
 RUN apt-get update && apt-get install -y unzip
 RUN mamba install python=3.10
 RUN mamba upgrade pip tqdm cryptography
+RUN mamba install openjdk
 
 WORKDIR /data/nedrex_files/
 RUN mkdir -p nedrex_api/static

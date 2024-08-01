@@ -36,6 +36,7 @@ from nedrexdb.db.parsers import (
     ncg,
     intogen,
     orphanet,
+    opentargets,
 )
 from nedrexdb.post_integration import trim_uberon, drop_empty_collections
 
@@ -75,7 +76,6 @@ def update(conf, download):
     uberon.parse()
     uniprot.parse_proteins()
 
-
     cosmic.parse_gene_disease_associations()
     ncg.parse_gene_disease_associations()
 
@@ -113,7 +113,8 @@ def update(conf, download):
     uniprot.parse_idmap()
 
     intogen.parse_gene_disease_associations()
-    orphanet.parse_gene_disease_associations()    
+    orphanet.parse_gene_disease_associations()
+    opentargets.parse_gene_disease_associations()    
 
     from nedrexdb.analyses import molecule_similarity
 
