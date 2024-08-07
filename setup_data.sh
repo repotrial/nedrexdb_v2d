@@ -19,7 +19,7 @@ done
 cd ../../
 mkdir -p nedrex_api/static
 cd nedrex_api/static
-wget https://cloud.uni-hamburg.de/s/PdXPnX77QpWzX7z/download -O static.zip
+wget -nv https://cloud.uni-hamburg.de/s/PdXPnX77QpWzX7z/download -O static.zip
 unzip -o static.zip
 mv static/* .
 rm -rf static
