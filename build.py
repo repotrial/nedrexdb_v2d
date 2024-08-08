@@ -77,6 +77,7 @@ def update(conf, download):
     uniprot.parse_proteins()
 
     # Sources that add node type but require existing nodes, too
+    cosmic.parse_gene_disease_associations()
     clinvar.parse()
 
     if version == "licensed":
@@ -112,7 +113,6 @@ def update(conf, download):
     intogen.parse_gene_disease_associations()
     orphanet.parse_gene_disease_associations()
     opentargets.parse_gene_disease_associations()    
-    cosmic.parse_gene_disease_associations()
     ncg.parse_gene_disease_associations()
 
     from nedrexdb.analyses import molecule_similarity

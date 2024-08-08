@@ -10,6 +10,7 @@ from nedrexdb.db.models.edges.variant_affects_gene import VariantAffectsGene
 from nedrexdb.db.models.edges.variant_associated_with_disorder import VariantAssociatedWithDisorder
 from nedrexdb.db.models.edges.gene_associated_with_disorder import GeneAssociatedWithDisorder
 from nedrexdb.db.models.nodes.gene import Gene
+from nedrexdb.db.models.nodes.disorder import Disorder
 from nedrexdb.db.models.nodes.genomic_variant import GenomicVariant
 from nedrexdb.db.parsers import _get_file_location_factory
 from nedrexdb.logger import logger
@@ -119,7 +120,7 @@ class COSMICRow:
     #         return GenomicVariant(**variant)
     # return None
 
-    def parse(self, gdot2clinvar: dict[str, str], symbol2entrez: dict[str, str], cancer2mondo: dict[tuple, str]) -> \
+    def parse(self, gdot2clinvar: dict[str, str], symbol2entrez: dict[str, str], cancer2mondo: dict[tuple, str], nedrex_mondo_ids: set[str]) -> \
             tuple[GenomicVariant, VariantAffectsGene, VariantAssociatedWithDisorder]:
         variant_id = gdot2clinvar.get(self.get_HGVSG())
         genomic_variant = None
@@ -136,7 +137,7 @@ class COSMICRow:
             variant_gene = VariantAffectsGene(sourceDomainId=variant_id, targetDomainId=gene_id,
                                               dataSources=asserted_by)
             mondo_id = cancer2mondo.get(self.get_cancer_tuple())
-            if mondo_id:
+            if mondo_id and mondo_id in nedrex_mondo_ids:
                 variant_disorder = VariantAssociatedWithDisorder(accession=cosmic_id, dataSources=asserted_by,
                                                                 sourceDomainId=variant_id,
                                                                 targetDomainId=mondo_id,
@@ -194,9 +195,11 @@ class COSMICParser:
         gdot2clinvar = get_gdot2clinvar(
             get_clinvar_file_location("human_data"))
         cancer2mondo = get_cancer2mondo(mapping_fname)
+        # get mondo ids in NeDRex
+        nedrex_mondo_ids = {dis["primaryDomainId"] for dis in Disorder.find(MongoInstance.DB)}
 
         updates = (
-            COSMICRow(row).parse(gdot2clinvar, symbol2entrez, cancer2mondo) 
+            COSMICRow(row).parse(gdot2clinvar, symbol2entrez, cancer2mondo, nedrex_mondo_ids) 
             for row in f_dict
         )
 
