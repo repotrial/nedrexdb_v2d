@@ -55,6 +55,7 @@ def download_all(force=False):
             "biogrid",
             "drugbank",
             "chembl",
+            "disgenet"
         }:
             continue
         (download_dir / source).mkdir(exist_ok=True)

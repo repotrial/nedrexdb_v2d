@@ -83,13 +83,13 @@ def update(conf, download):
     hpo.parse()  # requires disorders to be parsed first
     reactome.parse()  # requires protein to be parsed first
     bioontology.parse()  # requires phenotype to be parsed
-    #
-    # Sources that add data to existing nodes
+
+#     Sources that add data to existing nodes
     drug_central.parse_drug_central()
     unichem.parse()
     repotrial.parse()
-    #
-    # Sources adding edges.
+
+#     Sources adding edges.
     biogrid.parse_ppis()
     ctd.parse()
     disgenet.parse_gene_disease_associations()
@@ -112,7 +112,7 @@ def update(conf, download):
     trim_uberon.trim_uberon()
     drop_empty_collections.drop_empty_collections()
 
-    # export to Neo4j
+#     export to Neo4j
     mongo_to_neo.mongo_to_neo(dev_instance, MongoInstance.DB)
 
     # Profile the collections
