@@ -33,11 +33,11 @@ WORKDIR /app/nedrexdb
 COPY cron/cron.prod /etc/cron.d/cron-nedrex
 RUN chmod 0644 /etc/cron.d/cron-nedrex
 RUN crontab /etc/cron.d/cron-nedrex
-RUn touch /var/log/nedrexdb.log
+RUN touch /var/log/nedrexdb.log
 
 COPY . ./
 RUN rm -rf cron
-RUN pip install .
+RUN pip install .[dependencies]
 
 CMD cron && bash build.sh >> /var/log/nedrexdb.log 2>&1 & tail -f /var/log/nedrexdb.log
 
