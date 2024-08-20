@@ -3,7 +3,7 @@ mode="open"
 status="live"
 port=7123
 host="127.0.0.1"
-base="/"
+base="/open"
 
 rate_limiting_enabled = false
 rate_limit = "1/second"
@@ -60,9 +60,9 @@ edge_collections = [
 
 [api.directories]
 static = "/data/nedrex_files/nedrex_api/static"
-static_outside = "/home/andim/projects/nedrex/nedrexdb_v2d/nedrex_files/nedrex_api/static"
+static_outside = "/srv/projects/nedrex/nedrex_files/nedrex_api/static"
 data = "/data/nedrex_files/nedrex_api/data"
-data_outside = "/home/andim/projects/nedrex/nedrexdb_v2d/nedrex_files/nedrex_api/data"
+data_outside = "/srv/projects/nedrex/nedrex_files/nedrex_api/data"
 scripts = "/app/nedrexapi/scripts"
 
 [tools]
@@ -137,7 +137,7 @@ url = "https://ctdbase.org/reports/CTD_chemicals_diseases.tsv.gz"
 
 [sources.disgenet]
 [sources.disgenet.gene_disease_associations]
-url = "https://www.disgenet.org/static/disgenet_ap1/files/downloads/curated_gene_disease_associations.tsv.gz"
+filename = "curated_gene_disease_associations.tsv.gz"
 
 [sources.drugbank]
 [sources.drugbank.open]
@@ -214,3 +214,4 @@ url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgeba
 
 [sources.uniprot.idmapping]
 url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping_selected.tab.gz"
+
