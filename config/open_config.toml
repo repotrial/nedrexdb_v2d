@@ -71,8 +71,8 @@ bicon_python = "/opt/conda/envs/bicon/bin/python"
 
 [db]
 version = "open"
-neo4j_image = "neo4j:3.5.34"
-mongo_image = "mongo:4.4.10"
+neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:dev"
+mongo_image = "mongo:5.0.27"
 mongo_express_image = "mongo-express:0.54.0"
 mongo_db = "nedrex"
 root_directory = "/data/nedrex_files/nedrex_data"
