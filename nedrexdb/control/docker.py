@@ -151,9 +151,15 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             "image": get_neo4j_image(),
             "detach": True,
             "name": self.neo4j_container_name,
-            "volumes": {volume: {"mode": "rw", "bind": "/data"}, "/tmp/nedrexdb_v2": {"mode": "ro", "bind": "/import"}},
+            "volumes": {volume: {"bind": "/data","mode": "rw"}, "/tmp/nedrexdb_v2": {"bind": "/import","mode": "ro" }},
             "ports": {7474: ("127.0.0.1", self.neo4j_http_port), 7687: ("127.0.0.1", self.neo4j_bolt_port)},
-            "environment": {"NEO4J_AUTH": "none"},
+           "environment": {
+                "NEO4J_AUTH": "none",
+                "NEO4J_server_config_strict__validation_enabled": "false",
+                "NEO4J_PLUGINS": '["apoc"]',
+                "NEO4J_server_security_procedures_unrestricted": "apoc.*",
+                "NEO4J_ACCEPT_LICENSE_AGREEMENT": "yes"
+            },
             "network": self.network_name,
             "remove": False,
             "restart_policy":{"Name":"always"}
@@ -165,10 +171,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             kwargs["entrypoint"] = "/bin/bash"
 
         elif neo4j_mode == "db":
-            kwargs["environment"]["NEO4J_dbms_read__only"] = "true"
+            kwargs["environment"]["NEO4J_server_read__only"] = "true"
         else:
             raise Exception(f"neo4j_mode {neo4j_mode!r} is invalid")
-
         _client.containers.run(**kwargs)
 
     def _set_up_mongo(self, use_existing_volume):
@@ -206,7 +211,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             network=self.network_name,
             environment={"ME_CONFIG_MONGODB_SERVER": self.mongo_container_name},
             remove=False,
-            restart_policy={"Name":"always"},
+            restart_policy={"Name":"always"}
         )
 
     def _remove_neo4j(self, remove_db_volume=False):
@@ -262,7 +267,6 @@ class _NeDRexBaseInstance(_NeDRexInstance):
 
     def set_up(self, use_existing_volume=True, neo4j_mode="db"):
         print("Setting up Live NeDRex instance...")
-        # self._set_up_network()
         self._set_up_mongo(use_existing_volume=use_existing_volume)
         self._set_up_neo4j(use_existing_volume=use_existing_volume, neo4j_mode=neo4j_mode)
         self._set_up_express()
@@ -274,7 +278,6 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         )
         self._remove_neo4j(remove_db_volume=remove_db_volume)
         self._remove_express()
-        # self._remove_network()
 
 
 class NeDRexLiveInstance(_NeDRexBaseInstance):
