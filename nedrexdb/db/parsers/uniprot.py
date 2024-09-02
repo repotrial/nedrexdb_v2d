@@ -72,6 +72,13 @@ class UniProtRecord:
         synonyms = [i.strip() for i in synonyms]
         synonyms = [i[:-1] if i.endswith(";") else i for i in synonyms]
         synonyms = [i for i in synonyms if i]
+        syn_set = set()
+        for syn in synonyms:
+            if "{" in syn:
+                syn_set.add(self._CURLY_REGEX.split(syn)[0].strip())
+            else:
+                syn_set.add(syn.strip())
+        synonyms = list(syn_set)
         return synonyms
 
     def get_gene_name(self) -> str:
@@ -90,6 +97,7 @@ class UniProtRecord:
                 gene_name = name
             if gene_name.startswith("Name="):
                 gene_name = gene_name.replace("Name=", "").split(";", 1)[0]
+            if "{" in gene_name:
                 gene_name = self._CURLY_REGEX.split(gene_name)[0].strip()
 
         return gene_name

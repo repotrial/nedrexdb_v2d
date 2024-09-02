@@ -55,7 +55,7 @@ class MongoInstance:
 
     @classmethod
     def set_indexes(cls):
-        if not cls.DB:
+        if cls.DB is None:
             raise ValueError("run nedrexdb.db.connect() first to connect to MongoDB")
         # Nodes
         _disorder.Disorder.set_indexes(cls.DB)
