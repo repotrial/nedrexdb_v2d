@@ -25,7 +25,7 @@ class Version:
         return f"{self.major}.{self.minor}.{self.patch}"
 
 
-def download_all(force=False):
+def download_all(force=False, ignored_sources={}):
     base = _Path(_config["db.root_directory"])
     download_dir = base / _config["sources.directory"]
 
@@ -35,17 +35,18 @@ def download_all(force=False):
 
     sources = _config["sources"]
     # Remove the source keys (in filter)
-    exclude_keys = {"directory", "username", "password"}
+    exclude_keys = ignored_sources.union({"directory", "username", "password"})
 
     metadata = {"source_databases": {}}
 
-    chembl_date = _datetime.datetime.now().date()
-    chembl_version = _download_chembl()
-    metadata["source_databases"]["chembl"] = {"date": f"{chembl_date}", "version": chembl_version}
-
-    biogrid_date = _datetime.datetime.now().date()
-    biogrid_version = _download_biogrid()
-    metadata["source_databases"]["biogrid"] = {"date": f"{biogrid_date}", "version": biogrid_version}
+    if "chembl" not in ignored_sources:
+        chembl_date = _datetime.datetime.now().date()
+        chembl_version = _download_chembl()
+        metadata["source_databases"]["chembl"] = {"date": f"{chembl_date}", "version": chembl_version}
+    if "biogrid" not in ignored_sources:
+        biogrid_date = _datetime.datetime.now().date()
+        biogrid_version = _download_biogrid()
+        metadata["source_databases"]["biogrid"] = {"date": f"{biogrid_date}", "version": biogrid_version}
 
     for source in filter(lambda i: i not in exclude_keys, sources):
         metadata["source_databases"][source] = {"date": f"{_datetime.datetime.now().date()}", "version": None}

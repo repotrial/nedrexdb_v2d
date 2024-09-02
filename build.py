@@ -61,8 +61,11 @@ def update(conf, download):
     MongoInstance.connect("dev")
     MongoInstance.set_indexes()
 
+    # control source downloads
     if download:
-        downloaders.download_all()
+        downloaders.download_all(ignored_sources={"chembl",
+                                                  "biogrid",
+                                                  "drugbank"})
 
     # Parse sources contributing only nodes (and edges amongst those nodes)
     go.parse_go()
