@@ -59,7 +59,7 @@ def download_all(force=False, ignored_sources=set()):
 
     sources = _config["sources"]
     # Remove the source keys (in filter)
-    exclude_keys = ignored_sources.union({"directory", "username", "password"})
+    exclude_keys = ignored_sources.union({"directory", "username", "password", "default_version"})
 
     metadata = {"source_databases": {}}
 
@@ -87,9 +87,7 @@ def download_all(force=False, ignored_sources=set()):
 
         # update metadata
         match source:
-            ## omim just date
             case "uniprot":
-                ##sources[source]["version_url"]
                 url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions"
                 pattern = r">uniprot_sprot_human\.dat\.gz</a>                            [\d-]+"
                 metadata["source_databases"][source] = update_version("uniprot", url, pattern)
@@ -130,30 +128,24 @@ def download_all(force=False, ignored_sources=set()):
                 pattern = r'>CTD_chemicals_diseases\.tsv\.gz</a></td><td align="right">[\d-]+'
                 metadata["source_databases"][source] = update_version("ctd", url, pattern)
             case "clinvar":
-                # url = sources["clinvar"]["human_data"][1].get("url").rsplit("/", 1)[1]
-                # '--> can be used to get the URL from config (instead of hard coding url)
                 url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/"
                 metadata["source_databases"][source] = (
                     update_version("clinvar", url, r'href="clinvar_\d+\.vcf\.error\.txt"'))
             case "go":
-                # write it as json interpreter, maybe use just requests?
                 url = "https://current.geneontology.org/release_stats/go-stats-summary.json"
                 pattern = r'"release_date": "[\d-]+'
                 metadata["source_databases"][source] = update_version("go", url, pattern)
             case "uberon":
-                #url = "https://github.com/obophenotype/uberon/releases/download/v2022-04-05"
-                #version = sources["uberon"]["ext"][1].get("url").rsplit("/", 2)[1]
-                #version = version[1:]
                 date = _datetime.datetime.now().date()
                 version = "2022-04-05"
                 metadata["source_databases"][source] = {"date": f"{date}", "version": version}
             case "drug_central":
-                #url = "https://unmtid-shinyapps.net/download/drugcentral.dump.11012023.sql.gz"
-                #version = sources["drug_central"]["postgres_dump"][1].get("url").rsplit(".", 3)[1]
-                #version = f"{version[4:]}-{version[2:4]}-{version[0:2]}"
                 date = _datetime.datetime.now().date()
                 version = "2023-01-11"
                 metadata["source_databases"][source] = {"date": f"{date}", "version": version}
+            case "omim":
+                date = _datetime.datetime.now().date()
+                metadata["source_databases"][source] = {"date": f"{date}", "version": f"{date}"}
             case "sider":
                 metadata["source_databases"][source] = {"date": f"{_datetime.datetime.now().date()}", "version": "4.1"}
             case _:
@@ -185,7 +177,7 @@ def download_all(force=False, ignored_sources=set()):
     if len(docs) == 1:
         version = docs[0]["version"]
     elif len(docs) == 0:
-        version = "0.0.0"
+        version = sources["default_version"]
     else:
         raise Exception("should only be one document in the metadata collection")
 
@@ -193,8 +185,5 @@ def download_all(force=False, ignored_sources=set()):
     v.increment("patch")
 
     metadata["version"] = f"{v}"
-
-    print(1000*"metadata")
-    print(metadata)
 
     MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
