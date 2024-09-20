@@ -159,9 +159,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             "ports": {7474: ("127.0.0.1", self.neo4j_http_port), 7687: ("127.0.0.1", self.neo4j_bolt_port)},
            "environment": {
                 "NEO4J_AUTH": "none",
-                "NEO4J_server_config_strict__validation_enabled": "false",
                 "NEO4J_PLUGINS": '["apoc"]',
-                "NEO4J_server_security_procedures_unrestricted": "apoc.*",
                 "NEO4J_ACCEPT_LICENSE_AGREEMENT": "yes"
             },
             "network": self.network_name,
