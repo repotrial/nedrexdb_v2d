@@ -1,9 +1,9 @@
 import gzip as _gzip
-import xml.etree.cElementTree as _et
+from itertools import chain
+from lxml import etree as _let
 from collections import defaultdict as _defaultdict
 from csv import DictReader as _DictReader
 from functools import lru_cache as _lru_cache
-from itertools import chain as _chain
 
 from more_itertools import chunked as _chunked
 from tqdm import tqdm as _tqdm
@@ -68,76 +68,74 @@ class ClinVarXMLParser:
         variant_ids = get_variant_list()
         disorder_domain_id_map = disorder_domain_id_to_primary_id_map()
 
-        # throws an error if variant_ids is None
         assert None not in variant_ids
 
-        # opens gz file, takes its xml file. Fails, if it is empty
-        with _gzip.open(self.fname, "rt") as f:
-            for _, elem in _et.iterparse(f, events=("end",)):
-                if elem.tag == "ReferenceClinVarAssertion":
-                    pass
-
-                elif elem.tag == "ClinVarSet":
-                    ms = elem.find("ReferenceClinVarAssertion").find("MeasureSet")
-                    if ms:
-                        variant_pdid = f"clinvar.{ms.attrib['ID']}"
-                    else:
-                        variant_pdid = None
-
-                    if ms and variant_pdid in variant_ids:
-                        traits = elem.find("ReferenceClinVarAssertion").find("TraitSet").findall("Trait")
-                        traits = _chain(
-                            *[
-                                [xref.attrib for xref in trait.findall("XRef")]
-                                for trait in traits
-                                if trait.attrib["Type"] == "Disease"
-                            ]
-                        )
-                        traits = {xml_disorder_mapper(item["ID"], item["DB"]) for item in traits}
-                        traits = set(
-                            _chain(*[disorder_domain_id_map.get(domain_id, []) for domain_id in traits if domain_id])
-                        )
-                        traits.discard(None)
-
-                        effects = [
-                            effect.strip()
-                            for effect in elem.find("ReferenceClinVarAssertion")
-                            .find("ClinicalSignificance")
-                            .find("Description")
-                            .text.split(",")
-                        ]
-                        review_status = (
-                            elem.find("ReferenceClinVarAssertion")
-                            .find("ClinicalSignificance")
-                            .find("ReviewStatus")
-                            .text
-                        )
-                        acc = elem.find("ReferenceClinVarAssertion").find("ClinVarAccession").attrib["Acc"]
-
-                        for trait in traits:
-                            vawd = VariantAssociatedWithDisorder(
-                                sourceDomainId=variant_pdid,
-                                targetDomainId=trait,
-                                accession=acc,
-                                effects=effects,
-                                reviewStatus=review_status,
-                                dataSources=["clinvar"],
-                            )
-
-                            yield vawd
-
-                    elem.clear()
-
-                elif elem.tag == "MeasureSet":
-                    pass
-                elif elem.tag == "ClinVarAccession":
-                    pass
-                elif elem.tag in {"ClinicalSignificance", "Description", "ReviewStatus"}:
-                    pass
-                elif elem.tag in {"TraitSet", "Trait", "XRef"}:
-                    pass
+        with _gzip.open(self.fname, "rb") as f:
+            for _, elem in _let.iterparse(f, events=("end",), tag="VariationArchive"):
+                if elem.get('VariationID') is not None:
+                    variant_pdid = f"clinvar.{elem.get('VariationID')}"
                 else:
-                    elem.clear()
+                    variant_pdid = None
+                if variant_pdid in variant_ids:
+                    classified_record = elem.find("ClassifiedRecord")
+
+                    if classified_record is not None:
+
+                        clinical_assertion_list = classified_record.find("ClinicalAssertionList")
+
+                        if clinical_assertion_list is not None:
+                            clinical_assertions = clinical_assertion_list.findall("ClinicalAssertion")
+
+                            for clinical_assertion in clinical_assertions:
+
+                                trait_set = clinical_assertion.find("TraitSet")
+                                if trait_set is not None:
+                                    traits = trait_set.findall("Trait")
+                                    traits = chain(
+                                        *[
+                                            [xref.attrib for xref in trait.findall("XRef")]
+                                            for trait in traits
+                                            if trait.get("Type") == "Disease"
+                                        ]
+                                    )
+                                    traits = {xml_disorder_mapper(item["ID"], item["DB"]) for item in traits}
+                                    traits = set(
+                                        chain(
+                                            *[disorder_domain_id_map.get(domain_id, []) for domain_id in traits if
+                                              domain_id]
+                                        )
+                                    )
+                                    traits.discard(None)
+
+                                classification = clinical_assertion.find("Classification")
+                                if classification is not None:
+                                    effects_elem = classification.find(
+                                        "GermlineClassification")
+                                    review_status_elem = classification.find("ReviewStatus")
+
+                                    effects = [
+                                        effects_elem.text] if effects_elem is not None and effects_elem.text else []
+                                    review_status = review_status_elem.text if review_status_elem is not None else "Unknown"
+
+                                clinvar_accession = clinical_assertion.find("ClinVarAccession")
+                                if clinvar_accession is not None:
+                                    acc = clinvar_accession.get("Accession")
+                                else:
+                                    acc = None
+
+                                if traits and acc:
+                                    for trait in traits:
+                                        vawd = VariantAssociatedWithDisorder(
+                                            sourceDomainId=variant_pdid,
+                                            targetDomainId=trait,
+                                            accession=acc,
+                                            effects=effects,
+                                            reviewStatus=review_status,
+                                            dataSources=["clinvar"],
+                                        )
+                                        yield vawd
+
+                elem.clear()
 
 
 class ClinVarVCFParser:
@@ -230,7 +228,7 @@ def parse():
     parser = ClinVarVCFParser(fname)
 
     updates = (ClinVarRow(i).parse_variant().generate_update() for i in parser.iter_rows())
-    for chunk in _tqdm(_chunked(updates, 1_000), desc="Parsing ClinVar genomic variants", leave=False):
+    for chunk in _tqdm(_chunked(updates, 100_000), desc="Parsing ClinVar genomic variants", leave=False):
         MongoInstance.DB[GenomicVariant.collection_name].bulk_write(chunk)
 
     def iter_variant_gene_relationships():
@@ -241,14 +239,16 @@ def parse():
 
     updates = (vgr.generate_update() for vgr in iter_variant_gene_relationships() if vgr.targetDomainId in gene_ids)
     for chunk in _tqdm(
-        _chunked(updates, 1_000), desc="Parsing ClinVar genomic variant-gene relationships", leave=False
+        _chunked(updates, 100_000), desc="Parsing ClinVar genomic variant-gene relationships", leave=False
     ):
         MongoInstance.DB[VariantAffectsGene.collection_name].bulk_write(chunk)
 
+
     fname = get_file_location("human_data_xml")
+
     parser = ClinVarXMLParser(fname)
     updates = (i.generate_update() for i in parser.iter_parse())
     for chunk in _tqdm(
-        _chunked(updates, 1_000), desc="Parsing ClinVar genomic variant-disorder relationships", leave=False
+        _chunked(updates, 100_000), desc="Parsing ClinVar genomic variant-disorder relationships", leave=False
     ):
         MongoInstance.DB[VariantAssociatedWithDisorder.collection_name].bulk_write(chunk)
