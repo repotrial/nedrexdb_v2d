@@ -80,8 +80,8 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         return f'{_config[f"db.{self.version}.container_name"]}_neo4j'
 
     @property
-    def db_status(self):
-        return f'{_config["api.status"]}'
+    def db_mode(self):
+        return f'{_config["api.mode"]}'
 
     @property
     def neo4j_http_port(self):
@@ -168,9 +168,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             "restart_policy": {"Name": "always"}
         }
 
-        if self.db_status == "open":
-            kwargs["ports"][7474] = ("0.0.0.0", self.neo4j_http_port)
-            kwargs["ports"][7687] = ("0.0.0.0", self.neo4j_bolt_port)
+        if self.db_mode == "open":
+            kwargs["ports"][7474] = self.neo4j_http_port
+            kwargs["ports"][7687] = self.neo4j_bolt_port
 
         if neo4j_mode == "import":
             kwargs["stdin_open"] = True
