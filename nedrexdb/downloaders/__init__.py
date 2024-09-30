@@ -59,7 +59,9 @@ def download_all(force=False, ignored_sources=set()):
 
     sources = _config["sources"]
     # Remove the source keys (in filter)
-    exclude_keys = ignored_sources.union({"directory", "username", "password", "default_version"})
+    exclude_keys = {"directory", "username", "password", "default_version", "version",
+                    "version_url", "version_pattern", "version_mode", "skip_digits"}
+    exclude_keys.update(ignored_sources)
 
     metadata = {"source_databases": {}}
 
@@ -76,80 +78,36 @@ def download_all(force=False, ignored_sources=set()):
 
     for source in filter(lambda i: i not in exclude_keys, sources):
 
-        # Catch case to skip sources with bespoke downloaders.
+        # Catch case to skip sources with bespoke downloaders entirely.
         if source in {
             "biogrid",
-            "drugbank",
-            "chembl",
-            "disgenet"
+            "chembl"
         }:
             continue
 
         # update metadata
-        match source:
-            case "uniprot":
-                url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions"
-                pattern = r">uniprot_sprot_human\.dat\.gz</a>                            [\d-]+"
-                metadata["source_databases"][source] = update_version("uniprot", url, pattern)
-            case "reactome":
-                url = "https://reactome.org/download/current/"
-                pattern = r'>UniProt2Reactome_All_Levels\.txt</a></td><td align="right">[\d-]+'
-                metadata["source_databases"][source] = update_version("reactome", url, pattern, skip_digits=1)
-            case "unichem":
-                url = "http://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id2/"
-                pattern = r'>src2src22\.txt\.gz</a></td><td align="right">[\d-]+'
-                metadata["source_databases"][source] = update_version("unichem", url, pattern, skip_digits=3)
-            case "ncbi":
-                url = "https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/"
-                pattern = r">Homo_sapiens\.gene_info\.gz</a>      [\d-]+"
-                metadata["source_databases"][source] = update_version("ncbi", url, pattern)
-            case "mondo":
-                url = "https://github.com/monarch-initiative/mondo/tags"
-                pattern = r"/monarch-initiative/mondo/releases/tag/v[\d-]+"
-                metadata["source_databases"][source] = update_version("mondo", url, pattern)
-            case "intact":
-                url = "http://ftp.ebi.ac.uk/pub/databases/intact/current/psimitab/"
-                pattern = r'>intact\.zip</a></td><td align="right">[\d-]+'
-                metadata["source_databases"][source] = update_version("intact", url, pattern)
-            case "iid":
-                url = "http://iid.ophid.utoronto.ca/static/Search_By_Proteins.css"
-                pattern = r'content: "version [\d-]+'
-                metadata["source_databases"][source] = update_version("iid", url, pattern)
-            case "hpo":
-                url = "https://github.com/obophenotype/human-phenotype-ontology/releases/"
-                pattern = r'href="/obophenotype/human-phenotype-ontology/releases/tag/v[\d-]+'
-                metadata["source_databases"][source] = update_version("hpo", url, pattern)
-            case "hpa":
-                url = "https://www.proteinatlas.org/about/download"
-                pattern = r"data available in the Human Protein Atlas version \d+\.\d+"
-                metadata["source_databases"][source] = update_version("hpa", url, pattern, "serial")
-            case "ctd":
-                url = "https://ctdbase.org/reports/"
-                pattern = r'>CTD_chemicals_diseases\.tsv\.gz</a></td><td align="right">[\d-]+'
-                metadata["source_databases"][source] = update_version("ctd", url, pattern)
-            case "clinvar":
-                url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/"
-                metadata["source_databases"][source] = (
-                    update_version("clinvar", url, r'href="clinvar_\d+\.vcf\.error\.txt"'))
-            case "go":
-                url = "https://current.geneontology.org/release_stats/go-stats-summary.json"
-                pattern = r'"release_date": "[\d-]+'
-                metadata["source_databases"][source] = update_version("go", url, pattern)
-            case "uberon":
-                date = _datetime.datetime.now().date()
-                version = "2022-04-05"
-                metadata["source_databases"][source] = {"date": f"{date}", "version": version}
-            case "drug_central":
-                date = _datetime.datetime.now().date()
-                version = "2023-01-11"
-                metadata["source_databases"][source] = {"date": f"{date}", "version": version}
-            case "omim":
-                date = _datetime.datetime.now().date()
-                metadata["source_databases"][source] = {"date": f"{date}", "version": f"{date}"}
-            case "sider":
-                metadata["source_databases"][source] = {"date": f"{_datetime.datetime.now().date()}", "version": "4.1"}
-            case _:
-                metadata["source_databases"][source] = {"date": f"{_datetime.datetime.now().date()}", "version": None}
+        meta = sources[source]
+        if "version_url" in meta.keys():
+            version_url = meta["version_url"]
+            version_pattern = rf"{meta['version_pattern']}"
+            skip_digits = meta["skip_digits"] if "skip_digits" in meta.keys() else 0
+            version_mode = meta["version_mode"] if "version_mode" in meta.keys() else "date"
+            metadata["source_databases"][source] = update_version(name=source,
+                                                                  source_url=version_url,
+                                                                  unique_pattern=version_pattern,
+                                                                  mode=version_mode,
+                                                                  skip_digits=skip_digits)
+        else:
+            date = _datetime.datetime.now().date()
+            version = meta["version"] if "version" in meta.keys() else f"{date}"
+            metadata["source_databases"][source] = {"date": f"{date}", "version": version}
+
+        # Catch case to skip sources with bespoke downloaders after setting metadata.
+        if source in {
+            "drugbank",
+            "disgenet"
+        }:
+            continue
 
         (download_dir / source).mkdir(exist_ok=True)
 

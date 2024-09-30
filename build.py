@@ -8,7 +8,7 @@ import os
 import nedrexdb
 from nedrexdb import config, downloaders
 from nedrexdb.control.docker import NeDRexDevInstance, NeDRexLiveInstance
-from nedrexdb.db import MongoInstance, mongo_to_neo, collection_stats, update_db_version
+from nedrexdb.db import MongoInstance, mongo_to_neo, collection_stats
 from nedrexdb.db.parsers import (
     biogrid,
     disgenet,
@@ -63,34 +63,7 @@ def update(conf, download):
     MongoInstance.set_indexes()
 
     if os.environ.get("TEST_MINIMUM", 0) == '1':
-        # control source downloads
-        if download:
-            downloaders.download_all(ignored_sources={"chembl",
-                                                      "biogrid",
-                                                      "go",
-                                                      "uberon",
-                                                      "clinvar",
-                                                      "uniprot",
-                                                      "hpo",
-                                                      "hpo",
-                                                      "reactome",
-                                                      "bioontology",
-                                                      "drug_central",
-                                                      "unichem",
-                                                      "repotrial",
-                                                      "iid",
-                                                      "intact",
-                                                      "omim",
-                                                      "sider"})
-
-        mondo.parse_mondo_json()
-        ncbi.parse_gene_info()
-        if version == "licensed":
-            drugbank._parse_drugbank()  # requires proteins to be parsed first
-        elif version == "open":
-            drugbank.parse_drugbank()
-        ctd.parse()
-        disgenet.parse_gene_disease_associations()
+        parse_dev(version=version, download=download)
     else:
         if download:
             downloaders.download_all()
@@ -140,17 +113,15 @@ def update(conf, download):
 
         # Post-processing
         trim_uberon.trim_uberon()
+
+    # clean up for export
     drop_empty_collections.drop_empty_collections()
 
-    #     export to Neo4j
+    # export to Neo4j
     mongo_to_neo.mongo_to_neo(dev_instance, MongoInstance.DB)
 
     # Profile the collections
     collection_stats.profile_collections(MongoInstance.DB)
-
-    # this was a fix from pre-dockerized version of NeDRex, interfering with metadata. Will be deleted soon.
-    ## update_db_version.update_db_version(default_version="2.0.0")
-    ## time.sleep(60)
 
     # remove dev instance and set up live instance
     dev_instance.remove()
@@ -158,7 +129,35 @@ def update(conf, download):
     live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
 
+def parse_dev(version, download):
+    # control source downloads
+    if download:
+        downloaders.download_all(ignored_sources={"chembl",
+                                                  "biogrid",
+                                                  "go",
+                                                  "uberon",
+                                                  "clinvar",
+                                                  "uniprot",
+                                                  "hpo",
+                                                  "hpa",
+                                                  "reactome",
+                                                  "bioontology",
+                                                  "drug_central",
+                                                  "unichem",
+                                                  "repotrial",
+                                                  "iid",
+                                                  "intact",
+                                                  "omim",
+                                                  "sider"})
 
+    mondo.parse_mondo_json()
+    ncbi.parse_gene_info()
+    if version == "licensed":
+        drugbank._parse_drugbank()  # requires proteins to be parsed first
+    elif version == "open":
+        drugbank.parse_drugbank()
+    ctd.parse()
+    disgenet.parse_gene_disease_associations()
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @cli.command()
 def restart_live(conf):
