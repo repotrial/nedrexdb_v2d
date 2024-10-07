@@ -60,9 +60,9 @@ edge_collections = [
 
 [api.directories]
 static = "/data/nedrex_files/nedrex_api/static"
-static_outside = "/home/adrian/Projects/NeDRex/nedrex_files/nedrex_api/static"
+static_outside = "/srv/projects/nedrex/nedrex_files/nedrex_api/static"
 data = "/data/nedrex_files/nedrex_api/data"
-data_outside = "/home/adrian/Projects/NeDRex/nedrex_files/nedrex_api/data"
+data_outside = "/srv/projects/nedrex/nedrex_files/nedrex_api/data"
 scripts = "/app/nedrexapi/scripts"
 
 [tools]
