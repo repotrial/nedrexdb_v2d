@@ -80,8 +80,8 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         return f'{_config[f"db.{self.version}.container_name"]}_neo4j'
 
     @property
-    def db_status(self):
-        return f'{_config["api.status"]}'
+    def db_mode(self):
+        return f'{_config["api.mode"]}'
 
     @property
     def neo4j_http_port(self):
@@ -155,23 +155,22 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             "image": get_neo4j_image(),
             "detach": True,
             "name": self.neo4j_container_name,
-            "volumes": {volume: {"bind": "/data","mode": "rw"}, "/tmp/nedrexdb_v2": {"bind": "/import","mode": "ro" }},
+            "volumes": {volume: {"bind": "/data", "mode": "rw"}, "/tmp/nedrexdb_v2": {"bind": "/import", "mode": "ro"}},
             "ports": {7474: ("127.0.0.1", self.neo4j_http_port), 7687: ("127.0.0.1", self.neo4j_bolt_port)},
-           "environment": {
+            "environment": {
                 "NEO4J_AUTH": "none",
-                "NEO4J_server_config_strict__validation_enabled": "false",
                 "NEO4J_PLUGINS": '["apoc"]',
-                "NEO4J_server_security_procedures_unrestricted": "apoc.*",
-                "NEO4J_ACCEPT_LICENSE_AGREEMENT": "yes"
+                "NEO4J_ACCEPT_LICENSE_AGREEMENT": "yes",
+                "NEO4J_server_config_strict__validation_enabled": "false",
             },
             "network": self.network_name,
             "remove": False,
-            "restart_policy":{"Name":"always"}
+            "restart_policy": {"Name": "always"}
         }
 
-        if self.db_status == "open":
-            kwargs["ports"][7474] = ("0.0.0.0", self.neo4j_http_port)
-            kwargs["ports"][7687] = ("0.0.0.0", self.neo4j_bolt_port)
+        if self.db_mode == "open":
+            kwargs["ports"][7474] = self.neo4j_http_port
+            kwargs["ports"][7687] = self.neo4j_bolt_port
 
         if neo4j_mode == "import":
             kwargs["stdin_open"] = True
@@ -204,7 +203,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             ports={27017: ("127.0.0.1", self.mongo_port)},
             network=self.network_name,
             remove=False,
-            restart_policy={"Name":"always"}
+            restart_policy={"Name": "always"}
         )
 
     def _set_up_express(self):
@@ -219,7 +218,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             network=self.network_name,
             environment={"ME_CONFIG_MONGODB_SERVER": self.mongo_container_name},
             remove=False,
-            restart_policy={"Name":"always"}
+            restart_policy={"Name": "always"}
         )
 
     def _remove_neo4j(self, remove_db_volume=False):

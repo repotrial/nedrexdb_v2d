@@ -6,6 +6,12 @@ NEO4J_CONF="/var/lib/neo4j/conf/neo4j.conf"
 # The desired number of allowed failed authentication attempts
 MAX_FAILED_ATTEMPTS=100
 
+if grep -q "^#*dbms.security.auth_enabled=" "$NEO4J_CONF"; then
+    sed -i "s/^#*dbms.security.auth_enabled=.*/dbms.security.auth_enabled=false/g" "$NEO4J_CONF"
+else
+    echo "dbms.security.auth_enabled=false" >> "$NEO4J_CONF"
+fi
+
 # Uncomment the dbms.security.auth_max_failed_attempts line and set its value
 if grep -q "^#*dbms.security.auth_max_failed_attempts=" "$NEO4J_CONF"; then
     sed -i "s/^#*dbms.security.auth_max_failed_attempts=.*/dbms.security.auth_max_failed_attempts=$MAX_FAILED_ATTEMPTS/g" "$NEO4J_CONF"
@@ -13,61 +19,78 @@ else
     echo "dbms.security.auth_max_failed_attempts=$MAX_FAILED_ATTEMPTS" >> "$NEO4J_CONF"
 fi
 
-# Check if Bolt connector is enabled in neo4j.conf
+# Enable Bolt connector
 if grep -q "^#*dbms.connector.bolt.enabled=" "$NEO4J_CONF"; then
-    # If the line is present, uncomment it
     sed -i "s/^#*dbms.connector.bolt.enabled=.*/dbms.connector.bolt.enabled=true/g" "$NEO4J_CONF"
-    echo "Bolt connector enabled in neo4j.conf."
 else
-    # If the line is not present, add it
     echo "dbms.connector.bolt.enabled=true" >> "$NEO4J_CONF"
-    echo "Added dbms.connector.bolt.enabled to neo4j.conf."
 fi
+echo "Bolt connector enabled in neo4j.conf."
 
-# Check if HTTP connector is enabled in neo4j.conf
+# Enable HTTP connector
 if grep -q "^#*dbms.connector.http.enabled=" "$NEO4J_CONF"; then
-    # If the line is present, uncomment it
     sed -i "s/^#*dbms.connector.http.enabled=.*/dbms.connector.http.enabled=true/g" "$NEO4J_CONF"
-    echo "HTTP connector enabled in neo4j.conf."
 else
-    # If the line is not present, add it
     echo "dbms.connector.http.enabled=true" >> "$NEO4J_CONF"
-    echo "Added dbms.connector.http.enabled to neo4j.conf."
 fi
+echo "HTTP connector enabled in neo4j.conf."
 
-# Check if APOC procedures are already unrestricted in neo4j.conf
-if grep -q "dbms.security.procedures.unrestricted=apoc.*" /var/lib/neo4j/conf/neo4j.conf; then
+# Unrestrict APOC procedures
+if grep -q "dbms.security.procedures.unrestricted=apoc.*" "$NEO4J_CONF"; then
     echo "APOC procedures already unrestricted in neo4j.conf."
 else
-    # Add unrestricted procedures line to neo4j.conf
     echo 'dbms.security.procedures.unrestricted=apoc.*' >> "$NEO4J_CONF"
     echo "Updated neo4j.conf to allow unrestricted APOC procedures."
 fi
 
-# Update listen address settings for Bolt and HTTP connectors
-# For Bolt
-if grep -q "^dbms.connector.bolt.listen_address="  "$NEO4J_CONF"; then
-    sed -i 's/^dbms.connector.bolt.listen_address=.*/dbms.connector.bolt.listen_address=0.0.0.0:7687/g'  "$NEO4J_CONF"
+# Set Bolt connector listen address
+if grep -q "^#*dbms.connector.bolt.listen_address=" "$NEO4J_CONF"; then
+    sed -i 's/^#*dbms.connector.bolt.listen_address=.*/dbms.connector.bolt.listen_address=0.0.0.0:7687/g' "$NEO4J_CONF"
 else
     echo "dbms.connector.bolt.listen_address=0.0.0.0:7687" >> "$NEO4J_CONF"
 fi
-echo "Bolt connector configuration set to allow connections from any IP address."
+echo "Bolt connector listen address set to 0.0.0.0:7687."
 
-# For HTTP
-if grep -q "^dbms.connector.http.listen_address="  "$NEO4J_CONF"; then
-    sed -i 's/^dbms.connector.http.listen_address=.*/dbms.connector.http.listen_address=0.0.0.0:7474/g'  "$NEO4J_CONF"
+# Set HTTP connector listen address
+if grep -q "^#*dbms.connector.http.listen_address=" "$NEO4J_CONF"; then
+    sed -i 's/^#*dbms.connector.http.listen_address=.*/dbms.connector.http.listen_address=0.0.0.0:7474/g' "$NEO4J_CONF"
 else
-    echo "dbms.connector.http.listen_address=0.0.0.0:7474" >>  "$NEO4J_CONF"
+    echo "dbms.connector.http.listen_address=0.0.0.0:7474" >> "$NEO4J_CONF"
 fi
-echo "HTTP connector configuration set to allow connections from any IP address."
+echo "HTTP connector listen address set to 0.0.0.0:7474."
 
-# Update the new settings replacing the deprecated ones
-sed -i 's/^#*dbms.default_listen_address=.*/# Deprecated setting removed/g'  "$NEO4J_CONF"
-sed -i 's/^#*dbms.connector.bolt.listen_address=.*/# Deprecated setting removed/g'  "$NEO4J_CONF"
+# Set Bolt connector TLS level to DISABLED
+if grep -q "^#*dbms.connector.bolt.tls_level=" "$NEO4J_CONF"; then
+    sed -i "s/^#*dbms.connector.bolt.tls_level=.*/dbms.connector.bolt.tls_level=DISABLED/g" "$NEO4J_CONF"
+else
+    echo "dbms.connector.bolt.tls_level=DISABLED" >> "$NEO4J_CONF"
+fi
+echo "Bolt connector TLS level set to DISABLED."
+
+
+# Enable Bolt over WebSocket
+#if grep -q "^#*dbms.connector.bolt.ws.enabled=" "$NEO4J_CONF"; then
+#    sed -i "s/^#*dbms.connector.bolt.ws.enabled=.*/dbms.connector.bolt.ws.enabled=true/g" "$NEO4J_CONF"
+#else
+#    echo "dbms.connector.bolt.ws.enabled=true" >> "$NEO4J_CONF"
+#fi
+#echo "Bolt over WebSocket enabled."
+
+# Set Bolt over WebSocket listen address
+#if grep -q "^#*dbms.connector.bolt.ws.listen_address=" "$NEO4J_CONF"; then
+#    sed -i "s/^#*dbms.connector.bolt.ws.listen_address=.*/dbms.connector.bolt.ws.listen_address=0.0.0.0:7687/g" "$NEO4J_CONF"
+#else
+#    echo "dbms.connector.bolt.ws.listen_address=0.0.0.0:7687" >> "$NEO4J_CONF"
+#fi
+#echo "Bolt over WebSocket listen address set to 0.0.0.0:7687."
+
+
+# Remove deprecated settings
+#sed -i 's/^#*dbms.default_listen_address=.*/# Deprecated setting removed/g'  "$NEO4J_CONF"
 
 # Add new settings for default listen address
 if ! grep -q "^server.default_listen_address="  "$NEO4J_CONF"; then
-    echo "server.default_listen_address=0.0.0.0" >> /var/lib/neo4j/conf/neo4j.conf
+    echo "server.default_listen_address=0.0.0.0" >> "$NEO4J_CONF"
     echo "Added new default listen address configuration."
 fi
 
@@ -76,3 +99,4 @@ if ! grep -q "^server.bolt.listen_address="  "$NEO4J_CONF"; then
     echo "server.bolt.listen_address=0.0.0.0:7687" >> "$NEO4J_CONF"
     echo "Added new Bolt listen address configuration."
 fi
+
