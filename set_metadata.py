@@ -51,7 +51,6 @@ def update(config, version):
 
         metadata["source_databases"][source] = {"version": None, "date": f"{earliest_date.date()}"}
 
-
     db["metadata"].replace_one({}, metadata, upsert=True)
 
 

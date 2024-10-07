@@ -10,6 +10,7 @@ services:
       - SKIP_UPDATE=0
       - SKIP_OPEN=1
       - SKIP_CLEAN=0
+      - TEST_MINIMUM=1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/nedrexdb_v2:/tmp
