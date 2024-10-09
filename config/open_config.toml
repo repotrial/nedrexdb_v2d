@@ -236,7 +236,7 @@ filename = "matching_icd10_cmwho.json"
 
 [sources.unichem]
 version_url = "http://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id2/"
-verion_pattern = '''>src2src22\.txt\.gz</a></td><td align="right">[\d-]+'''
+version_pattern = '''>src2src22\.txt\.gz</a></td><td align="right">[\d-]+'''
 skip_digits = 3
 
 [sources.unichem.pubchem_drugbank_map]

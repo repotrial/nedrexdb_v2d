@@ -24,6 +24,7 @@ def update(config, version):
 
     sources = list(config["sources"].keys())
     sources.remove("directory")
+    sources.remove("default_version")
     try:
         client = MongoClient(port=mongo_port, host=mongo_host)
         db = client[db_name]
