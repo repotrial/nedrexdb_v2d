@@ -39,8 +39,8 @@ def update(config, version):
     for source in sources:
         dir = f"{download_directory}/{source}"
         earliest_date = datetime.datetime.now()
-        for _, options in config["sources"][source].items():
-            try:
+        try:
+            for _, options in config["sources"][source].items():
                 if "filename" in options:
                     filename = options["filename"]
                 else:
@@ -50,8 +50,8 @@ def update(config, version):
                 ts = datetime.datetime.fromtimestamp(os.path.getctime(path))
                 if ts < earliest_date:
                     earliest_date = ts
-            except:
-                pass
+        except:
+            pass
 
         metadata["source_databases"][source] = {"version": None, "date": f"{earliest_date.date()}"}
 
