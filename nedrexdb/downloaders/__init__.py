@@ -30,21 +30,23 @@ class Version:
         return f"{self.major}.{self.minor}.{self.patch}"
 
 def update_version(name, source_url, unique_pattern, mode="date", skip_digits=0):
-    response = requests.get(source_url)
-    if response.status_code != 200:
-        raise _ProcessError(f"got non-zero status code while updating metadata.\n source:{name}\n URL: {source_url}")
-    result = _re.findall(unique_pattern, response.text)
-    text = str(result[0])
-    #version = text.split("_")[1].split(".")[0]     \\ old way to split for version, may be removed
-    if mode == "date":
-        # create version number from date
-        version = "".join(_re.findall(r"\d+", text))
-        version = version[skip_digits:]
-        version = f"{version[0:4]}-{version[4:6]}-{version[6:]}"
-    else:
-        version = "".join(_re.findall(r"\d+", text))
-        version = version[skip_digits:]
-        version = f"{version[0:2]}.{version[2:]}"
+    try:
+        response = requests.get(source_url)
+        if response.status_code != 200:
+            raise _ProcessError(f"got non-zero status code while updating metadata.\n source:{name}\n URL: {source_url}")
+        result = _re.findall(unique_pattern, response.text)
+        text = str(result[0])
+        if mode == "date":
+            # create version number from date
+            version = "".join(_re.findall(r"\d+", text))
+            version = version[skip_digits:]
+            version = f"{version[0:4]}-{version[4:6]}-{version[6:]}"
+        else:
+            version = "".join(_re.findall(r"\d+", text))
+            version = version[skip_digits:]
+            version = f"{version[0:2]}.{version[2:]}"
+    except:
+        version = "N/A"
     date = _datetime.datetime.now().date()
     print(f"{name}: date: {date}, version: {version}")
     return {"date": f"{date}", "version": version}
