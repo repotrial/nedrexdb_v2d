@@ -24,6 +24,7 @@ def update(config, version):
 
     sources = list(config["sources"].keys())
     sources.remove("directory")
+    sources.remove("default_version")
     try:
         client = MongoClient(port=mongo_port, host=mongo_host)
         db = client[db_name]
@@ -38,16 +39,19 @@ def update(config, version):
     for source in sources:
         dir = f"{download_directory}/{source}"
         earliest_date = datetime.datetime.now()
-        for _, options in config["sources"][source].items():
-            if "filename" in options:
-                filename = options["filename"]
-            else:
-                filename = options["url"].rsplit("/", 1)[1]
+        try:
+            for _, options in config["sources"][source].items():
+                if "filename" in options:
+                    filename = options["filename"]
+                else:
+                    filename = options["url"].rsplit("/", 1)[1]
 
-            path = f"{dir}/{filename}"
-            ts = datetime.datetime.fromtimestamp(os.path.getctime(path))
-            if ts < earliest_date:
-                ts = earliest_date
+                path = f"{dir}/{filename}"
+                ts = datetime.datetime.fromtimestamp(os.path.getctime(path))
+                if ts < earliest_date:
+                    earliest_date = ts
+        except:
+            pass
 
         metadata["source_databases"][source] = {"version": None, "date": f"{earliest_date.date()}"}
 
