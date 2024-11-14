@@ -32,13 +32,17 @@ class OpenTargetsRow:
     
     def get_data_source(self):
         return [self._row["datasourceId"]]
+    
+    def get_score(self):
+        return self._row["score"]
 
     def parse(self, ensembl2entrez) -> list[GeneAssociatedWithDisorder]:
         ensembl_gene = self.get_gene_id()
         source = self.get_data_source()
         disorder = self.get_disorder_id()
+        scoreOpenTargets = self.get_score()
 
-        gawds = [GeneAssociatedWithDisorder(sourceDomainId=ensembl2entrez[ensembl_gene], targetDomainId=disorder, dataSources=source)]
+        gawds = [GeneAssociatedWithDisorder(sourceDomainId=ensembl2entrez[ensembl_gene], targetDomainId=disorder, dataSources=source, scoreOpenTargets=scoreOpenTargets)]
 
         return gawds
 
