@@ -179,6 +179,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
 
         elif neo4j_mode == "db":
             kwargs["environment"]["NEO4J_server_read__only"] = "true"
+            kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "true"
         else:
             raise Exception(f"neo4j_mode {neo4j_mode!r} is invalid")
         _client.containers.run(**kwargs)
