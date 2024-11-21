@@ -34,6 +34,7 @@ from nedrexdb.db.parsers import (
     uberon,
     repotrial,
 )
+from nedrexdb.downloaders import get_and_update_versions
 from nedrexdb.post_integration import trim_uberon, drop_empty_collections
 
 
@@ -44,10 +45,12 @@ def cli():
 
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @click.option("--download", is_flag=True, default=False)
+@click.option("--version_update", is_flag=True, default=False)
 @cli.command()
-def update(conf, download):
+def update(conf, download, version_update):
     print(f"Config file: {conf}")
     print(f"Download updates: {download}")
+    print(f"Download updates: {version_update}")
 
     nedrexdb.parse_config(conf)
 
@@ -63,7 +66,7 @@ def update(conf, download):
     MongoInstance.set_indexes()
 
     if os.environ.get("TEST_MINIMUM", 0) == '1':
-        parse_dev(version=version, download=download)
+        parse_dev(version=version, download=download, version_update=version_update)
     else:
         if download:
             downloaders.download_all()
@@ -113,6 +116,8 @@ def update(conf, download):
 
         # Post-processing
         trim_uberon.trim_uberon()
+        if download or version_update:
+            get_and_update_versions()
 
     # clean up for export
     drop_empty_collections.drop_empty_collections()
@@ -129,26 +134,27 @@ def update(conf, download):
     live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
 
-def parse_dev(version, download):
+def parse_dev(version, download, version_update):
     # control source downloads
+    ignored_sources = {"chembl",
+                       "biogrid",
+                       "go",
+                       "uberon",
+                       "clinvar",
+                       "uniprot",
+                       "hpo",
+                       "hpa",
+                       "reactome",
+                       "bioontology",
+                       "drug_central",
+                       "unichem",
+                       "repotrial",
+                       "iid",
+                       "intact",
+                       "omim",
+                       "sider"}
     if download:
-        downloaders.download_all(ignored_sources={"chembl",
-                                                  "biogrid",
-                                                  "go",
-                                                  "uberon",
-                                                  "clinvar",
-                                                  "uniprot",
-                                                  "hpo",
-                                                  "hpa",
-                                                  "reactome",
-                                                  "bioontology",
-                                                  "drug_central",
-                                                  "unichem",
-                                                  "repotrial",
-                                                  "iid",
-                                                  "intact",
-                                                  "omim",
-                                                  "sider"})
+        downloaders.download_all(ignored_sources=ignored_sources)
 
     mondo.parse_mondo_json()
     ncbi.parse_gene_info()
@@ -158,6 +164,8 @@ def parse_dev(version, download):
         drugbank.parse_drugbank()
     ctd.parse()
     disgenet.parse_gene_disease_associations()
+    if download or version_update:
+        get_and_update_versions(ignored_sources=ignored_sources)
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @cli.command()
 def restart_live(conf):

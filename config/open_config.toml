@@ -108,7 +108,7 @@ express_container_name = "open_nedrex_live_express"
 
 [sources]
 directory = "downloads"
-default_version = "2.0.0"
+default_version = "2.1.0"
 
 [sources.biogrid]
 [sources.biogrid.human_data]
@@ -142,16 +142,21 @@ version_url = "https://ctdbase.org/reports/"
 version_pattern = '''>CTD_chemicals_diseases\.tsv\.gz</a></td><td align="right">[\d-]+'''
 
 [sources.ctd.chemical_disease_relationships]
-url = "https://ctdbase.org/reports/CTD_chemicals_diseases.tsv.gz"
+url = "http://ctdbase.org/reports/CTD_chemicals_diseases.tsv.gz"
+
 
 [sources.disgenet]
 version = "24.1"
 
 [sources.disgenet.gene_disease_associations]
-filename = "curated_gene_disease_associations.tsv.gz"
+url = "https://www.disgenet.org/static/disgenet_ap1/files/downloads/curated_gene_disease_associations.tsv.gz"
+
 
 [sources.drugbank]
 version = "5.1.10"
+
+[sources.drugbank.all]
+filename = "full database.xml"
 
 [sources.drugbank.open]
 filename = "all_drugbank_vocabulary.zip"
@@ -162,6 +167,7 @@ version = "2023-01-11"
 [sources.drug_central.postgres_dump]
 url = "https://unmtid-shinyapps.net/download/drugcentral.dump.11012023.sql.gz"
 filename = "drug_central.sql.gz"
+
 
 [sources.go]
 version_url = "https://current.geneontology.org/release_stats/go-stats-summary.json"
@@ -191,12 +197,14 @@ url = "http://purl.obolibrary.org/obo/hp.obo"
 [sources.hpo.annotations]
 url = "http://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa"
 
+
 [sources.iid]
 version_url = "http://iid.ophid.utoronto.ca/static/Search_By_Proteins.css"
 version_pattern = '''content: "version [\d-]+'''
 
 [sources.iid.human]
 url = "http://iid.ophid.utoronto.ca/static/download/human_annotated_PPIs.txt.gz"
+
 
 [sources.intact]
 version_url = "http://ftp.ebi.ac.uk/pub/databases/intact/current/psimitab/"
@@ -205,12 +213,14 @@ version_pattern = '''>intact\.zip</a></td><td align="right">[\d-]+'''
 [sources.intact.psimitab]
 url = "http://ftp.ebi.ac.uk/pub/databases/intact/current/psimitab/intact.zip"
 
+
 [sources.mondo]
 version_url = "https://github.com/monarch-initiative/mondo/tags"
 version_pattern = '''/monarch-initiative/mondo/releases/tag/v[\d-]+'''
 
 [sources.mondo.json]
 url = "http://purl.obolibrary.org/obo/mondo.json"
+
 
 [sources.ncbi]
 version_url = "https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/"
@@ -219,11 +229,18 @@ version_pattern = '''>Homo_sapiens\.gene_info\.gz</a>      [\d-]+'''
 [sources.ncbi.gene_info]
 url = "https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz"
 
+
+[sources.omim]
+[sources.omim.genemap2]
+url = "https://data.omim.org/downloads/DIcI6kd8S96Xx9TDthBjCw/genemap2.txt"
+
+
 [sources.sider]
 version = "4.1"
 
 [sources.sider.frequency_data]
 url = "http://sideeffects.embl.de/media/download/meddra_freq.tsv.gz"
+
 
 [sources.repotrial]
 version = "1.0.0"
@@ -256,9 +273,10 @@ skip_digits = 1
 [sources.reactome.uniprot_annotations]
 url = "https://reactome.org/download/current/UniProt2Reactome_PE_All_Levels.txt"
 
+
 [sources.uniprot]
 version_url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions"
-version_pattern = '''>uniprot_sprot_human\.dat\.gz</a>                            [\d-]+'''
+version_pattern = '''>uniprot_sprot_human\.dat\.gz</a></td><td align="right">[\d-]+'''
 
 [sources.uniprot.swissprot]
 url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz"
@@ -268,5 +286,3 @@ url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgeba
 
 [sources.uniprot.idmapping]
 url = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping_selected.tab.gz"
-
-

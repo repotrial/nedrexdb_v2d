@@ -7,8 +7,8 @@ from pathlib import Path as _Path
 from nedrexdb import config as _config
 from nedrexdb.common import Downloader
 from nedrexdb.db import MongoInstance
-from nedrexdb.downloaders.biogrid import download_biogrid as _download_biogrid
-from nedrexdb.downloaders.chembl import download_chembl as _download_chembl
+from nedrexdb.downloaders.biogrid import download_biogrid as _download_biogrid, get_latest_biogrid_version
+from nedrexdb.downloaders.chembl import download_chembl as _download_chembl, get_latest_chembl_version
 from nedrexdb.exceptions import (
     ProcessError as _ProcessError,
 )
@@ -65,18 +65,12 @@ def download_all(force=False, ignored_sources=set()):
                     "version_url", "version_pattern", "version_mode", "skip_digits"}
     exclude_keys.update(ignored_sources)
 
-    metadata = {"source_databases": {}}
-
-    print(f"ignore sources: {ignored_sources}")
+    print(f"ignore sources for download: {ignored_sources}")
 
     if "chembl" not in ignored_sources:
-        chembl_date = _datetime.datetime.now().date()
-        chembl_version = _download_chembl()
-        metadata["source_databases"]["chembl"] = {"date": f"{chembl_date}", "version": chembl_version}
+        _download_chembl()
     if "biogrid" not in ignored_sources:
-        biogrid_date = _datetime.datetime.now().date()
-        biogrid_version = _download_biogrid()
-        metadata["source_databases"]["biogrid"] = {"date": f"{biogrid_date}", "version": biogrid_version}
+        _download_biogrid()
 
     for source in filter(lambda i: i not in exclude_keys, sources):
 
@@ -86,23 +80,6 @@ def download_all(force=False, ignored_sources=set()):
             "chembl"
         }:
             continue
-
-        # update metadata
-        meta = sources[source]
-        if "version_url" in meta.keys():
-            version_url = meta["version_url"]
-            version_pattern = rf"{meta['version_pattern']}"
-            skip_digits = meta["skip_digits"] if "skip_digits" in meta.keys() else 0
-            version_mode = meta["version_mode"] if "version_mode" in meta.keys() else "date"
-            metadata["source_databases"][source] = update_version(name=source,
-                                                                  source_url=version_url,
-                                                                  unique_pattern=version_pattern,
-                                                                  mode=version_mode,
-                                                                  skip_digits=skip_digits)
-        else:
-            date = _datetime.datetime.now().date()
-            version = meta["version"] if "version" in meta.keys() else f"{date}"
-            metadata["source_databases"][source] = {"date": f"{date}", "version": version}
 
         # Catch case to skip sources with bespoke downloaders after setting metadata.
         if source in {
@@ -132,6 +109,53 @@ def download_all(force=False, ignored_sources=set()):
                 password=password,
             )
             d.download()
+
+def get_and_update_versions(ignored_sources=set()):
+    sources = _config["sources"]
+    # Remove the source keys (in filter)
+    exclude_keys = {"directory", "username", "password", "default_version", "version",
+                    "version_url", "version_pattern", "version_mode", "skip_digits"}
+    exclude_keys.update(ignored_sources)
+
+    metadata = {"source_databases": {}}
+
+    print(f"ignore sources for versions: {ignored_sources}")
+
+    if "chembl" not in ignored_sources:
+        chembl_date = _datetime.datetime.now().date()
+        chembl_version = get_latest_chembl_version()
+        metadata["source_databases"]["chembl"] = {"date": f"{chembl_date}", "version": chembl_version}
+        # Catch case to skip sources with bespoke version grabbers entirely.
+        exclude_keys.add("chembl")
+
+    if "biogrid" not in ignored_sources:
+        biogrid_date = _datetime.datetime.now().date()
+        biogrid_version = get_latest_biogrid_version()
+        metadata["source_databases"]["biogrid"] = {"date": f"{biogrid_date}", "version": biogrid_version}
+        # Catch case to skip sources with bespoke version grabbers entirely.
+        exclude_keys.add("biogrid")
+
+    for source in filter(lambda i: i not in exclude_keys, sources):
+
+        print(f"checking version of {source}")
+
+        # update metadata
+        meta = sources[source]
+        if "version_url" in meta.keys():
+            version_url = meta["version_url"]
+            version_pattern = rf"{meta['version_pattern']}"
+            skip_digits = meta["skip_digits"] if "skip_digits" in meta.keys() else 0
+            version_mode = meta["version_mode"] if "version_mode" in meta.keys() else "date"
+            metadata["source_databases"][source] = update_version(name=source,
+                                                                  source_url=version_url,
+                                                                  unique_pattern=version_pattern,
+                                                                  mode=version_mode,
+                                                                  skip_digits=skip_digits)
+        else:
+            date = _datetime.datetime.now().date()
+            version = meta["version"] if "version" in meta.keys() else f"{date}"
+            metadata["source_databases"][source] = {"date": f"{date}", "version": version}
+
 
     docs = list(MongoInstance.DB["metadata"].find())
     if len(docs) == 1:
