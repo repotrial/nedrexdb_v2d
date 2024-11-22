@@ -59,6 +59,8 @@ def update(conf, download, version_update):
     if version not in ["open", "licensed"]:
         raise Exception(f"invalid version {version!r}")
 
+    version_update_skip = set()
+
     dev_instance = NeDRexDevInstance()
     dev_instance.remove()
     dev_instance.set_up(use_existing_volume=False, neo4j_mode="import")
@@ -107,6 +109,7 @@ def update(conf, download, version_update):
 
         if version == "licensed":
             omim.parse_gene_disease_associations()
+            version_update_skip.add("omim")
 
         sider.parse()
         uniprot.parse_idmap()
@@ -117,7 +120,7 @@ def update(conf, download, version_update):
         # Post-processing
         trim_uberon.trim_uberon()
         if download or version_update:
-            get_and_update_versions()
+            get_and_update_versions(version_update_skip)
 
     # clean up for export
     drop_empty_collections.drop_empty_collections()
