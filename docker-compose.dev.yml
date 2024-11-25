@@ -6,7 +6,7 @@ services:
     container_name: nedrexdb_v2
     build: .
     environment:
-      - DOWNLOAD_ON_STARTUP=1
+      - DOWNLOAD_ON_STARTUP=0
       - SKIP_UPDATE=0
       - SKIP_OPEN=0
       - SKIP_CLEAN=0
