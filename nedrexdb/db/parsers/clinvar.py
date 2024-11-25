@@ -19,6 +19,7 @@ from nedrexdb.logger import logger
 
 get_file_location = _get_file_location_factory("clinvar")
 
+already_reported_missing_handlers = set()
 
 def xml_disorder_mapper(id, db):
     if db == "MONDO":
@@ -31,7 +32,8 @@ def xml_disorder_mapper(id, db):
         return f"mesh.{id}"
     elif db in {"Human Phenotype Ontology", "EFO", "Gene", "MedGen"}:
         return None
-    else:
+    elif db in already_reported_missing_handlers:
+        already_reported_missing_handlers.add(db)
         logger.warning(f"database given without handler: {db!r}")
 
 
