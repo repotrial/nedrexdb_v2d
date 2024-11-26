@@ -14,7 +14,11 @@ setup_db() {
         if [[ "$DOWNLOAD_ON_STARTUP" == "1" && "$db_type" == "licensed" ]]; then
             build_args+=(--download)
         elif [[ "$DOWNLOAD_ON_STARTUP" == "1" && "$db_type" == "open" ]]; then
-            build_args+=(--version_update)
+            if [[ "$SKIP_LICENSED" == "1" ]]; then
+              build_args+=(--download)
+            else
+              build_args+=(--version_update)
+            fi
         fi
         ./build.py "${build_args[@]}"
     fi
