@@ -50,7 +50,7 @@ def cli():
 def update(conf, download, version_update):
     print(f"Config file: {conf}")
     print(f"Download updates: {download}")
-    print(f"Download updates: {version_update}")
+    print(f"Update DB versions: {version_update}")
 
     nedrexdb.parse_config(conf)
 
