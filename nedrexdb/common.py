@@ -7,6 +7,7 @@ from typing import Optional as _Optional
 
 import requests as _requests  # type: ignore
 from pydantic import BaseModel as _BaseModel, validator as _validator
+from tqdm import tqdm as _tqdm
 
 from nedrexdb.logger import logger as _logger
 
@@ -59,7 +60,7 @@ class Downloader(_BaseModel):
                 response.raise_for_status()
 
                 with self.target.open(mode="wb") as f:
-                    for chunk in response.iter_content(chunk_size=8_192):
+                    for chunk in _tqdm(response.iter_content(chunk_size=8_192), leave=False):
                         f.write(chunk)
         else:
             subprocess.call(
@@ -67,6 +68,7 @@ class Downloader(_BaseModel):
                     "wget",
                     "--read-timeout",
                     "10",
+                    "-q",
                     "-O",
                     f"{self.target.resolve()}",
                     self.url,
