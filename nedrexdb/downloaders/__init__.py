@@ -1,12 +1,16 @@
 import datetime as _datetime
+import logging
 import shutil as _shutil
 import re as _re
+import time
+
 import requests
 from pathlib import Path as _Path
 
 from nedrexdb import config as _config
 from nedrexdb.common import Downloader
 from nedrexdb.db import MongoInstance
+from nedrexdb.db.parsers import unichem
 from nedrexdb.downloaders.biogrid import download_biogrid as _download_biogrid, get_latest_biogrid_version
 from nedrexdb.downloaders.chembl import download_chembl as _download_chembl, get_latest_chembl_version
 from nedrexdb.exceptions import (
@@ -108,7 +112,21 @@ def download_all(force=False, ignored_sources=set()):
                 username=username,
                 password=password,
             )
-            d.download()
+            validated = False
+            retries = 3
+            timeout = 30
+            while not validated and retries > 0:
+                d.download()
+                validated = validate_download(download_dir / source / filename, source)
+                if not validated:
+                    logging.error(f"failed to verify download of {filename} for {source}! Retrying in {timeout} seconds.")
+                    retries -= 1
+                    time.sleep(timeout)
+
+def validate_download(file, source):
+    if source == "unichem":
+        return unichem.validate_file(file)
+    return True
 
 def get_and_update_versions(ignored_sources=set()):
     sources = _config["sources"]
