@@ -202,8 +202,8 @@ class OpenTargetsParser:
         entries_after_filter = df.count()
         logger.debug(f"OpenTargets: Dropped {total_entries_association - entries_after_filter} rows out of {total_entries_association}: mondo id not in NeDRex. {entries_after_filter} rows left.")
 
-        # add "opentargets." prefix to datasourceId
-        df = df.withColumn('datasourceId', _F.concat(_F.lit("opentargets."), df['datasourceId']))
+        # add "opentargets_" prefix to datasourceId
+        df = df.withColumn('datasourceId', _F.concat(_F.lit("opentargets_"), df['datasourceId']))
         
         # broadcast the summary_score_mapping dictionary for better performance
         results_broadcast = spark.sparkContext.broadcast(summary_score_mapping)
