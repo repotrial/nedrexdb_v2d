@@ -28,7 +28,7 @@ class Downloader(_BaseModel):
     password: _Optional[str]
 
     @_validator("url")
-    def url_https_or_http(cls, v):
+    def url_https_or_http_or_ftp(cls, v):
         if any(v.startswith(i) for i in ("ftp://", "http://", "https://")):
             return v
         else:
