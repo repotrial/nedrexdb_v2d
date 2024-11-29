@@ -230,7 +230,7 @@ def parse():
     parser = ClinVarVCFParser(fname)
 
     updates = (ClinVarRow(i).parse_variant().generate_update() for i in parser.iter_rows())
-    for chunk in _tqdm(_chunked(updates, 100_000), desc="Parsing ClinVar genomic variants", leave=False):
+    for chunk in _tqdm(_chunked(updates, 10_000), desc="Parsing ClinVar genomic variants", leave=False):
         MongoInstance.DB[GenomicVariant.collection_name].bulk_write(chunk)
 
     def iter_variant_gene_relationships():
@@ -241,7 +241,7 @@ def parse():
 
     updates = (vgr.generate_update() for vgr in iter_variant_gene_relationships() if vgr.targetDomainId in gene_ids)
     for chunk in _tqdm(
-        _chunked(updates, 100_000), desc="Parsing ClinVar genomic variant-gene relationships", leave=False
+        _chunked(updates, 10_000), desc="Parsing ClinVar genomic variant-gene relationships", leave=False
     ):
         MongoInstance.DB[VariantAffectsGene.collection_name].bulk_write(chunk)
 
@@ -251,6 +251,24 @@ def parse():
     parser = ClinVarXMLParser(fname)
     updates = (i.generate_update() for i in parser.iter_parse())
     for chunk in _tqdm(
-        _chunked(updates, 100_000), desc="Parsing ClinVar genomic variant-disorder relationships", leave=False
+        _chunked(updates, 10_000), desc="Parsing ClinVar genomic variant-disorder relationships", leave=False
     ):
         MongoInstance.DB[VariantAssociatedWithDisorder.collection_name].bulk_write(chunk)
+        db = MongoInstance.DB
+        coll = VariantAssociatedWithDisorder.collection_name
+        doc_count = db[coll].count_documents({})
+        sample_doc = db[coll].find_one()
+
+        if sample_doc:
+            attr_counts = {attr: db[coll].count_documents({attr: {"$exists": True}})
+                           for attr in sample_doc.keys()}
+            db["_collections"].replace_one(
+                {"collection": coll},
+                {
+                    "collection": coll,
+                    "document_count": doc_count,
+                    "unique_attributes": list(attr_counts.keys()),
+                    "attribute_counts": attr_counts
+                },
+                upsert=True
+            )

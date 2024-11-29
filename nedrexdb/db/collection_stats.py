@@ -50,9 +50,9 @@ def profile_collections(db):
 
 
 def verify_collections_after_profiling(db):
-    """Verify that all collections have been properly profiled."""
     actual_collections = set(coll for coll in db.list_collection_names()
-                             if not coll.startswith("system.") and coll != "_collections")
+                             if not coll.startswith("system.")
+                             and coll not in ["_collections", "metadata"])
     metadata_collections = set(doc["collection"] for doc in db["_collections"].find())
 
     missing = actual_collections - metadata_collections
