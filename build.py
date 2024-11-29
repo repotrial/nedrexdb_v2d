@@ -131,6 +131,8 @@ def update(conf, download, version_update):
     # Profile the collections
     collection_stats.profile_collections(MongoInstance.DB)
 
+    collection_stats.verify_collections_after_profiling(MongoInstance.DB)
+
     # remove dev instance and set up live instance
     dev_instance.remove()
     live_instance = NeDRexLiveInstance()
