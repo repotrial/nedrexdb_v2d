@@ -128,7 +128,7 @@ def validate_download(file, source):
         return unichem.validate_file(file)
     return True
 
-def get_and_update_versions(ignored_sources=set()):
+def update_versions(ignored_sources=set()):
     sources = _config["sources"]
     # Remove the source keys (in filter)
     exclude_keys = {"directory", "username", "password", "default_version", "version",
@@ -187,5 +187,25 @@ def get_and_update_versions(ignored_sources=set()):
     v.increment("patch")
 
     metadata["version"] = f"{v}"
+
+    with open("./metadata.txt", "w") as f:
+        f.write(f"Last Download: {_datetime.datetime.now().date()}\n\n")
+        f.write("Current metadata: \n")
+        f.write(f"version:\t{metadata["version"]}\n")
+        f.write("source_databases:\n")
+        for key in metadata["source_databases"].keys():
+            f.write(f"V\t{key}:\t{metadata["source_databases"][key]}\n")
+
+    MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
+
+def get_versions():
+    metadata = {"source_databases": {}}
+    with open("./metadata.txt") as f:
+        for line in f:
+            if line.startswith("V"):
+                sd_split = line.rstrip().split("\t")
+                metadata["source_databases"][sd_split[1][:-1]] = sd_split[2]
+            elif line.startswith("version"):
+                metadata["version"] = line.rstrip().split("\t")[1]
 
     MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)

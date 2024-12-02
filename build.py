@@ -34,7 +34,7 @@ from nedrexdb.db.parsers import (
     uberon,
     repotrial,
 )
-from nedrexdb.downloaders import get_and_update_versions
+from nedrexdb.downloaders import get_versions, update_versions
 from nedrexdb.post_integration import trim_uberon, drop_empty_collections
 
 
@@ -119,8 +119,11 @@ def update(conf, download, version_update):
 
         # Post-processing
         trim_uberon.trim_uberon()
-        if download or version_update:
-            get_and_update_versions(version_update_skip)
+        if download:
+            update_versions(version_update_skip)
+        if version_update:
+            get_versions()
+
 
     # clean up for export
     drop_empty_collections.drop_empty_collections()
@@ -170,7 +173,11 @@ def parse_dev(version, download, version_update):
     ctd.parse()
     disgenet.parse_gene_disease_associations()
     if download or version_update:
-        get_and_update_versions(ignored_sources=ignored_sources)
+        if download:
+            update_versions(ignored_sources=ignored_sources)
+        if version_update:
+            get_versions()
+
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @cli.command()
 def restart_live(conf):
