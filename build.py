@@ -50,7 +50,7 @@ def cli():
 def update(conf, download, version_update):
     print(f"Config file: {conf}")
     print(f"Download updates: {download}")
-    print(f"Download updates: {version_update}")
+    print(f"Update DB versions: {version_update}")
 
     nedrexdb.parse_config(conf)
 
@@ -130,6 +130,8 @@ def update(conf, download, version_update):
 
     # Profile the collections
     collection_stats.profile_collections(MongoInstance.DB)
+
+    collection_stats.verify_collections_after_profiling(MongoInstance.DB)
 
     # remove dev instance and set up live instance
     dev_instance.remove()
