@@ -1,0 +1,266 @@
+methods	score	confidence	source
+reconstituted complex	10	high	hippie
+x-ray crystallography	10	high	hippie
+co-crystal structure	10	high	hippie
+surface plasmon resonance	10	high	hippie
+fluorescence polarization spectroscopy	10	high	hippie
+isothermal titration calorimetry	10	high	hippie
+nuclear magnetic resonance	10	high	hippie
+light scattering	10	high	hippie
+fluorescence correlation spectroscopy	10	high	hippie
+solution state nmr	10	high	perplexity
+x ray scattering	9	high	hippie
+circular dichroism	9	high	hippie
+dynamic light scattering	9	high	hippie
+atomic force microscopy	9	high	hippie
+electron paramagnetic resonance	9	high	hippie
+electron tomography	9	high	hippie
+x-ray fiber diffraction	9	high	hippie
+3d electron microscopy	9	high	perplexity
+surface plasmon resonance array	9	high	perplexity
+electron microscopy 3d single particle reconstruction	9	high	perplexity
+bio-layer interferometry	9	high	perplexity
+static light scattering	9	high	perplexity
+microscale thermophoresis	9	high	perplexity
+differential scanning calorimetry	9	high	perplexity
+solid state nmr	9	high	perplexity
+electron diffraction	9	high	perplexity
+mst	9	high	perplexity
+force spectroscopy	9	high	perplexity
+electron microscopy 3d helical reconstruction	9	high	perplexity
+intermolecular force	9	high	perplexity
+cross-linking-ms (xl-ms)	8	medium_high	perplexity
+mass spectrometry study of hydrogen/deuterium exchange	8	medium_high	perplexity
+thermal shift binding	8	medium_high	perplexity
+infrared spectroscopy	8	medium_high	perplexity
+ion mobility mass spectrometry of complexes	8	medium_high	perplexity
+biosensor	8	medium_high	perplexity
+silicon nanowire field-effect transistor	8	medium_high	perplexity
+equilibrium dialysis	8	medium_high	perplexity
+small angle neutron scattering	8	medium_high	perplexity
+x-ray powder diffraction	8	medium_high	perplexity
+protein kinase assay	7.5	medium_high	hippie
+protease assay	7.5	medium_high	hippie
+phosphatase assay	7.5	medium_high	hippie
+in-gel kinase assay	7.5	medium_high	hippie
+classical fluorescence spectroscopy	7.5	medium_high	hippie
+saturation binding	7.5	medium_high	hippie
+deacetylase assay	7.5	medium_high	hippie
+scintillation proximity assay	7.5	medium_high	hippie
+methyltransferase assay	7.5	medium_high	hippie
+methyltransferase radiometric assay	7.5	medium_high	hippie
+demethylase assay	7.5	medium_high	hippie
+ribonuclease assay	7.5	medium_high	hippie
+gtpase assay	7.5	medium_high	hippie
+acetylation assay	7.5	medium_high	hippie
+kinase homogeneous time resolved fluorescence	7.5	medium_high	hippie
+phosphotransfer assay	7.5	medium_high	hippie
+ubiquitinase assay	7.5	medium_high	perplexity
+deubiquitinase assay	7.5	medium_high	perplexity
+ubiquitination reaction	7.5	medium_high	perplexity
+cleavage assay	7.5	medium_high	perplexity
+gdp/gtp exchange assay	7.5	medium_high	perplexity
+acetylase assay	7.5	medium_high	perplexity
+sumoylation reaction	7.5	medium_high	perplexity
+hydroxylase assay	7.5	medium_high	perplexity
+phosphotransferase assay	7.5	medium_high	perplexity
+sumoylase assay	7.5	medium_high	perplexity
+cleavage reaction	7.5	medium_high	perplexity
+in gel phosphatase assay	7.5	medium_high	perplexity
+atpase assay	7.5	medium_high	perplexity
+dephosphorylation reaction	7.5	medium_high	perplexity
+neddylase assay	7.5	medium_high	perplexity
+nuclease assay	7.5	medium_high	perplexity
+oxidoreductase assay	7.5	medium_high	perplexity
+ampylation assay	7.5	medium_high	perplexity
+protein phosphatase assay	7.5	medium_high	perplexity
+acetylation reaction	7.5	medium_high	perplexity
+decarboxylation assay	7.5	medium_high	perplexity
+lipoprotein cleavage assay	7.5	medium_high	perplexity
+myristoylase assay	7.5	medium_high	perplexity
+adp ribosylase assay	7.5	medium_high	perplexity
+de-adp-ribosylation assay	7.5	medium_high	perplexity
+deamination assay	7.5	medium_high	perplexity
+glycosylase assay	7.5	medium_high	perplexity
+kinase scintillation proximity assay	7.5	medium_high	perplexity
+palmitoylase assay	7.5	medium_high	perplexity
+homogeneous time resolved fluorescence	7	medium_high	hippie
+proximity label-ms	7	medium_high	perplexity
+bioid	7	medium_high	perplexity
+proximity-dependent biotin identification	7	medium_high	perplexity
+proximity ligation assay	7	medium_high	perplexity
+amplified luminescent proximity homogeneous assay	7	medium_high	perplexity
+avexis	7	medium_high	perplexity
+sandwich immunoassay	7	medium_high	perplexity
+ubiquitin binding	7	medium_high	perplexity
+complemented donor-acceptor resonance energy transfer	7	medium_high	perplexity
+proximity labelling technology	7	medium_high	perplexity
+fluorescent resonance energy transfer	6	medium	hippie
+fret	6	medium	hippie
+bimolecular fluorescence complementation	6	medium	hippie
+mammalian protein protein interaction trap	6	medium	hippie
+phage display	6	medium	hippie
+bioluminescence resonance energy transfer	6	medium	hippie
+filamentous phage display	6	medium	hippie
+lambda phage display	6	medium	hippie
+t7 phage display	6	medium	hippie
+dihydrofolatereductase reconstruction	6	medium	hippie
+validated two hybrid	6	medium	perplexity
+luminescence based mammalian interactome mapping	6	medium	perplexity
+pca	6	medium	perplexity
+virotrap	6	medium	perplexity
+split luciferase complementation	6	medium	perplexity
+p8 filamentous phage display	6	medium	perplexity
+immunodepleted coimmunoprecipitation	6	medium	perplexity
+fluorescence recovery after photobleaching	6	medium	perplexity
+luminiscence technology	6	medium	perplexity
+dihydrofolate reductase reconstruction	6	medium	perplexity
+split renilla luciferase complementation	6	medium	perplexity
+split firefly luciferase complementation	6	medium	perplexity
+field flow fractionation	6	medium	perplexity
+interactome parallel affinity capture	6	medium	perplexity
+mrna display	6	medium	perplexity
+monoclonal antibody blockade	6	medium	perplexity
+protease accessibility laddering	6	medium	perplexity
+ultraviolet-visible spectroscopy	6	medium	perplexity
+affinity capture-ms	5	medium	hippie
+affinity chromatography technology	5	medium	hippie
+anti tag coimmunoprecipitation	5	medium	hippie
+two-hybrid	5	medium	hippie
+two hybrid	5	medium	perplexity
+affinity capture-western	5	medium	hippie
+tandem affinity purification	5	medium	hippie
+anti bait coimmunoprecipitation	5	medium	hippie
+biochemical activity	5	medium	hippie
+cross-linking study	5	medium	hippie
+protein-peptide	5	medium	hippie
+two hybrid fragment pooling approach	5	medium	hippie
+ubiquitin reconstruction	5	medium	hippie
+affinity capture-luminescence	5	medium	hippie
+protein array	5	medium	hippie
+peptide array	5	medium	hippie
+coimmunoprecipitation	5	medium	hippie
+protein complementation assay	5	medium	hippie
+far western blotting	5	medium	hippie
+enzyme linked immunosorbent assay	5	medium	hippie
+filter binding	5	medium	hippie
+gst pull down	5	medium	hippie
+competition binding	5	medium	hippie
+electron microscopy	5	medium	hippie
+transmission electron microscopy	5	medium	hippie
+mass spectrometry studies of complexes	5	medium	hippie
+antibody array	5	medium	hippie
+affinity technology	5	medium	hippie
+gal4 vp16 complementation	5	medium	hippie
+protein cross-linking with a bifunctional reagent	5	medium	hippie
+beta galactosidase complementation	5	medium	hippie
+beta lactamase complementation	5	medium	hippie
+lex-a dimerization assay	5	medium	hippie
+tox-r dimerization assay	5	medium	hippie
+transcriptional complementation assay	5	medium	hippie
+his pull down	5	medium	hippie
+yeast display	5	medium	hippie
+reverse two hybrid	5	medium	hippie
+polymerization	5	medium	hippie
+3 hybrid method	5	medium	hippie
+protein tri hybrid	5	medium	hippie
+pull-down/mass spectrometry	5	medium	hippie
+co-purification	5	medium	perplexity
+display technology	5	medium	perplexity
+far western	5	medium	perplexity
+barcode fusion genetics two hybrid	5	medium	perplexity
+reverse ras recruitment system	5	medium	perplexity
+lexa b52 complementation	5	medium	perplexity
+y2h	5	medium	perplexity
+aggregation assay	5	medium	perplexity
+three hybrid	5	medium	perplexity
+lambda repressor two hybrid	5	medium	perplexity
+detection by mass spectrometry	5	medium	perplexity
+protein three hybrid	5	medium	perplexity
+zymography	5	medium	perplexity
+anti tag western blot	5	medium	perplexity
+lexa vp16 complementation	5	medium	perplexity
+bead aggregation assay	5	medium	perplexity
+scanning electron microscopy	5	medium	perplexity
+yeast 2-hybridyeast 2-hybrid	5	medium	perplexity
+biotin tag	5	medium	perplexity
+rna immunoprecipitation	5	medium	perplexity
+two hybrid array	4	low	perplexity
+two hybrid prey pooling approach	4	low	perplexity
+two hybrid pooling approach	4	low	perplexity
+two hybrid bait and prey pooling approach	4	low	perplexity
+chromatin immunoprecipitation array	4	low	perplexity
+filter trap assay	4	low	perplexity
+ion exchange chromatography	3	low	hippie
+comigration in sds page	3	low	hippie
+blue native page	3	low	hippie
+comigration in non denaturing gel electrophoresis	3	low	hippie
+array technology	3	low	hippie
+comigration in gel electrophoresis	3	low	hippie
+footprinting	3	low	hippie
+inference by socio-affinity scoring	3	low	perplexity
+synthetic lethality	3	low	perplexity
+one hybrid	3	low	perplexity
+synthetic growth defect	3	low	perplexity
+synthetic rescue	3	low	perplexity
+electrophoretic mobility-based method	3	low	perplexity
+enzymatic footprinting	3	low	perplexity
+dnase i footprinting	3	low	perplexity
+docking	3	low	perplexity
+aut-page	3	low	perplexity
+molecular weight estimation by autoradiography	3	low	perplexity
+mutation analysis	3	low	perplexity
+uracil interference assay	3	low	perplexity
+pull down	2.5	low	hippie
+affinity capture-rna	2	low	hippie
+chromatin immunoprecipitation assay	2	low	hippie
+molecular sieving	2	low	hippie
+cosedimentation through density gradient	2	low	hippie
+cosedimentation in solution	2	low	hippie
+cosedimentation	2	low	hippie
+electrophoretic mobility shift assay	2	low	hippie
+electrophoretic mobility supershift assay	2	low	hippie
+copurification	2	low	hippie
+negative genetic	2	low	perplexity
+positive genetic	2	low	perplexity
+phenotypic suppression	2	low	perplexity
+phenotypic enhancement	2	low	perplexity
+dosage lethality	2	low	perplexity
+dosage rescue	2	low	perplexity
+antisense oligonucleotides	2	low	perplexity
+dosage growth defect	2	low	perplexity
+rna interference	2	low	perplexity
+co-fractionation	1	low	hippie
+biochemical	1	low	hippie
+enzymatic study	1	low	hippie
+co-localization	1	low	hippie
+imaging technique	1	low	hippie
+fluorescence microscopy	1	low	hippie
+confocal microscopy	1	low	hippie
+solid phase assay	1	low	hippie
+experimental interaction detection	1	low	hippie
+fluorescence technology	1	low	hippie
+chromatography technology	1	low	hippie
+fluorescence-activated cell sorting	1	low	hippie
+biophysical	1	low	hippie
+light microscopy	1	low	hippie
+reverse phase chromatography	1	low	hippie
+colocalization by fluorescent probes cloning	1	low	hippie
+colocalization by immunostaining	1	low	hippie
+colocalization/visualisation technologies	1	low	hippie
+in vitro	1	low	hippie
+in vivo	1	low	hippie
+inferred by curator	1	low	hippie
+experimental knowledge based	1	low	perplexity
+protein-rna	0	low	hippie
+genetic interference	0	low	hippie
+no experiment assigned	0	low	hippie
+unknown	0	low	perplexity
+unspecified method	0	low	perplexity
+vv	0	low	perplexity
+vvy2h	0	low	perplexity
+vt	0	low	perplexity
+vt vvy2h	0	low	perplexity
+vtvv	0	low	perplexity
+r	0	low	perplexity
+vv vty2h	0	low	perplexity

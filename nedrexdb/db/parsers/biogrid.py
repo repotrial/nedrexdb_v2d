@@ -102,8 +102,9 @@ class BioGridParser:
         "Organism Name Interactor B",
     )
 
-    def __init__(self, f):
+    def __init__(self, f, method_scores):
         self._f = f
+        self.method_scores = method_scores
 
     def parse(self):
         proteins = {i["primaryDomainId"] for i in Protein.find(MongoInstance.DB)}
@@ -113,11 +114,11 @@ class BioGridParser:
             members = (BioGridRow(row).parse(proteins_allowed=proteins) for row in reader)
 
             for chunk in _tqdm(_chunked(members, 1_000), leave=False, desc="Parsing BioGRID"):
-                updates = [ppi.generate_update() for ppi in _chain(*chunk)]
+                updates = [ppi.generate_update(self.method_scores, db=MongoInstance.DB) for ppi in _chain(*chunk)]
                 if updates:
                     MongoInstance.DB[ProteinInteractsWithProtein.collection_name].bulk_write(updates)
 
 
-def parse_ppis():
+def parse_ppis(method_scores):
     filename = get_file_location("human_data")
-    BioGridParser(filename).parse()
+    BioGridParser(filename, method_scores).parse()
