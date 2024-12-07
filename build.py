@@ -42,7 +42,7 @@ from nedrexdb.db.parsers import (
 from nedrexdb.post_integration import trim_uberon, drop_empty_collections
 
 def parse_method_scores():
-    method_scores_file = "data/hippie_perplexity_technique_scores"
+    method_scores_file = "./nedrexdb/data/hippie_perplexity_technique_scores.tsv"
     method_scores = pd.read_csv(method_scores_file, sep='\t', usecols=['methods', 'score'])
     method_scores_dict = dict(zip(method_scores['methods'], method_scores['score']))
     print(method_scores_dict)
