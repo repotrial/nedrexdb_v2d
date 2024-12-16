@@ -40,7 +40,7 @@ RUN chmod 777 -R /opt/conda
 FROM nedrexdb_base
 RUN apt-get update && apt-get upgrade -y && apt-get autoclean -y && apt-get autoremove -y && apt-get clean -y
 
-RUN mamba upgrade pip tqdm cryptography
+RUN mamba update pip tqdm cryptography
 
 WORKDIR /data/nedrex_files/
 RUN mkdir -p nedrex_api/static
