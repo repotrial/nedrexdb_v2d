@@ -45,7 +45,7 @@ def cli():
 
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @click.option("--download", is_flag=True, default=False)
-@click.option("--version_update", is_flag=True, default=False)
+@click.option("--version_update", is_flag=False, default="")
 @cli.command()
 def update(conf, download, version_update):
     print(f"Config file: {conf}")
@@ -122,7 +122,9 @@ def update(conf, download, version_update):
         if download:
             update_versions(version_update_skip)
         if version_update:
-            get_versions()
+            get_versions(version_update)
+
+
 
 
     # clean up for export
@@ -172,11 +174,11 @@ def parse_dev(version, download, version_update):
         drugbank.parse_drugbank()
     ctd.parse()
     disgenet.parse_gene_disease_associations()
-    if download or version_update:
-        if download:
-            update_versions(ignored_sources=ignored_sources)
-        if version_update:
-            get_versions()
+
+    if download:
+        update_versions(ignored_sources=ignored_sources)
+    if version_update:
+        get_versions(version_update)
 
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @cli.command()
