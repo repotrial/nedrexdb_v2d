@@ -2,7 +2,10 @@ import datetime as _datetime
 import logging
 import shutil as _shutil
 import re as _re
+import ast
 import time
+from pymongo import MongoClient
+import toml
 
 import requests
 from pathlib import Path as _Path
@@ -128,7 +131,7 @@ def validate_download(file, source):
         return unichem.validate_file(file)
     return True
 
-def get_and_update_versions(ignored_sources=set()):
+def update_versions(ignored_sources=set()):
     sources = _config["sources"]
     # Remove the source keys (in filter)
     exclude_keys = {"directory", "username", "password", "default_version", "version",
@@ -187,5 +190,70 @@ def get_and_update_versions(ignored_sources=set()):
     v.increment("patch")
 
     metadata["version"] = f"{v}"
+
+    MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
+
+    # metadata debugging file. Use to check metadata if DB does not work as intended.
+    #with open("./metadata.txt", "w") as f:
+    #    f.write(f"Last Download: {_datetime.datetime.now().date()}\n\n")
+    #    f.write("Current metadata: \n")
+    #    f.write(f"version:\t{metadata['version']}\n")
+    #    f.write("source_databases:\n")
+    #    for key in metadata["source_databases"].keys():
+    #        f.write(f"V\t{key}:\t{metadata['source_databases'][key]}\n")
+    # can be parsed with this code:
+    #metadata = {"source_databases": {}}
+    #with open("./metadata.txt") as f:
+    #    for line in f:
+    #        if line.startswith("V"):
+    #            sd_split = line.rstrip().split("\t")
+    #            metadata["source_databases"][sd_split[1][:-1]] = ast.literal_eval(sd_split[2])
+    #        elif line.startswith("version"):
+    #            metadata["version"] = line.rstrip().split("\t")[1]
+
+def get_versions(no_download):
+    increment = False
+    # no_download is either "true" or path to metadata config -> mconfig
+    if not no_download == "true":
+
+        licensed_config = no_download
+
+        with open(licensed_config) as f:
+            mconfig = toml.load(f)
+        version = "live"
+        for n in range(30):
+            print(no_download)
+    else:
+        increment = True
+        mconfig = _config
+        version = "live"
+
+    mongo_port = 27017
+    mongo_host = mconfig["db"][version.lower()]["mongo_name"]
+    db_name = mconfig["db"]["mongo_db"]
+
+    sources = list(mconfig["sources"].keys())
+    sources.remove("directory")
+    sources.remove("default_version")
+
+    try:
+        client = MongoClient(port=mongo_port, host=mongo_host)
+        db = client[db_name]
+
+        metadata = db["metadata"].find_one()
+    except:
+        metadata = None
+    metadata = metadata if metadata is not None else {"version": "0.0.0"}
+    if "source_databases" not in metadata:
+        metadata["source_databases"] = {}
+
+    if increment:
+        v = Version(metadata["version"])
+        v.increment("patch")
+        metadata["version"] = f"{v}"
+
+    for source in metadata["source_databases"].keys():
+        if source not in _config["sources"]:
+            del metadata["source_databases"][source]
 
     MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
