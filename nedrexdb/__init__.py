@@ -111,9 +111,24 @@ class _Config:
                     defaults_dict["db"]["dev"]["neo4j_bolt_port_internal"] = 7687
                     defaults_dict["db"]["live"]["neo4j_http_port_internal"] = 7474
 
-                self.data = defaults_dict | self.data
+                if "config_deep_merge" in self.data.keys() and self.data["config_deep_merge"] == False:
+                    self.data = defaults_dict | self.data
+                else:
+                    self.data = self.deep_merge(defaults_dict, self.data)
 
-
+    def deep_merge(self, dict1, dict2):
+        for key, value in dict2.items():
+            if key in dict1:
+                if isinstance(dict1[key], dict) and isinstance(value, dict):
+                    # Recursively merge dictionaries
+                    self.deep_merge(dict1[key], value)
+                else:
+                    # Overwrite the value in dict1 with the value from dict2
+                    dict1[key] = value
+            else:
+                # Add the key-value pair from dict2 to dict1
+                dict1[key] = value
+        return dict1
 
     def __getitem__(self, path):
         if self.data is None:
