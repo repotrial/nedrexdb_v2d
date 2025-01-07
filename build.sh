@@ -11,14 +11,25 @@ setup_db() {
         ./build.py restart-live --conf "$config_file"
     else
         local build_args=(update --conf "$config_file")
-        if [[ "$DOWNLOAD_ON_STARTUP" == "1" && "$db_type" == "licensed" ]]; then
-            build_args+=(--download)
-        elif [[ "$DOWNLOAD_ON_STARTUP" == "1" && "$db_type" == "open" ]]; then
-            if [[ "$SKIP_LICENSED" == "1" ]]; then
+
+        if [[ "$DOWNLOAD_ON_STARTUP" == "1" ]]; then
+
+          # update incl. metadata when setting download flag
+          if [[ "$db_type" == "licensed" ]]; then
               build_args+=(--download)
-            else
-              build_args+=(--version_update)
-            fi
+
+           # when only building open db, download flag must be set
+          elif [[ "$db_type" == "open" ]]; then
+              if [[ "$SKIP_LICENSED" == "1" ]]; then
+                build_args+=(--download)
+              else
+                build_args+=(--version_update .licensed_config.toml)
+              fi
+
+          fi
+        # set versions anyways when no download
+        else
+          build_args+=(--version_update true)
         fi
         ./build.py "${build_args[@]}"
     fi
