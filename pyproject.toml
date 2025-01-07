@@ -30,7 +30,6 @@ py = "^1.11.0"
 idna = "^3.7"
 rdkit = "^2023.9.5"
 numpy = "1.26.4"
-urllib3 = "2.2.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
