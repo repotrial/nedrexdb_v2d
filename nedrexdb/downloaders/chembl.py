@@ -13,6 +13,7 @@ from nedrexdb.logger import logger
 
 
 def get_latest_chembl_version() -> str:
+    logger.info("Identifying latest ChEMBL version")
     # correct source urls to match latest version names
     url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/"
     response = requests.get(url)
@@ -28,10 +29,9 @@ def get_latest_chembl_version() -> str:
 def download_chembl():
     version = get_latest_chembl_version()
 
-    url = (
-        "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/"
-        f"chembl_{version}_sqlite.tar.gz"
-    )
+    url = f"https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_{version}_sqlite.tar.gz"
+
+    logger.info(f"Downloading ChEMBL v{version} from {url}")
 
     zip_fname = url.rsplit("/", 1)[1]
     chembl_dir = _Path(_config.get("db.root_directory")) / _config.get("sources.directory") / "chembl"
@@ -41,7 +41,6 @@ def download_chembl():
     chembl_dir.mkdir(exist_ok=True, parents=True)
 
     with _cd(chembl_dir):
-        logger.debug("Downloading ChEMBL v%s" % version)
         _urlretrieve(url, zip_fname)
         _urlretrieve(unichem_url, unichem_name)
     return version

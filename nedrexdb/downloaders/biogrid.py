@@ -18,6 +18,7 @@ from nedrexdb.logger import logger
 
 
 def get_latest_biogrid_version() -> str:
+    logger.info("Identifying latest BioGRID version")
     url = "https://wiki.thebiogrid.org/doku.php/statistics"
     response = requests.get(url)
     if response.status_code != 200:
@@ -33,12 +34,9 @@ def get_latest_biogrid_version() -> str:
 def download_biogrid():
     version = get_latest_biogrid_version()
 
-    url = (
-        "https://downloads.thebiogrid.org/"
-        "Download/BioGRID/Release-Archive/"
-        f"BIOGRID-{version}/"
-        f"BIOGRID-ORGANISM-{version}.tab3.zip"
-    )
+    url = f"https://downloads.thebiogrid.org/Download/BioGRID/Release-Archive/BIOGRID-{version}/BIOGRID-ORGANISM-{version}.tab3.zip"
+
+    logger.info(f"Downloading BioGRID v{version} from {url}")
 
     zip_fname = url.rsplit("/", 1)[1]
     target_fname = _config.get("sources.biogrid.human_data.filename")
@@ -52,7 +50,6 @@ def download_biogrid():
         if _os.path.isfile(target_fname):
             _os.remove(target_fname)
 
-        logger.debug("Downloading BioGRID v%s" % version)
         _urlretrieve(url, zip_fname)
         _subprocess.call(
             ["unzip", zip_fname],
