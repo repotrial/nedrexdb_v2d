@@ -155,7 +155,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             "image": get_neo4j_image(),
             "detach": True,
             "name": self.neo4j_container_name,
-            "volumes": {volume: {"bind": "/data", "mode": "rw"}, "/tmp/nedrexdb_v2": {"bind": "/import", "mode": "ro"}},
+            "volumes": {volume: {"bind": "/data", "mode": "rw"}},
             "ports": {7474: ("127.0.0.1", self.neo4j_http_port), 7687: ("127.0.0.1", self.neo4j_bolt_port)},
             "environment": {
                 "NEO4J_AUTH": "none",
@@ -173,13 +173,20 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             kwargs["ports"][7687] = self.neo4j_bolt_port
 
         if neo4j_mode == "import":
+            kwargs["volumes"].update({"/tmp/nedrexdb_v2": {"bind": "/import", "mode": "ro"}})
+            kwargs["environment"]["NEO4J_dbms_memory_heap_max__size"] = "4G"
+            kwargs["environment"]["NEO4J_dbms_memory_pagecache_size"] = "2G"
             kwargs["stdin_open"] = True
             kwargs["tty"] = True
             kwargs["entrypoint"] = "/bin/bash"
 
         elif neo4j_mode == "db":
-            kwargs["environment"]["NEO4J_server_read__only"] = "true"
+            kwargs["environment"]["NEO4J_server_databases_read__only"] = "true"
             kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "true"
+        elif neo4j_mode == "db-write":
+            kwargs["environment"]["NEO4J_server_databases_read__only"] = "false"
+            kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "false"
+
         else:
             raise Exception(f"neo4j_mode {neo4j_mode!r} is invalid")
         _client.containers.run(**kwargs)
@@ -223,6 +230,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         )
 
     def _remove_neo4j(self, remove_db_volume=False):
+        import subprocess as _subprocess
         if not self.neo4j_container:
             return
 
@@ -234,7 +242,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         volumes_to_remove = [
             mount["Name"] for mount in mounts if mount["Type"] == "volume" and mount["Destination"] in volumes_to_remove
         ]
-
+        self.neo4j_container.stop()
         self.neo4j_container.remove(force=True)
 
         for vol_name in volumes_to_remove:
@@ -275,9 +283,10 @@ class _NeDRexBaseInstance(_NeDRexInstance):
 
     def set_up(self, use_existing_volume=True, neo4j_mode="db"):
         print("Setting up Live NeDRex instance...")
-        self._set_up_mongo(use_existing_volume=use_existing_volume)
+        if neo4j_mode != "db-write":
+            self._set_up_mongo(use_existing_volume=use_existing_volume)
+            self._set_up_express()
         self._set_up_neo4j(use_existing_volume=use_existing_volume, neo4j_mode=neo4j_mode)
-        self._set_up_express()
 
     def remove(self, remove_db_volume=False, remove_configdb_volume=True):
         self._remove_mongo(

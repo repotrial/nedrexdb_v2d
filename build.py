@@ -35,7 +35,7 @@ from nedrexdb.db.parsers import (
     repotrial,
 )
 from nedrexdb.downloaders import get_versions, update_versions
-from nedrexdb.post_integration import trim_uberon, drop_empty_collections
+from nedrexdb.post_integration import (trim_uberon, drop_empty_collections,create_vector_indices)
 
 
 @click.group()
@@ -46,11 +46,13 @@ def cli():
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @click.option("--download", is_flag=True, default=False)
 @click.option("--version_update", is_flag=False, default="")
+@click.option("--create_embeddings", is_flag=True, default=False)
 @cli.command()
-def update(conf, download, version_update):
+def update(conf, download, version_update, create_embeddings):
     print(f"Config file: {conf}")
     print(f"Download updates: {download}")
     print(f"Update DB versions: {version_update}")
+    print(f"Create embeddings: {create_embeddings}")
 
     nedrexdb.parse_config(conf)
 
@@ -138,10 +140,19 @@ def update(conf, download, version_update):
 
     collection_stats.verify_collections_after_profiling(MongoInstance.DB)
 
+
     # remove dev instance and set up live instance
     dev_instance.remove()
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
+
+    if create_embeddings:
+        live_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+
+        # create embeddings
+        create_vector_indices.create_vector_indices()
+        live_instance.remove()
+
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
 
 def parse_dev(version, download, version_update):

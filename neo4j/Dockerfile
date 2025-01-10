@@ -10,8 +10,6 @@ ENV NEO4J_PASSWORD=password
 ENV NEO4J_AUTH=$NEO4J_USERNAME/$NEO4J_PASSWORD
 ENV NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
 
-### Instalar puto python3.11 en debian -----------------------------------------------------
-# Instala las dependencias necesarias para compilar Python
 RUN apt-get update && apt-get install -y --fix-missing \
     build-essential \
     libffi-dev \
