@@ -1,10 +1,10 @@
-FROM neo4j:5.17.0
+FROM neo4j:5.26.0
 
 # Return to the original working directory
 RUN mkdir /app
 WORKDIR /app
 
-ENV APOC_VERSION=5.17.0
+ENV APOC_VERSION=5.26.0
 ENV NEO4J_USERNAME=neo4j
 ENV NEO4J_PASSWORD=password
 ENV NEO4J_AUTH=$NEO4J_USERNAME/$NEO4J_PASSWORD
@@ -12,7 +12,7 @@ ENV NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
 
 ### Instalar puto python3.11 en debian -----------------------------------------------------
 # Instala las dependencias necesarias para compilar Python
-RUN apt-get update && apt-get install -y -y --fix-missing \
+RUN apt-get update && apt-get install -y --fix-missing \
     build-essential \
     libffi-dev \
     libgdbm-dev \
@@ -35,7 +35,8 @@ RUN apt-get update && apt-get install -y -y --fix-missing \
     unzip
 
 # Installiere APOC Plugin
-RUN wget -O /var/lib/neo4j/plugins/apoc.jar https://github.com/neo4j/apoc/releases/download/${APOC_VERSION}/apoc-${APOC_VERSION}-core.jar
+RUN wget -O /var/lib/neo4j/plugins/apoc-${APOC_VERSION}-core.jar https://github.com/neo4j/apoc/releases/download/${APOC_VERSION}/apoc-${APOC_VERSION}-core.jar
+RUN wget -O /var/lib/neo4j/plugins/apoc-${APOC_VERSION}-extended.jar https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/${APOC_VERSION}/apoc-${APOC_VERSION}-extended.jar
 
 ENV NEO4JLABS_PLUGINS='["apoc"]'
 ENV NEO4J_dbms_security_procedures_unrestricted=apoc.* \
@@ -53,6 +54,9 @@ RUN neo4j-admin dbms set-initial-password $NEO4J_PASSWORD
 # Run the modify_neo4j_conf script
 RUN /app/scripts/modify_neo4j_conf.sh
 RUN echo "configuration of neo4j ready"
+
+WORKDIR /var/lib/neo4j
+RUN mv products/neo4j-genai-* plugins/
 
 # # Expose the ports Neo4j and Jupyter Lab uses
 EXPOSE 7687

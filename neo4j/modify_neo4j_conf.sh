@@ -36,10 +36,10 @@ fi
 echo "HTTP connector enabled in neo4j.conf."
 
 # Unrestrict APOC procedures
-if grep -q "dbms.security.procedures.unrestricted=apoc.*" "$NEO4J_CONF"; then
+if grep -q "dbms.security.procedures.unrestricted=apoc.*,genai.*,vectorize.*" "$NEO4J_CONF"; then
     echo "APOC procedures already unrestricted in neo4j.conf."
 else
-    echo 'dbms.security.procedures.unrestricted=apoc.*' >> "$NEO4J_CONF"
+    echo 'dbms.security.procedures.unrestricted=apoc.*,genai.*,vectorize.*' >> "$NEO4J_CONF"
     echo "Updated neo4j.conf to allow unrestricted APOC procedures."
 fi
 
