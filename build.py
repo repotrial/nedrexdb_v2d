@@ -142,7 +142,7 @@ def update(conf, download, version_update, create_embeddings):
 
 
     # remove dev instance and set up live instance
-    dev_instance.remove()
+    dev_instance.remove(neo4j_mode="import")
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
 
@@ -179,12 +179,14 @@ def parse_dev(version, download, version_update):
 
     mondo.parse_mondo_json()
     ncbi.parse_gene_info()
-    if version == "licensed":
-        drugbank._parse_drugbank()  # requires proteins to be parsed first
-    elif version == "open":
-        drugbank.parse_drugbank()
-    ctd.parse()
-    disgenet.parse_gene_disease_associations()
+    # if version == "licensed":
+    #     drugbank._parse_drugbank()  # requires proteins to be parsed first
+    # elif version == "open":
+    #     drugbank.parse_drugbank()
+    # ctd.parse()
+    # disgenet.parse_gene_disease_associations()
+    # uniprot.parse_proteins()
+    # biogrid.parse_ppis()
 
     if download:
         update_versions(ignored_sources=ignored_sources)

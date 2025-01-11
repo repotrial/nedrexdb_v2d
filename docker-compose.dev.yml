@@ -2,7 +2,8 @@ version: '3.3'
 
 services:
   db:
-    image: nedrexdb_v2d:dev
+#    image: nedrexdb_v2d:dev
+    image: ghcr.io/repotrial/nedrexdb_v2d:dev
     container_name: nedrexdb_v2
     build: .
     environment:

@@ -46,12 +46,12 @@ def create_disease_embeddings(con):
 
     res = con.query("""SHOW VECTOR INDEXES""")
     print(res)
-
+    start = time.time()
     con.query("""
       MATCH (disorder:Disorder)
 WITH collect(disorder) as allDisorders
-UNWIND range(0, size(allDisorders)-1, 100) as i
-WITH i, allDisorders[i..i+100] as batchDisorders
+UNWIND range(0, size(allDisorders)-1, 1000) as i
+WITH i, allDisorders[i..i+1000] as batchDisorders
 WHERE size(batchDisorders) > 0
 CALL apoc.ml.openai.embedding(
     [d in batchDisorders | 
@@ -63,11 +63,15 @@ CALL apoc.ml.openai.embedding(
     {
         endpoint: "https://llm.cosy.bio/v1",
         path: 'embeddings',
-        model: "snowflake-arctic-embed2:latest"
+        model: "snowflake-arctic-embed2:latest",
+        enableBackOffRetries: true,
+        exponentialBackoff: true
     }
 ) YIELD index, embedding
 WITH batchDisorders[index] as disorder, embedding CALL db.create.setNodeVectorProperty(disorder, "disorderEmbedding", embedding);"""
               )
+    duration = time.time() - start
+    print(f"Building disorder embedding indexes finished after {duration} seconds")
     res = con.query("""SHOW VECTOR INDEXES""")
     print(res)
 
