@@ -179,14 +179,12 @@ def parse_dev(version, download, version_update):
 
     mondo.parse_mondo_json()
     ncbi.parse_gene_info()
-    # if version == "licensed":
-    #     drugbank._parse_drugbank()  # requires proteins to be parsed first
-    # elif version == "open":
-    #     drugbank.parse_drugbank()
-    # ctd.parse()
-    # disgenet.parse_gene_disease_associations()
-    # uniprot.parse_proteins()
-    # biogrid.parse_ppis()
+    if version == "licensed":
+        drugbank._parse_drugbank()
+    elif version == "open":
+        drugbank.parse_drugbank()
+    ctd.parse()
+    disgenet.parse_gene_disease_associations()
 
     if download:
         update_versions(ignored_sources=ignored_sources)

@@ -74,7 +74,7 @@ class _NeDRexInstance(_ABC):
 
 
 class _NeDRexBaseInstance(_NeDRexInstance):
-    GRACEFUL_SHUTDOWN_TIMEOUT = 180
+    GRACEFUL_SHUTDOWN_TIMEOUT = 600
 
     @property
     def mongo_container_name(self):
@@ -255,7 +255,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
     def _stop_neo4j_process(self) -> bool:
         """Attempt to gracefully stop the Neo4j process within the container."""
         update_command = ["docker", "update", "--restart=no", self.neo4j_container_name]
-        run(update_command, timeout=5)
+        run(update_command, timeout=15)
         try:
             result = run(
                 ["docker", "exec", self.neo4j_container_name, "neo4j", "stop"],
@@ -263,6 +263,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
                 text=True,
                 timeout=self.GRACEFUL_SHUTDOWN_TIMEOUT
             )
+            print(result.stdout)
             return result.returncode == 0
 
         except (CalledProcessError, TimeoutError) as e:
@@ -302,16 +303,6 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         volumes_to_remove = [
             mount["Name"] for mount in mounts if mount["Type"] == "volume" and mount["Destination"] in volumes_to_remove
         ]
-        # try:
-        #     _subprocess.call(["docker","exec", self.neo4j_container_name, "neo4j", "stop"])
-        # except _subprocess.CalledProcessError:
-        #     print("neo4j not running")
-        #     pass
-        # try:
-        #     self.neo4j_container.stop()
-        # except:
-        #     print("neo4j not stopped")
-        #     pass
         if neo4j_mode=='import':
             self.neo4j_container.remove(force=True)
         else:
