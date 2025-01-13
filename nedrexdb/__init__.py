@@ -153,9 +153,13 @@ class _Config:
 
 
 config = _Config()
-
+mconfig = _Config()
 
 def parse_config(infile):
     global config
     logger.info("Parsing config file: %s" % infile)
     config.from_file(infile)
+
+def parse_mconfig(infile):
+    global mconfig
+    mconfig.from_file(infile)
