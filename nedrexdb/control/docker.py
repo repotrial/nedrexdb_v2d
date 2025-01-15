@@ -254,8 +254,10 @@ class _NeDRexBaseInstance(_NeDRexInstance):
 
     def _stop_neo4j_process(self) -> bool:
         """Attempt to gracefully stop the Neo4j process within the container."""
+        print("Attempting to gracefully stop Neo4j process")
         update_command = ["docker", "update", "--restart=no", self.neo4j_container_name]
-        run(update_command, timeout=15)
+        update = run(update_command)
+        update.check_returncode()
         try:
             result = run(
                 ["docker", "exec", self.neo4j_container_name, "neo4j", "stop"],
