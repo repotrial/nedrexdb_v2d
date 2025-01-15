@@ -151,9 +151,9 @@ def update(conf, download, version_update, create_embeddings):
 
         # create embeddings
         create_vector_indices.create_vector_indices()
-        live_instance.remove()
-
-    live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
+    #     live_instance.remove()
+    #
+    # live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
 
 def parse_dev(version, download, version_update):
     # control source downloads
