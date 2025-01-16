@@ -143,16 +143,16 @@ def update(conf, download, version_update, create_embeddings):
 
     # remove dev instance and set up live instance
     dev_instance.remove(neo4j_mode="import")
-    live_instance = NeDRexLiveInstance()
-    live_instance.remove()
 
     if create_embeddings:
-        live_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+        dev_instance = NeDRexDevInstance()
+        dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
 
         # create embeddings
         create_vector_indices.create_vector_indices()
-        live_instance.remove()
-    #
+        dev_instance.remove()
+    live_instance = NeDRexLiveInstance()
+    live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
 
 def parse_dev(version, download, version_update):
@@ -178,13 +178,13 @@ def parse_dev(version, download, version_update):
         downloaders.download_all(ignored_sources=ignored_sources)
 
     mondo.parse_mondo_json()
-    ncbi.parse_gene_info()
-    if version == "licensed":
-        drugbank._parse_drugbank()
-    elif version == "open":
-        drugbank.parse_drugbank()
-    ctd.parse()
-    disgenet.parse_gene_disease_associations()
+    # ncbi.parse_gene_info()
+    # if version == "licensed":
+    #     drugbank._parse_drugbank()
+    # elif version == "open":
+    #     drugbank.parse_drugbank()
+    # ctd.parse()
+    # disgenet.parse_gene_disease_associations()
 
     if download:
         update_versions(ignored_sources=ignored_sources)

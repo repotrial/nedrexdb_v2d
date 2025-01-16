@@ -1,11 +1,11 @@
 from langchain_community.graphs import Neo4jGraph
 from nedrexdb import config as _config
 import time
-import subprocess as _subprocess
+
 
 
 def create_vector_indices():
-    neo4j_container = _config["db.live.neo4j_name"]
+    neo4j_container = _config["db.dev.neo4j_name"]
     bolt_port = 7687
 
     NEO4J_URI = f'bolt://{neo4j_container}:{bolt_port}'
@@ -29,7 +29,6 @@ def create_vector_indices():
 
     print("Starting with indexing!")
     create_disease_embeddings(kg)
-    test(kg)
     if wait_for_database_ready(kg):
         print("Ready to switch to read-only mode")
     else:
@@ -37,6 +36,8 @@ def create_vector_indices():
 
 
 def create_disease_embeddings(con):
+
+    from nedrexdb.llm import (_LLM_BASE, _LLM_path, _LLM_model)
     con.query("""CREATE VECTOR INDEX disorder_embeddings IF NOT EXISTS
   FOR (d:Disorder) ON (d.disorderEmbedding) 
   OPTIONS { indexConfig: {
@@ -61,9 +62,9 @@ CALL apoc.ml.openai.embedding(
     ], 
     "whatever", 
     {
-        endpoint: "https://llm.cosy.bio/v1",
-        path: 'embeddings',
-        model: "snowflake-arctic-embed2:latest",
+        endpoint: '"""+_LLM_BASE+"""',
+        path: '"""+_LLM_path+"""',
+        model: '"""+_LLM_model+"""',
         enableBackOffRetries: true,
         exponentialBackoff: true
     }
@@ -73,20 +74,6 @@ WITH batchDisorders[index] as disorder, embedding CALL db.create.setNodeVectorPr
     duration = time.time() - start
     print(f"Building disorder embedding indexes finished after {duration} seconds")
     res = con.query("""SHOW VECTOR INDEXES""")
-    print(res)
-
-
-def test(con):
-    res = con.query("""CALL apoc.ml.openai.embedding(["What is Myositis ossificans?"], "no-key", 
-        {
-            endpoint: "https://llm.cosy.bio/v1",
-            path: 'embeddings',
-            model: "snowflake-arctic-embed2:latest"
-        }) yield index, embedding
-
-    CALL db.index.vector.queryNodes('disorder_embeddings', 5, embedding) YIELD node AS d, score
-    RETURN score, d.displayName, d.description, d.synonyms;""")
-
     print(res)
 
 
