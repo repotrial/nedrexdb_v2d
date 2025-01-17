@@ -57,7 +57,7 @@ WITH i, allDisorders[i..i+1000] as batchDisorders
 WHERE size(batchDisorders) > 0
 CALL apoc.ml.openai.embedding(
     [d in batchDisorders | 
-        'coalesce(d.type, '') +  ' with ID ' + d.primaryDomainId +
+        coalesce(d.type, '') +  ' with ID ' + d.primaryDomainId +
         ': DisplayName: ' + coalesce(d.displayName, '') + '; Synonyms: ' +
         coalesce( apoc.text.join(d.synonyms,', '), '') + '; Description: ' +
         coalesce(d.description, '')
