@@ -178,13 +178,13 @@ def parse_dev(version, download, version_update):
         downloaders.download_all(ignored_sources=ignored_sources)
 
     mondo.parse_mondo_json()
-    # ncbi.parse_gene_info()
-    # if version == "licensed":
-    #     drugbank._parse_drugbank()
-    # elif version == "open":
-    #     drugbank.parse_drugbank()
-    # ctd.parse()
-    # disgenet.parse_gene_disease_associations()
+    ncbi.parse_gene_info()
+    if version == "licensed":
+        drugbank._parse_drugbank()
+    elif version == "open":
+        drugbank.parse_drugbank()
+    ctd.parse()
+    disgenet.parse_gene_disease_associations()
 
     if download:
         update_versions(ignored_sources=ignored_sources)
