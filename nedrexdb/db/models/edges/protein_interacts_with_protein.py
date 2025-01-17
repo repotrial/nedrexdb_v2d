@@ -33,13 +33,23 @@ class ProteinInteractsWithProtein(_BaseModel, ProteinInteractsWithProteinBase):
     jointTissues: list[str] = []
     brainTissues: list[str] = []
     subcellularLocations: list[str] = []
+    methods_score: float = 0.0
 
-    def generate_update(self):
+    def generate_update(self, method_scores, db):
         tnow = _datetime.datetime.utcnow()
 
         m1, m2 = sorted([self.memberOne, self.memberTwo])
 
         query = {"memberOne": m1, "memberTwo": m2}
+        
+        existing_doc = db[self.collection_name].find_one(query)
+        if existing_doc and "methods" in existing_doc:
+            all_methods = set(existing_doc["methods"])
+        else:
+            all_methods = set()
+        all_methods.update(self.methods)
+        methods_score = sum(method_scores.get(method, 0) for method in all_methods)
+
 
         update = {
             "$setOnInsert": {
@@ -48,6 +58,7 @@ class ProteinInteractsWithProtein(_BaseModel, ProteinInteractsWithProteinBase):
             "$set": {
                 "updated": tnow,
                 "type": self.edge_type,
+                "methods_score": methods_score,
             },
             "$addToSet": {
                 "methods": {"$each": self.methods},
