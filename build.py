@@ -77,19 +77,13 @@ def update(conf, download):
         downloaders.download_all()
 
     # Parse sources contributing only nodes (and edges amongst those nodes)
-
-
-    ncbi.parse_gene_info()
-    uniprot.parse_proteins()
-    
     methods_scores = parse_method_scores()
     
-    iid.parse_ppis(methods_scores)
-    intact.parse(methods_scores)
-    biogrid.parse_ppis(methods_scores)
     go.parse_go()
     mondo.parse_mondo_json()
+    ncbi.parse_gene_info()
     uberon.parse()
+    uniprot.parse_proteins()
     # Sources that add node type but require existing nodes, too
     cosmic.parse_gene_disease_associations()
     clinvar.parse()
@@ -110,10 +104,13 @@ def update(conf, download):
     repotrial.parse()
     #
     # Sources adding edges.
+    biogrid.parse_ppis(methods_scores)
     ctd.parse()
     disgenet.parse_gene_disease_associations()
     go.parse_goa()
     hpa.parse_hpa()
+    iid.parse_ppis(methods_scores)
+    intact.parse(methods_scores)
     
 
     if version == "licensed":
