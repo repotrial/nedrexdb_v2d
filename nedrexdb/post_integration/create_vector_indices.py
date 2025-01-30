@@ -128,7 +128,7 @@ WITH batchGenes[index] as gene, embedding CALL db.create.setNodeVectorProperty(g
 def create_disease_gene_embeddings(con):
     from nedrexdb.llm import (_LLM_BASE, _LLM_path, _LLM_model)
     con.query("""CREATE VECTOR INDEX disease_gene_embeddings IF NOT EXISTS
-  FOR (r:GeneAssociatedWithDisorder) ON (r.geneDiseaseEmbedding) 
+  FOR ()-[r:GeneAssociatedWithDisorder]-() ON (r.geneDiseaseEmbedding) 
   OPTIONS { indexConfig: {
     `vector.dimensions`: 1024,
     `vector.similarity_function`: 'cosine'
