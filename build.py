@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import enum
 import time
 
 import click
@@ -149,7 +149,11 @@ def update(conf, download, version_update, create_embeddings):
         dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
 
         # create embeddings
-        create_vector_indices.create_vector_indices()
+        try:
+            create_vector_indices.create_vector_indices()
+        except Exception as e:
+            print(e)
+            print("Failed to create vector indices")
         dev_instance.remove()
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
