@@ -33,6 +33,8 @@ def download_intogen():
     d = Downloader(
         url=url,
         target=intogen_dir / zip_fname,
+        username=None,
+        password=None,
     )
     d.download()
     with _cd(intogen_dir):
@@ -48,3 +50,4 @@ def download_intogen():
 
         _shutil.rmtree(zip_dir)
         assert _os.path.isfile(intogen_dir / target_fname)
+
