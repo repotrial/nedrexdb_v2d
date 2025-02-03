@@ -50,3 +50,4 @@ def download_intogen():
 
         _shutil.rmtree(zip_dir)
         assert _os.path.isfile(intogen_dir / target_fname)
+
