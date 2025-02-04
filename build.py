@@ -106,7 +106,7 @@ def update(conf, download):
     # Sources adding edges.
     biogrid.parse_ppis(methods_scores)
     ctd.parse()
-    disgenet.parse_gene_disease_associations()
+    #disgenet.parse_gene_disease_associations()
     go.parse_goa()
     hpa.parse_hpa()
     iid.parse_ppis(methods_scores)
