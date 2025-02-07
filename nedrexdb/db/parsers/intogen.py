@@ -81,6 +81,18 @@ class IntOGenParser:
         reader = _DictReader(f, delimiter="\t")
         f_dict = [{"SYMBOL": row['SYMBOL'], "CANCER_TYPE": row['CANCER_TYPE']}
                   for row in reader]
+        
+        # remove disease ids, which cannot be mapped py 
+        f_dict_tmp = []
+        not_mapped = []
+        for row in f_dict:
+            if row["CANCER_TYPE"] in self.intogen2mondo:
+                f_dict_tmp.append(row)
+            else:
+                not_mapped.append(row["CANCER_TYPE"])
+        if not_mapped:
+            logger.warning(f"{len(f_dict) - len(f_dict_tmp)} intogen rows were left out, because intogen2mondo could not map: {set(not_mapped)}")
+        f_dict = f_dict_tmp
 
         symbol2entrez = {gene["approvedSymbol"]: gene["primaryDomainId"]
                          for gene in Gene.find(MongoInstance.DB)}
