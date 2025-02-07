@@ -17,6 +17,7 @@ from tqdm import tqdm as _tqdm
 from nedrexdb.db import MongoInstance
 from nedrexdb.db.parsers import _get_file_location_factory
 from nedrexdb.db.models.nodes.protein import Protein
+from nedrexdb.logger import logger
 
 
 _INTERPRO_DATABASES: _Final = {
@@ -125,6 +126,7 @@ def generate_protein_signature_update(protein_id, signature_id):
 
 
 def parse():
+    logger.info("Parsing uniprot signatures")
     signature_coll = MongoInstance.DB["signature"]
     signature_coll.create_index("primaryDomainId")
 
@@ -149,6 +151,7 @@ def parse():
 
             signatures += [sig.to_update() for sig in record.signatures]
             relationships += [generate_protein_signature_update(record.id, sig.domain_id) for sig in record.signatures]
-
-        signature_coll.bulk_write(signatures)
-        protein_has_sig_coll.bulk_write(relationships)
+        if signatures:
+            signature_coll.bulk_write(signatures)
+        if relationships:
+            protein_has_sig_coll.bulk_write(relationships)

@@ -1,3 +1,4 @@
+
 import gzip as _gzip
 import re as _re
 import sys as _sys
@@ -19,6 +20,7 @@ from nedrexdb.db.models.nodes.protein import Protein
 from nedrexdb.db.models.edges.protein_encoded_by_gene import (
     ProteinEncodedByGene,
 )
+from nedrexdb.logger import logger
 
 get_file_location = _get_file_location_factory("uniprot")
 
@@ -72,6 +74,13 @@ class UniProtRecord:
         synonyms = [i.strip() for i in synonyms]
         synonyms = [i[:-1] if i.endswith(";") else i for i in synonyms]
         synonyms = [i for i in synonyms if i]
+        syn_set = set()
+        for syn in synonyms:
+            if "{" in syn:
+                syn_set.add(self._CURLY_REGEX.split(syn)[0].strip())
+            else:
+                syn_set.add(syn.strip())
+        synonyms = list(syn_set)
         return synonyms
 
     def get_gene_name(self) -> str:
@@ -90,6 +99,7 @@ class UniProtRecord:
                 gene_name = name
             if gene_name.startswith("Name="):
                 gene_name = gene_name.replace("Name=", "").split(";", 1)[0]
+            if "{" in gene_name:
                 gene_name = self._CURLY_REGEX.split(gene_name)[0].strip()
 
         return gene_name
@@ -150,6 +160,7 @@ def _iter_gzipped_swiss(fname, reviewed):
 
 
 def parse_proteins():
+    logger.info("Parsing uniprot proteins")
     filenames = [get_file_location("trembl"), get_file_location("swissprot")]
     uniprot_records = _itertools.chain(*[_iter_gzipped_swiss(filenames[filenum], bool(filenum)) for filenum in (0, 1)])
     updates = (UniProtRecord(record).parse().generate_update() for record in uniprot_records)
