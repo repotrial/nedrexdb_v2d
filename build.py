@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import enum
-import time
 
 import click
 import os

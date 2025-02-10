@@ -166,6 +166,7 @@ CALL apoc.ml.openai.embedding(
         path: $llm_path,
         model: $llm_model,
         enableBackOffRetries: true,
+        backOffRetries: 10,
         exponentialBackoff: true
     }
 ) YIELD index, embedding
@@ -188,6 +189,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name):
             path: $llm_path,
             model: $llm_model,
             enableBackOffRetries: true,
+            backOffRetries: 10,
             exponentialBackoff: true
         }
     ) YIELD index, embedding
