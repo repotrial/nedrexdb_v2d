@@ -48,6 +48,8 @@ def iter_records(fname):
             if line.strip() == "//":
                 yield _StringIO(text)
                 text = ""
+        #for line in f:
+        #    yield _StringIO(line.strip())
 
 
 @dataclass
@@ -149,6 +151,6 @@ def parse():
 
             signatures += [sig.to_update() for sig in record.signatures]
             relationships += [generate_protein_signature_update(record.id, sig.domain_id) for sig in record.signatures]
-
-        signature_coll.bulk_write(signatures)
-        protein_has_sig_coll.bulk_write(relationships)
+        if signatures:
+            signature_coll.bulk_write(signatures)
+            protein_has_sig_coll.bulk_write(relationships)
