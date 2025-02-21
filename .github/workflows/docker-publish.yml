@@ -77,9 +77,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          #Temporary disabled linux/arm64 because of system library issues
-          #platforms: linux/amd64,linux/arm64
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha, mode=max
 
@@ -126,6 +124,8 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-neo4j.outputs.tags }}
           labels: ${{ steps.meta-neo4j.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          #Temporary disabled linux/arm64 because of system library issues
+          # platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
