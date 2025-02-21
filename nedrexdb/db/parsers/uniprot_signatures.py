@@ -77,37 +77,46 @@ class Signature:
 
 @dataclass
 class SwissRecordParser:
-    data: _StringIO
 
     @property
     def id(self):
-        self.data.seek(0)
-        for line in self.data:
-            if not line.startswith("AC"):
-                continue
-            return f"uniprot.{line.strip().split()[1][:-1]}"
+        return self._id
 
     @property
     def signatures(self):
-        signatures = []
+        return self._signatures
 
-        self.data.seek(0)
-        for line in self.data:
-            if not line.startswith("DR"):
-                continue
 
-            db, acc, desc = [i[:-1] for i in line.strip().split()[1:4]]
+    @id.setter
+    def id(self, value):
+        self._id = value
 
-            if db not in _INTERPRO_DATABASES:
-                continue
+    @signatures.setter
+    def signatures(self, value):
+        self._signatures = value
 
-            if not desc or desc == "-":
-                desc = None
+    id: str
+    signatures: list[str]
 
-            sig = Signature(f"{db.lower()}.{acc}", db, desc, dataSources=["uniprot"])
-            signatures.append(sig)
+    def __init__(self, data):
+        self.signatures = []
+        data.seek(0)
+        for line in data:
+            if line.startswith("AC"):
+                self.id = f"uniprot.{line.strip().split()[1][:-1]}"
+            elif line.startswith("DR"):
+                db, acc, desc = [i[:-1] for i in line.strip().split()[1:4]]
 
-        return signatures
+                if db not in _INTERPRO_DATABASES:
+                    continue
+
+                if not desc or desc == "-":
+                    desc = None
+
+                sig = Signature(f"{db.lower()}.{acc}", db, desc, dataSources=["uniprot"])
+                self.signatures.append(sig)
+
+
 
 
 def generate_protein_signature_update(protein_id, signature_id):
@@ -137,18 +146,23 @@ def parse():
 
     protein_ids = {doc["primaryDomainId"] for doc in Protein.find(MongoInstance.DB)}
 
+    parsed_records = 0
+    missing_protein_ids = set()
     for chunk in _tqdm(_chunked(records_iter, 1_000), desc="Parsing signatures from UniProt", leave=False):
         signatures = []
         relationships = []
 
         records = [SwissRecordParser(data) for data in chunk]
-
         for record in records:
+            parsed_records+=1
             if record.id not in protein_ids:
-                raise Exception("Expected ID to be parsed already")
-
+                missing_protein_ids.add(record.id)
+                continue
             signatures += [sig.to_update() for sig in record.signatures]
             relationships += [generate_protein_signature_update(record.id, sig.domain_id) for sig in record.signatures]
+        if len(signatures) > 0:
+            signature_coll.bulk_write(signatures)
+        if len(relationships) > 0:
+            protein_has_sig_coll.bulk_write(relationships)
+    print(f"Parsed {parsed_records} proteins, {len(missing_protein_ids)} were not parsed yet: {missing_protein_ids}")
 
-        signature_coll.bulk_write(signatures)
-        protein_has_sig_coll.bulk_write(relationships)
