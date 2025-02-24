@@ -34,7 +34,6 @@ NODE_EMBEDDING_CONFIG = {
         "dataSources": {"prefix": "Data Sources: ", "suffix": "", "type": "list"},
         "reviewed":{"prefix":"Review status: ", "suffix":"", "type": "boolean"},
         "comments": {"prefix":"the following comments: ", "suffix":"", "type": "string"},
-
     }
 }
 
