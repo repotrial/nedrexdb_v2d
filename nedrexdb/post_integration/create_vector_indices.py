@@ -89,7 +89,13 @@ def create_vector_indices():
         fill_vector_index(kg, "NODE", node)
     for edge in EDGE_EMBEDDING_CONFIG.keys():
         fill_vector_index(kg, "RELATIONSHIP", edge)
-    if wait_for_database_ready(kg):
+    if wait_for_database_ready(kg, ['drugEmbeddings',
+                                    "drughasindicationEmbeddings",
+                                    "disorderEmbeddings",
+                                    "drughastargetEmbeddings",
+                                    "geneEmbeddings",
+                                    "geneassociatedwithdisorderEmbeddings",
+                                    "proteinEmbeddings"]):
         print("Ready to switch to read-only mode")
     else:
         print("Something went wrong with the index build")
@@ -214,29 +220,30 @@ def create_vector_index(con, entityType, name):
                }}""", params=props)
 
 
-def wait_for_database_ready(con, index_name='disorder_embeddings'):
-    try:
-        result = list(con.query("""
-            SHOW INDEXES
-            YIELD name, state, type, labelsOrTypes, properties
-            WHERE name = $name
-            RETURN *
-        """, {"name": index_name}))
+def wait_for_database_ready(con, index_names=['bad_default']):
+    for index_name in index_names:
+        try:
+            result = list(con.query("""
+                SHOW INDEXES
+                YIELD name, state, type, labelsOrTypes, properties
+                WHERE name = $name
+                RETURN *
+            """, {"name": index_name}))
 
-        if result:
-            index = result[0]
-            print(f"\nIndex details:")
-            print(f"- Name: {index['name']}")
-            print(f"- State: {index['state']}")
-            print(f"- Type: {index['type']}")
-            print(f"- Labels: {index['labelsOrTypes']}")
-            print(f"- Properties: {index['properties']}")
+            if result:
+                index = result[0]
+                print(f"\nIndex details:")
+                print(f"- Name: {index['name']}")
+                print(f"- State: {index['state']}")
+                print(f"- Type: {index['type']}")
+                print(f"- Labels: {index['labelsOrTypes']}")
+                print(f"- Properties: {index['properties']}")
 
-            return index['state'] == 'ONLINE'
-        else:
-            print(f"\nNo index found with name {index_name}")
+                return index['state'] == 'ONLINE'
+            else:
+                print(f"\nNo index found with name {index_name}")
+                return False
+
+        except Exception as e:
+            print(f"\nError checking index: {str(e)}")
             return False
-
-    except Exception as e:
-        print(f"\nError checking index: {str(e)}")
-        return False
