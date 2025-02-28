@@ -245,7 +245,8 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             bool: True if shutdown was successful, False otherwise
         """
         if not self._stop_neo4j_process():
-            print("Failed to gracefully stop Neo4j process")
+            print("Failed to gracefully stop Neo4j process, forcing now")
+            self.neo4j_container.remove(force=True)
 
         if not self._stop_neo4j_container():
             print("Failed to stop container")
@@ -293,7 +294,6 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             return False
 
     def _remove_neo4j(self, remove_db_volume=False, neo4j_mode="db"):
-        import subprocess as _subprocess
         if not self.neo4j_container:
             return
 
