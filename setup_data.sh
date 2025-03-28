@@ -9,7 +9,7 @@ wget https://cloud.uni-hamburg.de/s/RiAtjZC3bb7bg7n/download/bioontology.zip -q 
 echo "Downloaded bioontology.zip"
 wget https://cloud.uni-hamburg.de/s/5meqDbTbgydo6Tj/download/drugbank.zip -q -O drugbank.zip
 echo "Downloaded drugbank.zip"
-wget https://cloud.uni-hamburg.de/s/HSWQY8jrWi2aRo7/download/disgenet.zip -q -O disgenet.zip
+wget https://cloud.uni-hamburg.de/s/CwfdZ5AHFcEckRF/download/disgenet.zip -q -O disgenet.zip
 echo "Downloaded disgenet.zip"
 wget https://cloud.uni-hamburg.de/s/PxWXAMY5bfS3ZcA/download/repotrial.zip -q -O repotrial.zip
 echo "Downloaded repotrial.zip"

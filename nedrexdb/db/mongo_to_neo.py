@@ -117,7 +117,7 @@ def mongo_to_neo(nedrex_instance, db):
 
     _subprocess.call([
         "docker", "exec", nedrex_instance.neo4j_container_name,
-        "chown", "-R", "neo4j:neo4j", "/data", "/import", "/logs", "/plugins", "/app"
+        "chown", "-R", "neo4j:neo4j", "/data", "/import", "/logs", "/var/lib/neo4j/plugins", "/app"
     ])
 
 
@@ -131,6 +131,7 @@ def mongo_to_neo(nedrex_instance, db):
         "database",
         "import",
         "full",
+        "neo4j",
         f"--array-delimiter={delimiter}",
         "--multiline-fields=true",
         "--overwrite-destination=true",
@@ -142,7 +143,7 @@ def mongo_to_neo(nedrex_instance, db):
         command += ["--nodes=/import/" + node + ".csv"]
     for edge in edges:
         command += ["--relationships=/import/" + edge + ".csv"]
-    command += ["neo4j"]
+    # command += ["--database=nedrex"]
 
     print(" ".join(command))
     _subprocess.call(command)

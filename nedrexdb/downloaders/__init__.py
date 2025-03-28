@@ -216,6 +216,7 @@ def update_versions(ignored_sources=set()):
 def get_versions(no_download):
     increment = False
     # no_download is either "true" or path to metadata config -> mconfig
+
     # so in this case no_download contains the path to the licensed_config
     if not no_download == "true":
         licensed_config = no_download
@@ -227,6 +228,7 @@ def get_versions(no_download):
         mconfig = _config
 
     version = "live"
+
     mongo_port = 27017
     mongo_host = mconfig["db"][version.lower()]["mongo_name"]
     db_name = mconfig["db"]["mongo_db"]

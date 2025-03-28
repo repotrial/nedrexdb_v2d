@@ -14,6 +14,7 @@ from nedrexdb.logger import logger
 version_cache = None
 
 def get_latest_chembl_version() -> str:
+
     global version_cache
     if not version_cache:
         # correct source urls to match latest version names
@@ -35,6 +36,7 @@ def download_chembl():
     version = get_latest_chembl_version()
 
     url = _config["sources.chembl.sqlite.url"].format(version)
+    logger.info(f"Downloading ChEMBL v{version} from {url}")
 
     zip_fname = url.rsplit("/", 1)[1]
     chembl_dir = _Path(_config.get("db.root_directory")) / _config.get("sources.directory") / "chembl"
@@ -44,7 +46,6 @@ def download_chembl():
     chembl_dir.mkdir(exist_ok=True, parents=True)
 
     with _cd(chembl_dir):
-        logger.debug("Downloading ChEMBL v%s" % version)
         _urlretrieve(url, zip_fname)
         _urlretrieve(unichem_url, unichem_name)
     return version

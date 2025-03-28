@@ -30,6 +30,11 @@ setup_db() {
         # set versions anyways when no download
         else
           build_args+=(--version_update true)
+
+        fi
+
+        if [[ "$CREATE_EMBEDDINGS" == "1" ]]; then
+          build_args+=(--create_embeddings)
         fi
         ./build.py "${build_args[@]}"
     fi
