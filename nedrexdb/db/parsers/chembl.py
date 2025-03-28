@@ -5,6 +5,7 @@ import subprocess as _sp
 from nedrexdb.db import MongoInstance
 from nedrexdb.db.parsers import _get_file_location_factory
 from nedrexdb.db.models.nodes.drug import Drug
+from nedrexdb.downloaders import get_latest_chembl_version
 
 get_file_location = _get_file_location_factory("chembl")
 
@@ -22,7 +23,8 @@ def get_chembl_drugbank_map():
 
 
 def decompress_if_necessary():
-    path = get_file_location("sqlite")
+    version = get_latest_chembl_version()
+    path = get_file_location("sqlite").format(version)
     target = path.parents[0] / path.name.rsplit(".", 2)[0]
     if target.exists():
         return target
