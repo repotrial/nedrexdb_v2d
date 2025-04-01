@@ -24,12 +24,14 @@ def get_chembl_drugbank_map():
 
 def decompress_if_necessary():
     version = get_latest_chembl_version()
-    path = get_file_location("sqlite").format(version)
-    target = path.parents[0] / path.name.rsplit(".", 2)[0]
+    url_path = get_file_location("sqlite")
+
+    target = url_path.parents[0] / url_path.name.rsplit(".", 2)[0].format(version)
     if target.exists():
         return target
 
     target.mkdir(parents=True)
+    path = url_path.parents[0] / url_path.name.format(version)
     _sp.call(
         ["tar", "-zxvf", f"{path}", "-C", f"{target.resolve()}", "--strip-components", "1"], cwd=f"{path.parents[0]}"
     )

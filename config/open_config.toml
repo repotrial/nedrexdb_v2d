@@ -112,7 +112,6 @@ neo4j_name = "open_nedrex_live_neo4j"
 network = "nedrexdb_default"
 container_name = "open_nedrex_live"
 express_container_name = "open_nedrex_live_express"
-
 [sources]
 directory = "downloads"
 default_version = "2.1.0"
@@ -127,12 +126,18 @@ version = "2022AB"
 [sources.bioontology.meddra_mappings]
 filename = "meddra.json"
 
+
+
 [sources.chembl]
+version_url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/"
+version_pattern = '''href="chembl_\d+_sqlite\.tar\.gz"'''
+
 [sources.chembl.sqlite]
-url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_34_sqlite.tar.gz"
+url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_{}_sqlite.tar.gz"
+
 
 [sources.chembl.unichem]
-url = "https://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id1/src1src2.txt.gz"
+url = "ftp://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id1/src1src2.txt.gz"
 
 [sources.clinvar]
 version_url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/"
@@ -214,11 +219,11 @@ url = "http://iid.ophid.utoronto.ca/static/download/human_annotated_PPIs.txt.gz"
 
 
 [sources.intact]
-version_url = "http://ftp.ebi.ac.uk/pub/databases/intact/current/psimitab/"
+version_url = "https://ftp.ebi.ac.uk/pub/databases/intact/current/psimitab/"
 version_pattern = '''>intact\.zip</a></td><td align="right">[\d-]+'''
 
 [sources.intact.psimitab]
-url = "http://ftp.ebi.ac.uk/pub/databases/intact/current/psimitab/intact.zip"
+url = "https://ftp.ebi.ac.uk/pub/databases/intact/current/psimitab/intact.zip"
 
 
 [sources.mondo]
@@ -264,7 +269,7 @@ version_pattern = '''>src2src22\.txt\.gz</a></td><td align="right">[\d-]+'''
 skip_digits = 3
 
 [sources.unichem.pubchem_drugbank_map]
-url = "http://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id2/src2src22.txt.gz"
+url = "ftp://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id2/src2src22.txt.gz"
 
 [sources.uberon]
 version = "2022-04-05"
