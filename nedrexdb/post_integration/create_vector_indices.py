@@ -214,7 +214,7 @@ def create_vector_index(con, entityType, name):
                }}""", params=props)
 
 
-def wait_for_database_ready(con, index_name='disorder_embeddings'):
+def wait_for_database_ready(con, index_name='disorderEmbeddings'):
     try:
         result = list(con.query("""
             SHOW INDEXES
