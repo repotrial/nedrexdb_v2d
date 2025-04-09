@@ -126,15 +126,12 @@ version = "2022AB"
 [sources.bioontology.meddra_mappings]
 filename = "meddra.json"
 
-
-
 [sources.chembl]
 version_url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/"
 version_pattern = '''href="chembl_\d+_sqlite\.tar\.gz"'''
 
 [sources.chembl.sqlite]
 url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_{}_sqlite.tar.gz"
-
 
 [sources.chembl.unichem]
 url = "ftp://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id1/src1src2.txt.gz"
