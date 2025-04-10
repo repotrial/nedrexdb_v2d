@@ -10,7 +10,9 @@ import toml
 import requests
 from pathlib import Path as _Path
 
+import nedrexdb
 from nedrexdb import config as _config
+from nedrexdb import mconfig as _mconfig
 from nedrexdb.common import Downloader
 from nedrexdb.db import MongoInstance
 from nedrexdb.db.parsers import unichem
@@ -214,27 +216,22 @@ def update_versions(ignored_sources=set()):
 def get_versions(no_download):
     increment = False
     # no_download is either "true" or path to metadata config -> mconfig
+
+    # so in this case no_download contains the path to the licensed_config
     if not no_download == "true":
-
         licensed_config = no_download
+        nedrexdb.parse_mconfig(licensed_config)
+        mconfig = _mconfig
 
-        with open(licensed_config) as f:
-            mconfig = toml.load(f)
-        version = "live"
-        for n in range(30):
-            print(no_download)
     else:
         increment = True
         mconfig = _config
-        version = "live"
+
+    version = "live"
 
     mongo_port = 27017
     mongo_host = mconfig["db"][version.lower()]["mongo_name"]
     db_name = mconfig["db"]["mongo_db"]
-
-    sources = list(mconfig["sources"].keys())
-    sources.remove("directory")
-    sources.remove("default_version")
 
     try:
         client = MongoClient(port=mongo_port, host=mongo_host)

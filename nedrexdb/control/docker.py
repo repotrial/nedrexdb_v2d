@@ -246,9 +246,10 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         """
         if not self._stop_neo4j_process():
             print("Failed to gracefully stop Neo4j process")
-
-        if not self._stop_neo4j_container():
-            print("Failed to stop container")
+            # try:
+            #     self.neo4j_container.remove()
+            # except Exception:
+            #     pass
 
         return self._remove_neo4_container()
 
@@ -293,7 +294,6 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             return False
 
     def _remove_neo4j(self, remove_db_volume=False, neo4j_mode="db"):
-        import subprocess as _subprocess
         if not self.neo4j_container:
             return
 
@@ -348,10 +348,10 @@ class _NeDRexBaseInstance(_NeDRexInstance):
 
     def set_up(self, use_existing_volume=True, neo4j_mode="db"):
         print("Setting up Live NeDRex instance...")
+        self._set_up_neo4j(use_existing_volume=use_existing_volume, neo4j_mode=neo4j_mode)
         if neo4j_mode != "db-write":
             self._set_up_mongo(use_existing_volume=use_existing_volume)
             self._set_up_express()
-        self._set_up_neo4j(use_existing_volume=use_existing_volume, neo4j_mode=neo4j_mode)
 
     def remove(self, remove_db_volume=False, remove_configdb_volume=True, neo4j_mode="db"):
         self._remove_mongo(

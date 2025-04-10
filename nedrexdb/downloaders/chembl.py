@@ -11,26 +11,31 @@ from nedrexdb.exceptions import (
 )
 from nedrexdb.logger import logger
 
+version_cache = None
 
 def get_latest_chembl_version() -> str:
-    logger.info("Identifying latest ChEMBL version")
-    # correct source urls to match latest version names
-    url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/"
-    response = requests.get(url)
-    if response.status_code != 200:
-        raise _ProcessError("got non-zero status code while scraping ChEMBL to get latest version")
-    pattern = r'href="chembl_\d+_sqlite\.tar\.gz"'
-    result = _re.findall(pattern, response.text)
-    text = str(result[0])
-    version = text.split("_")[1]
+
+    global version_cache
+    if not version_cache:
+        # correct source urls to match latest version names
+        url = _config["sources.chembl.version_url"]
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise _ProcessError("got non-zero status code while scraping ChEMBL to get latest version")
+        pattern = _config["sources.chembl.version_pattern"]
+        result = _re.findall(pattern, response.text)
+        text = str(result[0])
+        version = text.split("_")[1]
+        version_cache = version
+    else:
+        version = version_cache
     return version
 
 
 def download_chembl():
     version = get_latest_chembl_version()
 
-    url = f"https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_{version}_sqlite.tar.gz"
-
+    url = _config["sources.chembl.sqlite.url"].format(version)
     logger.info(f"Downloading ChEMBL v{version} from {url}")
 
     zip_fname = url.rsplit("/", 1)[1]

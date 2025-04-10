@@ -36,6 +36,7 @@ from nedrexdb.downloaders import get_versions, update_versions
 from nedrexdb.post_integration import (trim_uberon, drop_empty_collections,create_vector_indices)
 
 
+
 @click.group()
 def cli():
     pass

@@ -48,6 +48,8 @@ def iter_records(fname):
             if line.strip() == "//":
                 yield _StringIO(text)
                 text = ""
+        #for line in f:
+        #    yield _StringIO(line.strip())
 
 
 @dataclass
