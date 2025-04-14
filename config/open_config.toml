@@ -1,6 +1,6 @@
 version_type = "open"
-static_outside = "/home/adrian/Projects/NeDRex/parallel_work/nedrexdb_v2d_fork/nedrex_files/nedrex_api/static"
-data_outside = "/home/adrian/Projects/NeDRex/parallel_work/nedrexdb_v2d_fork/nedrex_files/nedrex_api/data"
+static_outside = "../nedrex_files/nedrex_api/static" # your path
+data_outside = "../nedrex_files/nedrex_api/data" # your path
 
 #[embeddings]
 #server_base="https://llm.cosy.bio/v1"
@@ -14,7 +14,7 @@ server_base="https://llm.cosy.bio"
 model="phi4:latest"
 
 [db]
-neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:dev"
+neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:prod"
 mongo_image = "mongo:5.0.27"
 mongo_express_image = "mongo-express:0.54.0"
 mongo_db = "nedrex"
