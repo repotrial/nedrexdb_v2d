@@ -82,7 +82,7 @@ class _Config:
                                                 'user': 'None',
                                                 'pass': 'none'},
                                  'db': {'version': f'{vt}',
-                                        'neo4j_image': "ghcr.io/repotrial/nedrexdb_v2d-neo4j:dev",
+                                        'neo4j_image': "ghcr.io/repotrial/nedrexdb_v2d-neo4j:prod",
                                         'mongo_image': 'mongo:4.4.10',
                                         'mongo_express_image': 'mongo-express:0.54.0',
                                         'mongo_db': 'nedrex',

@@ -246,8 +246,8 @@ EDGE_EMBEDDING_CONFIG = {
 }
 
 # only building embeddings for dev nodes and edges, except they are None.
-dev_nodes = []
-dev_edges = []
+dev_nodes = None
+dev_edges = None
 
 def create_vector_indices():
     neo4j_container = _config["db.dev.neo4j_name"]
