@@ -1,84 +1,20 @@
-[api]
-mode="open"
-status="live"
-port=7123
-host="127.0.0.1"
-base="/open"
+version_type = "open"
+static_outside = "../nedrex_files/nedrex_api/static" # your path
+data_outside = "../nedrex_files/nedrex_api/data" # your path
 
-rate_limiting_enabled = false
-rate_limit = "1/second"
-require_api_keys = false
-pagination_max = 10000
+#[embeddings]
+#server_base="https://llm.cosy.bio/v1"
+#model="snowflake-arctic-embed2:latest"
+#path="embeddings"
+#user="None"
+#pass="none"
 
-redis_port = 5379
-redis_port_internal = 6379
-redis_host="open-nedrex-redis"
-redis_nedrex_db = 1
-redis_rate_limit_db = 2
-redis_queue_db = 3
-
-mongo_port=26018
-mongo_port_internal=27017
-mongo_db = "nedrexapi"
-network = "nedrexdb_default"
-
-node_collections = [
-    "disorder",
-    "drug",
-    "gene",
-    "genomic_variant",
-    "go",
-    "pathway",
-    "protein",
-    "phenotype",
-    "tissue",
-    "side_effect",
-    "signature",
-    ]
-
-edge_collections = [
-    "disorder_has_phenotype",
-    "disorder_is_subtype_of_disorder",
-    "drug_has_contraindication",
-    "drug_has_indication",
-    "drug_has_target",
-    "drug_has_side_effect",
-    "gene_associated_with_disorder",
-    "go_is_subtype_of_go",
-    "molecule_similarity_molecule",
-    "protein_encoded_by_gene",
-    "protein_has_go_annotation",
-    "protein_has_signature",
-    "protein_in_pathway",
-    "protein_interacts_with_protein",
-    "protein_expressed_in_tissue",
-    "gene_expressed_in_tissue",
-    "side_effect_same_as_phenotype",
-    "variant_affects_gene",
-    "variant_associated_with_disorder",
-]
-
-[api.directories]
-static = "/data/nedrex_files/nedrex_api/static"
-static_outside = "/srv/projects/nedrex/nedrex_files/nedrex_api/static"
-data = "/data/nedrex_files/nedrex_api/data"
-data_outside = "/srv/projects/nedrex/nedrex_files/nedrex_api/data"
-scripts = "/app/nedrexapi/scripts"
-
-[tools]
-bicon_python = "/opt/conda/envs/bicon/bin/python"
-
-[embeddings]
-server_base="https://llm.cosy.bio/v1"
-model="snowflake-arctic-embed2:latest"
-path="embeddings"
-user="None"
-pass="none"
-
+[chat]
+server_base="https://llm.cosy.bio"
+model="phi4:latest"
 
 [db]
-version = "open"
-neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:dev"
+neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:prod"
 mongo_image = "mongo:5.0.27"
 mongo_express_image = "mongo-express:0.54.0"
 mongo_db = "nedrex"
@@ -112,6 +48,7 @@ neo4j_name = "open_nedrex_live_neo4j"
 network = "nedrexdb_default"
 container_name = "open_nedrex_live"
 express_container_name = "open_nedrex_live_express"
+
 [sources]
 directory = "downloads"
 default_version = "2.1.0"
