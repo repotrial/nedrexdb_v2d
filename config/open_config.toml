@@ -2,16 +2,15 @@ version_type = "open"
 static_outside = "../nedrex_files/nedrex_api/static" # your path
 data_outside = "../nedrex_files/nedrex_api/data" # your path
 
-#[embeddings]
-#server_base="https://llm.cosy.bio/v1"
-#model="snowflake-arctic-embed2:latest"
-#path="embeddings"
-#user="None"
-#pass="none"
+[embeddings]
+server_base="https://dev.llm.cosy.bio/v1"
+model="snowflake-arctic-embed2:latest"
+path="embeddings"
+api_key=""
 
 [chat]
-server_base="https://llm.cosy.bio"
-model="phi4:latest"
+server_base="https://dev.llm.cosy.bio/v1"
+model="gemma3:latest"
 
 [db]
 neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:prod"

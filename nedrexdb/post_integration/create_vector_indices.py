@@ -1,4 +1,4 @@
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j import Neo4jGraph
 from nedrexdb import config as _config
 import time
 
@@ -336,8 +336,8 @@ def fill_vector_index(con, entityType, name):
     try:
         start = time.time()
         create_vector_index(con, entityType, name)
-        from nedrexdb.llm import (_LLM_BASE, _LLM_path, _LLM_model)
-        params = {"llm_base": _LLM_BASE, "llm_path": _LLM_path, "llm_model": _LLM_model}
+        from nedrexdb.llm import (_LLM_API_KEY, _LLM_BASE, _LLM_path, _LLM_model)
+        params = {"api_key": _LLM_API_KEY, "llm_base": _LLM_BASE, "llm_path": _LLM_path, "llm_model": _LLM_model}
         if entityType == "NODE":
             info_string = get_node_info_string(name)
             query = create_node_vector_query(info_string, name)
@@ -363,7 +363,7 @@ WITH i, allNodes[i..i+1000] as batchNodes
 WHERE size(batchNodes) > 0
 CALL apoc.ml.openai.embedding(
     [x in batchNodes | """+node_info_string+"""], 
-    "no_key", 
+    $api_key, 
     {
         endpoint: $llm_base,
         path: $llm_path,
@@ -386,7 +386,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name):
     CALL apoc.ml.openai.embedding(
         [entry in batchEntries | """ + edge_info_string + """
         ], 
-        "no_key", 
+        "$api_key", 
         {
             endpoint: $llm_base,
             path: $llm_path,
@@ -401,7 +401,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name):
 
 
 def create_vector_index(con, entityType, name):
-    props = {"name":name, "index_name":f"{name.lower()}Embeddings"}
+    props = {"index_name":f"{name.lower()}Embeddings"}
     if entityType == "NODE":
         con.query("""CREATE VECTOR INDEX $index_name IF NOT EXISTS
         FOR (d: """+name+""") ON (d.embedding) 
