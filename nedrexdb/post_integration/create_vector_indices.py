@@ -269,31 +269,31 @@ def create_vector_indices():
                 return
             time.sleep(5)
 
+    index_names = []
+
     # Only building embeddings for specified nodes
     if dev_nodes:
         for node in dev_nodes:
             if node in NODE_EMBEDDING_CONFIG.keys():
                 fill_vector_index(kg, "NODE", node)
+                index_names.append(f"{node.lower()}Embeddings")
     else:
         for node in NODE_EMBEDDING_CONFIG.keys():
             fill_vector_index(kg, "NODE", node)
+            index_names.append(f"{node.lower()}Embeddings")
 
     # Only building embeddings for specified edges
     if dev_edges:
         for edge in dev_edges:
             if edge in EDGE_EMBEDDING_CONFIG.keys():
                 fill_vector_index(kg, "RELATIONSHIP", edge)
+                index_names.append(f"{edge.lower()}Embeddings")
     else:
         for edge in EDGE_EMBEDDING_CONFIG.keys():
             fill_vector_index(kg, "RELATIONSHIP", edge)
+            index_names.append(f"{edge.lower()}Embeddings")
 
-    if wait_for_database_ready(kg, ['drugEmbeddings',
-                                    "drughasindicationEmbeddings",
-                                    "disorderEmbeddings",
-                                    "drughastargetEmbeddings",
-                                    "geneEmbeddings",
-                                    "geneassociatedwithdisorderEmbeddings",
-                                    "proteinEmbeddings"]):
+    if wait_for_database_ready(kg, index_names):
         print("Ready to switch to read-only mode")
     else:
         print("Something went wrong with the index build")
