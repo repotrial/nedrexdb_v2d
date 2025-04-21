@@ -65,7 +65,7 @@ NODE_EMBEDDING_CONFIG = {
         "domainIds": {"prefix": "Other used IDs: ", "suffix": "", "type": "list"},
         "dataSources": {"prefix": "Data Sources: ", "suffix": "", "type": "list"},
     },
-    "SideEffect:": {
+    "SideEffect": {
         "displayName": {"prefix": "DisplayName: ", "suffix": "", "type": "string"},
         "domainIds": {"prefix": "Other used IDs: ", "suffix": "", "type": "list"},
         "dataSources": {"prefix": "Data Sources: ", "suffix": "", "type": "list"},
