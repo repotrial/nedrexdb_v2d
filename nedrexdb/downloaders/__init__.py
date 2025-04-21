@@ -133,7 +133,7 @@ def validate_download(file, source):
         return unichem.validate_file(file)
     return True
 
-def update_versions(ignored_sources=set()):
+def update_versions(ignored_sources=set(), default_version=None):
     sources = _config["sources"]
     # Remove the source keys (in filter)
     exclude_keys = {"directory", "username", "password", "default_version", "version",
@@ -184,7 +184,9 @@ def update_versions(ignored_sources=set()):
     if len(docs) == 1:
         version = docs[0]["version"]
     elif len(docs) == 0:
-        version = sources["default_version"]
+        if default_version is None:
+            default_version = sources["default_version"]
+        version = default_version
     else:
         raise Exception("should only be one document in the metadata collection")
 
@@ -194,6 +196,8 @@ def update_versions(ignored_sources=set()):
     metadata["version"] = f"{v}"
 
     MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
+
+    return metadata["version"]
 
     # metadata debugging file. Use to check metadata if DB does not work as intended.
     #with open("./metadata.txt", "w") as f:
