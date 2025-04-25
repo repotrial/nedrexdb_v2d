@@ -170,15 +170,15 @@ EDGE_EMBEDDING_CONFIG = {
             "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
         }
     },
-    "ProteinExpressedInTissue": {
-        "source": "Protein",
-        "link_term": "is expressed by",
-        "target": "Tissue",
+    # "ProteinExpressedInTissue": {
+    #     "source": "Protein",
+    #     "link_term": "is expressed by",
+    #     "target": "Tissue",
         # "attributes": {
         #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
             # "level": {"prefix": "Expression level: ", "suffix": "", "type": "string"},
         # }
-    },
+    # },
     "ProteinHasGoAnnotation": {
         "source": "Protein",
         "link_term": "has GO annotation",
@@ -196,14 +196,14 @@ EDGE_EMBEDDING_CONFIG = {
             "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
         }
     },
-    "ProteinInPathway": {
-        "source": "Protein",
-        "link_term": "is in the pathway",
-        "target": "Pathway",
+    # "ProteinInPathway": {
+    #     "source": "Protein",
+    #     "link_term": "is in the pathway",
+    #     "target": "Pathway",
         # "attributes": {
         #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
         # }
-    },
+    # },
     "ProteinInteractsWithProtein": {
         "source": "Protein",
         "link_term": "interacts with",
