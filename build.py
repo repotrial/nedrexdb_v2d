@@ -2,6 +2,7 @@
 
 import click
 import os
+import subprocess
 
 import nedrexdb
 from nedrexdb import config, downloaders
@@ -62,6 +63,17 @@ def update(conf, download, version_update, create_embeddings):
 
     version_update_skip = set()
 
+# check for metadata of the current live version before fetching new data
+    if download:
+        MongoInstance.connect("live")
+        prev_metadata = list(MongoInstance.DB["metadata"].find())
+        prev_metadata = {} if prev_metadata is None else prev_metadata[0]["source_databases"]
+        # log printing
+        print("PREVIOUS METADATA")
+        for source in prev_metadata:
+            print(f"{source}:\t{prev_metadata[source]['version']}"
+                  f" [{prev_metadata[source]['date']}]")
+
     dev_instance = NeDRexDevInstance()
     dev_instance.remove()
     dev_instance.set_up(use_existing_volume=False, neo4j_mode="import")
@@ -69,10 +81,12 @@ def update(conf, download, version_update, create_embeddings):
     MongoInstance.set_indexes()
 
     if os.environ.get("TEST_MINIMUM", 0) == '1':
-        parse_dev(version=version, download=download, version_update=version_update)
+        parse_dev(version=version, download=download, version_update=version_update, prev_metadata=prev_metadata)
     else:
         if download:
-            downloaders.download_all()
+            print("Download: ON")
+            subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
+            downloaders.download_all(prev_metadata=prev_metadata)
 
         # Parse sources contributing only nodes (and edges amongst those nodes)
         go.parse_go()
@@ -165,7 +179,7 @@ def update(conf, download, version_update, create_embeddings):
     live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
 
-def parse_dev(version, download, version_update):
+def parse_dev(version, download, version_update, prev_metadata):
     # control source downloads
     ignored_sources = {"chembl",
                        "biogrid",
@@ -185,7 +199,9 @@ def parse_dev(version, download, version_update):
                        "omim",
                        "sider"}
     if download:
-        downloaders.download_all(ignored_sources=ignored_sources)
+        print("Download: ON")
+        subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
+        downloaders.download_all(ignored_sources=ignored_sources, prev_metadata=prev_metadata)
 
     mondo.parse_mondo_json()
     ncbi.parse_gene_info()

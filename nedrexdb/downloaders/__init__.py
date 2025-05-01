@@ -60,7 +60,7 @@ def update_version(name, source_url, unique_pattern, mode="date", skip_digits=0)
     print(f"{name}: date: {date}, version: {version}")
     return {"date": f"{date}", "version": version}
 
-def download_all(force=False, ignored_sources=set()):
+def download_all(force=False, ignored_sources=set(), prev_metadata={}):
     base = _Path(_config["db.root_directory"])
     download_dir = base / _config["sources.directory"]
 
@@ -77,9 +77,15 @@ def download_all(force=False, ignored_sources=set()):
     print(f"ignore sources for download: {ignored_sources}")
 
     if "chembl" not in ignored_sources:
-        _download_chembl()
+        if "chembl" not in prev_metadata or get_latest_chembl_version() != prev_metadata["chembl"]["version"]:
+            _download_chembl()
+        else:
+            print("chembl is already up-to-date")
     if "biogrid" not in ignored_sources:
-        _download_biogrid()
+        if "biogrid" not in prev_metadata or get_latest_biogrid_version() != prev_metadata["biogrid"]["version"]:
+            _download_biogrid()
+        else:
+            print("biogrid is already up-to-date")
 
     for source in filter(lambda i: i not in exclude_keys, sources):
 
@@ -97,36 +103,55 @@ def download_all(force=False, ignored_sources=set()):
         }:
             continue
 
-        (download_dir / source).mkdir(exist_ok=True)
+        meta = sources[source]
+        if "version_url" in meta.keys():
+            version_url = meta["version_url"]
+            version_pattern = rf"{meta['version_pattern']}"
+            skip_digits = meta["skip_digits"] if "skip_digits" in meta.keys() else 0
+            version_mode = meta["version_mode"] if "version_mode" in meta.keys() else "date"
+            latest_version = update_version(name=source,
+                                     source_url=version_url,
+                                     unique_pattern=version_pattern,
+                                     mode=version_mode,
+                                     skip_digits=skip_digits)
+        else:
+            date = _datetime.datetime.now().date()
+            latest_version = meta["version"] if "version" in meta.keys() else f"{date}"
 
-        data = sources[source]
-        username = data.get("username")
-        password = data.get("password")
+        # only download if necessary (by checking previous metadata)
+        if source not in prev_metadata or latest_version["version"] != prev_metadata[source]["version"]:
+            (download_dir / source).mkdir(exist_ok=True)
 
-        for _, download in filter(lambda i: i[0] not in exclude_keys, data.items()):
-            url = download.get("url")
-            filename = download.get("filename")
-            if url is None:
-                continue
-            if filename is None:
-                filename = url.rsplit("/", 1)[1]
+            data = sources[source]
+            username = data.get("username")
+            password = data.get("password")
 
-            d = Downloader(
-                url=url,
-                target=download_dir / source / filename,
-                username=username,
-                password=password,
-            )
-            validated = False
-            retries = 3
-            timeout = 30
-            while not validated and retries > 0:
-                d.download()
-                validated = validate_download(download_dir / source / filename, source)
-                if not validated:
-                    logging.error(f"failed to verify download of {filename} for {source}! Retrying in {timeout} seconds.")
-                    retries -= 1
-                    time.sleep(timeout)
+            for _, download in filter(lambda i: i[0] not in exclude_keys, data.items()):
+                url = download.get("url")
+                filename = download.get("filename")
+                if url is None:
+                    continue
+                if filename is None:
+                    filename = url.rsplit("/", 1)[1]
+
+                d = Downloader(
+                    url=url,
+                    target=download_dir / source / filename,
+                    username=username,
+                    password=password,
+                )
+                validated = False
+                retries = 3
+                timeout = 30
+                while not validated and retries > 0:
+                    d.download()
+                    validated = validate_download(download_dir / source / filename, source)
+                    if not validated:
+                        logging.error(f"failed to verify download of {filename} for {source}! Retrying in {timeout} seconds.")
+                        retries -= 1
+                        time.sleep(timeout)
+        else:
+            print(f"{source} is already up-to-date")
 
 def validate_download(file, source):
     if source == "unichem":

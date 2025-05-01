@@ -50,7 +50,7 @@ setup_db() {
 }
 
 
-[[ "$DOWNLOAD_ON_STARTUP" == "1" ]] && echo "Download: ON" && ./setup_data.sh /data/nedrex_files
+# [[ "$DOWNLOAD_ON_STARTUP" == "1" ]] && echo "Download: ON" && ./setup_data.sh /data/nedrex_files
 
 # Setup licensed DB if not skipped
 [[ "$SKIP_LICENSED" != "1" ]] &&  setup_db licensed
