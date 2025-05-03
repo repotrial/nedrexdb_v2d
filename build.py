@@ -63,7 +63,7 @@ def update(conf, download, version_update, create_embeddings):
 
     version_update_skip = set()
     prev_metadata = {}
-    
+
 # check for metadata of the current live version before fetching new data
     if download:
         MongoInstance.connect("live")
@@ -85,9 +85,24 @@ def update(conf, download, version_update, create_embeddings):
         parse_dev(version=version, download=download, version_update=version_update, prev_metadata=prev_metadata)
     else:
         if download:
+            # update metadata
+            # fallback version is rarely needed. Do not change that file, only use the config!
+            default_version = None
+            if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
+                with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
+                    default_version = fallback_file.readline().rstrip()
+            nedrex_versions = update_versions(version_update_skip, default_version=default_version)
+            with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
+                fallback_file.write(f"{nedrex_versions['version']}")
+
+            # do the download
             print("Download: ON")
+            current_metadata = nedrex_versions["source_databases"]
             subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
-            downloaders.download_all(prev_metadata=prev_metadata)
+            downloaders.download_all(prev_metadata=prev_metadata, current_metadata=current_metadata)
+
+        if version_update:
+            get_versions(version_update)
 
         # Parse sources contributing only nodes (and edges amongst those nodes)
         go.parse_go()
@@ -135,17 +150,6 @@ def update(conf, download, version_update, create_embeddings):
 
         # Post-processing
         trim_uberon.trim_uberon()
-        if download:
-            # fallback version is rarely needed. Do not change that file, only use the config!
-            default_version = None
-            if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
-                with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
-                    default_version = fallback_file.readline().rstrip()
-            nedrex_version = update_versions(version_update_skip, default_version=default_version)
-            with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
-                fallback_file.write(f"{nedrex_version}")
-        if version_update:
-            get_versions(version_update)
 
 
 
@@ -200,9 +204,26 @@ def parse_dev(version, download, version_update, prev_metadata):
                        "omim",
                        "sider"}
     if download:
+        # fallback version is rarely needed. Do not change that file, only use the config!
+        default_version = None
+        if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
+            with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
+                default_version = fallback_file.readline().rstrip()
+        nedrex_versions = update_versions(ignored_sources=ignored_sources, default_version=default_version)
+        with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
+            fallback_file.write(f"{nedrex_versions['version']}")
+
+        # do the download
         print("Download: ON")
+        current_metadata = nedrex_versions["source_databases"]
         subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
-        downloaders.download_all(ignored_sources=ignored_sources, prev_metadata=prev_metadata)
+        downloaders.download_all(ignored_sources=ignored_sources,
+                                 prev_metadata=prev_metadata,
+                                 current_metadata=current_metadata)
+
+    if version_update:
+        get_versions(version_update)
+
 
     mondo.parse_mondo_json()
     ncbi.parse_gene_info()
@@ -213,17 +234,7 @@ def parse_dev(version, download, version_update, prev_metadata):
     ctd.parse()
     disgenet.parse_gene_disease_associations()
 
-    if download:
-        # fallback version is rarely needed. Do not change that file, only use the config!
-        default_version = None
-        if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
-            with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
-                default_version = fallback_file.readline().rstrip()
-        nedrex_version = update_versions(ignored_sources=ignored_sources, default_version=default_version)
-        with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
-            fallback_file.write(f"{nedrex_version}")
-    if version_update:
-        get_versions(version_update)
+
 
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @cli.command()
