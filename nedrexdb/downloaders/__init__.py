@@ -5,7 +5,9 @@ import re as _re
 import ast
 import time
 from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 import toml
+
 
 import requests
 from pathlib import Path as _Path
@@ -282,4 +284,16 @@ def get_versions(no_download):
         if source not in _config["sources"]:
             del metadata["source_databases"][source]
 
-    MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
+
+    max_retries = 5
+    retry_delay = 1  # seconds
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
+            break  # Success, exit the loop
+        except PyMongoError as e:
+            print(f"Attempt {attempt} failed: {e}")
+            if attempt == max_retries:
+                raise  # Re-raise the exception after final attempt
+            time.sleep(retry_delay)

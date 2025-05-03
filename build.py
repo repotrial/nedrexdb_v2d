@@ -62,7 +62,8 @@ def update(conf, download, version_update, create_embeddings):
         raise Exception(f"invalid version {version!r}")
 
     version_update_skip = set()
-
+    prev_metadata = {}
+    
 # check for metadata of the current live version before fetching new data
     if download:
         MongoInstance.connect("live")
