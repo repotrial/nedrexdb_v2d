@@ -150,6 +150,19 @@ def update(conf, download, version_update, create_embeddings):
 
         # Post-processing
         trim_uberon.trim_uberon()
+        
+        #if download:
+            # fallback version is rarely needed. Do not change that file, only use the config!
+         #   default_version = None
+         #   if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
+         #       with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
+         #           default_version = fallback_file.readline().rstrip()
+         #   nedrex_version = update_versions(version_update_skip, default_version=default_version)
+         #   with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
+         #       fallback_file.write(f"{nedrex_version}")
+        #if version_update:
+         #   get_versions(version_update)
+
 
 
 
@@ -234,6 +247,18 @@ def parse_dev(version, download, version_update, prev_metadata):
     ctd.parse()
     disgenet.parse_gene_disease_associations()
 
+
+#    if download:
+#        # fallback version is rarely needed. Do not change that file, only use the config!
+#        default_version = None
+#        if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
+#            with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
+#                default_version = fallback_file.readline().rstrip()
+#        nedrex_version = update_versions(ignored_sources=ignored_sources, default_version=default_version)
+#        with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
+#            fallback_file.write(f"{nedrex_version}")
+#    if version_update:
+#        get_versions(version_update)
 
 
 @click.option("--conf", required=True, type=click.Path(exists=True))

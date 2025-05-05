@@ -79,7 +79,7 @@ class _Config:
                                  'embeddings': {'server_base': "",
                                                 'model': "snowflake-arctic-embed2:latest",
                                                 'path': "embeddings",
-                                                'api-key': None},
+                                                'api_key': None},
                                  'db': {'version': f'{vt}',
                                         'neo4j_image': "ghcr.io/repotrial/nedrexdb_v2d-neo4j:prod",
                                         'mongo_image': 'mongo:4.4.10',

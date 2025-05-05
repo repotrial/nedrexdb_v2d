@@ -213,7 +213,27 @@ def update_versions(ignored_sources=set(), default_version=None):
 
     MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
 
+
     return metadata
+
+    # metadata debugging file. Use to check metadata if DB does not work as intended.
+    #with open("./metadata.txt", "w") as f:
+    #    f.write(f"Last Download: {_datetime.datetime.now().date()}\n\n")
+    #    f.write("Current metadata: \n")
+    #    f.write(f"version:\t{metadata['version']}\n")
+    #    f.write("source_databases:\n")
+    #    for key in metadata["source_databases"].keys():
+    #        f.write(f"V\t{key}:\t{metadata['source_databases'][key]}\n")
+    # can be parsed with this code:
+    #metadata = {"source_databases": {}}
+    #with open("./metadata.txt") as f:
+    #    for line in f:
+    #        if line.startswith("V"):
+    #            sd_split = line.rstrip().split("\t")
+    #            metadata["source_databases"][sd_split[1][:-1]] = ast.literal_eval(sd_split[2])
+    #        elif line.startswith("version"):
+    #            metadata["version"] = line.rstrip().split("\t")[1]
+
 
 def get_versions(no_download):
     increment = False
