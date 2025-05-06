@@ -188,14 +188,14 @@ EDGE_EMBEDDING_CONFIG = {
         #     "qualifiers": {"prefix": "Qualifiers: ", "suffix": "", "type": "list"},
         # }
     },
-    "ProteinHasSignature": {
-        "source": "Protein",
-        "link_term": "has signature",
-        "target": "Signature",
-        "attributes": {
-            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        }
-    },
+    # "ProteinHasSignature": {
+    #     "source": "Protein",
+    #     "link_term": "has signature",
+    #     "target": "Signature",
+    #     "attributes": {
+    #         "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    #     }
+    # },
     # "ProteinInPathway": {
     #     "source": "Protein",
     #     "link_term": "is in the pathway",
