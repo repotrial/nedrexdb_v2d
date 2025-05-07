@@ -208,21 +208,21 @@ EDGE_EMBEDDING_CONFIG = {
         "source": "Protein",
         "link_term": "interacts with",
         "target": "Protein",
-        "attributes": {
-            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-            "evidenceTypes": {"prefix": "Evidence Type: ", "suffix": "", "type": "list"},
-            "methods": {"prefix": "Method/Approach: ", "suffix": "", "type": "list"},
-            "subcellularLocations": {"prefix": "Subcellular Locations: ", "suffix": "", "type": "list"},
-            "tissues": {"prefix": "Tissues: ", "suffix": "", "type": "list"},
-        }
+        # "attributes": {
+        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+        #     "evidenceTypes": {"prefix": "Evidence Type: ", "suffix": "", "type": "list"},
+        #     "methods": {"prefix": "Method/Approach: ", "suffix": "", "type": "list"},
+        #     "subcellularLocations": {"prefix": "Subcellular Locations: ", "suffix": "", "type": "list"},
+        #     "tissues": {"prefix": "Tissues: ", "suffix": "", "type": "list"},
+        # }
     },
     "SideEffectSameAsPhenotype": {
         "source": "SideEffect",
         "link_term": "is the same as",
         "target": "Phenotype",
-        "attributes": {
-            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        }
+        # "attributes": {
+        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+        # }
     },
     "VariantEffectsGene": {
         "source": "GenomicVariant",
@@ -236,12 +236,12 @@ EDGE_EMBEDDING_CONFIG = {
         "source": "GenomicVariant",
         "link_term": "is associated with",
         "target": "Disorder",
-        "attributes": {
-            # "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-            "effects": {"prefix": "Effects: ", "suffix": "", "type": "list"},
-            # "accession": {"prefix": "Accession: ", "suffix": "", "type": "string"},
-            "reviewStatus": {"prefix": "Review Status: ", "suffix": "", "type": "string"}
-        }
+        # "attributes": {
+        #     # "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+        #     "effects": {"prefix": "Effects: ", "suffix": "", "type": "list"},
+        #     # "accession": {"prefix": "Accession: ", "suffix": "", "type": "string"},
+        #     "reviewStatus": {"prefix": "Review Status: ", "suffix": "", "type": "string"}
+        # }
     },
 }
 
