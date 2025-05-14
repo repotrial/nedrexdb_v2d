@@ -204,10 +204,10 @@ EDGE_EMBEDDING_CONFIG = {
         #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
         # }
     # },
-    "ProteinInteractsWithProtein": {
-        "source": "Protein",
-        "link_term": "interacts with",
-        "target": "Protein",
+    # "ProteinInteractsWithProtein": {
+    #     "source": "Protein",
+    #     "link_term": "interacts with",
+    #     "target": "Protein",
         # "attributes": {
         #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
         #     "evidenceTypes": {"prefix": "Evidence Type: ", "suffix": "", "type": "list"},
@@ -215,7 +215,7 @@ EDGE_EMBEDDING_CONFIG = {
         #     "subcellularLocations": {"prefix": "Subcellular Locations: ", "suffix": "", "type": "list"},
         #     "tissues": {"prefix": "Tissues: ", "suffix": "", "type": "list"},
         # }
-    },
+    # },
     "SideEffectSameAsPhenotype": {
         "source": "SideEffect",
         "link_term": "is the same as",
@@ -224,14 +224,14 @@ EDGE_EMBEDDING_CONFIG = {
         #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
         # }
     },
-    "VariantEffectsGene": {
-        "source": "GenomicVariant",
-        "link_term": "effects",
-        "target": "Gene",
+    # "VariantAffectsGene": {
+    #     "source": "GenomicVariant",
+    #     "link_term": "effects",
+    #     "target": "Gene",
         # "attributes": {
         #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
         # }
-    },
+    # },
     "VariantAssociatedWithDisorder": {
         "source": "GenomicVariant",
         "link_term": "is associated with",
