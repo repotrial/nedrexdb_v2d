@@ -240,6 +240,8 @@ def parse_dev(version, download, version_update, prev_metadata):
                            and key not in ignored_sources]
         if static_download:
             subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
+        else:
+            print("Static sources are already up-to-date")
         downloaders.download_all(ignored_sources=ignored_sources,
                                  no_download_meta=no_download)
 
