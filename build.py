@@ -95,11 +95,16 @@ def update(conf, download, version_update, create_embeddings):
             with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
                 fallback_file.write(f"{nedrex_versions['version']}")
 
-            # do the download
             print("Download: ON")
             current_metadata = nedrex_versions["source_databases"]
-            subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
-            downloaders.download_all(prev_metadata=prev_metadata, current_metadata=current_metadata)
+            # already up-to-date data
+            no_download = [key for key in prev_metadata if key in current_metadata and
+                           prev_metadata[key] == current_metadata[key]]
+            static_download = [key for key in ["bioontology", "drugbank", "disgenet", "repotrial"] if
+                               key not in no_download]
+            if static_download:
+                subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
+            downloaders.download_all(no_download_meta=no_download)
 
         if version_update:
             get_versions(version_update)
@@ -226,13 +231,17 @@ def parse_dev(version, download, version_update, prev_metadata):
         with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
             fallback_file.write(f"{nedrex_versions['version']}")
 
-        # do the download
         print("Download: ON")
         current_metadata = nedrex_versions["source_databases"]
-        subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
+        # already up-to-date data
+        no_download = [key for key in prev_metadata if key in current_metadata and
+                       prev_metadata[key] == current_metadata[key]]
+        static_download = [key for key in ["bioontology", "drugbank", "disgenet", "repotrial"] if key not in no_download
+                           and key not in ignored_sources]
+        if static_download:
+            subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
         downloaders.download_all(ignored_sources=ignored_sources,
-                                 prev_metadata=prev_metadata,
-                                 current_metadata=current_metadata)
+                                 no_download_meta=no_download)
 
     if version_update:
         get_versions(version_update)
