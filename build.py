@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import time
 
 import click
 import os
@@ -6,7 +7,7 @@ import subprocess
 
 import nedrexdb
 from nedrexdb import config, downloaders
-from nedrexdb.control.docker import NeDRexDevInstance, NeDRexLiveInstance
+from nedrexdb.control.docker import NeDRexDevInstance, NeDRexLiveInstance, update_neo4j_image_version
 from nedrexdb.db import MongoInstance, mongo_to_neo, collection_stats
 from nedrexdb.db.parsers import (
     biogrid,
@@ -63,6 +64,8 @@ def update(conf, download, version_update, create_embeddings):
 
     version_update_skip = set()
     prev_metadata = {}
+
+    update_neo4j_image_version()
 
 # check for metadata of the current live version before fetching new data
     if download:
@@ -189,6 +192,7 @@ def update(conf, download, version_update, create_embeddings):
         # create embeddings
         try:
             create_vector_indices.create_vector_indices()
+            # time.sleep(10)
         except Exception as e:
             print(e)
             print("Failed to create vector indices")

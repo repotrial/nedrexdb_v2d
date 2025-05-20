@@ -246,10 +246,11 @@ EDGE_EMBEDDING_CONFIG = {
 }
 
 # only building embeddings for dev nodes and edges, except they are None.
-dev_nodes = None
-dev_edges = None
+dev_nodes = ["Disorder"]
+dev_edges = []
 
 def create_vector_indices():
+    print("Starting indexing")
     neo4j_container = _config["db.dev.neo4j_name"]
     bolt_port = 7687
 
@@ -271,27 +272,18 @@ def create_vector_indices():
 
     index_names = []
 
-    # Only building embeddings for specified nodes
-    if dev_nodes:
-        for node in dev_nodes:
-            if node in NODE_EMBEDDING_CONFIG.keys():
-                fill_vector_index(kg, "NODE", node)
-                index_names.append(f"{node.lower()}Embeddings")
-    else:
-        for node in NODE_EMBEDDING_CONFIG.keys():
-            fill_vector_index(kg, "NODE", node)
-            index_names.append(f"{node.lower()}Embeddings")
+    node_list = NODE_EMBEDDING_CONFIG.keys() if not dev_nodes else dev_nodes
 
-    # Only building embeddings for specified edges
-    if dev_edges:
-        for edge in dev_edges:
-            if edge in EDGE_EMBEDDING_CONFIG.keys():
-                fill_vector_index(kg, "RELATIONSHIP", edge)
-                index_names.append(f"{edge.lower()}Embeddings")
-    else:
-        for edge in EDGE_EMBEDDING_CONFIG.keys():
-            fill_vector_index(kg, "RELATIONSHIP", edge)
-            index_names.append(f"{edge.lower()}Embeddings")
+    # Only building embeddings for specified nodes
+    for node in node_list:
+        fill_vector_index(kg, "NODE", node)
+        index_names.append(f"{node.lower()}Embeddings")
+
+
+    edge_list = EDGE_EMBEDDING_CONFIG.keys() if not dev_edges else dev_edges
+    for edge in edge_list:
+        fill_vector_index(kg, "RELATIONSHIP", edge)
+        index_names.append(f"{edge.lower()}Embeddings")
 
     if wait_for_database_ready(kg, index_names):
         print("Ready to switch to read-only mode")

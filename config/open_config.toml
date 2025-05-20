@@ -6,11 +6,11 @@ data_outside = "../nedrex_files/nedrex_api/data" # your path
 server_base="https://dev.llm.cosy.bio/v1"
 model="snowflake-arctic-embed2:latest"
 path="embeddings"
-api_key=""
+api_key="none"
 
 [chat]
 server_base="https://dev.llm.cosy.bio/v1"
-model="gemma3:latest"
+model="qwen3:latest"
 
 [db]
 neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:prod"
