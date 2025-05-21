@@ -266,11 +266,25 @@ def parse_dev(version, download, version_update, prev_metadata):
 
 
 @click.option("--conf", required=True, type=click.Path(exists=True))
+@click.option("--create_embeddings", is_flag=True, default=False)
 @cli.command()
-def restart_live(conf):
+def restart_live(conf,create_embeddings):
     print(f"Config file: {conf}")
     nedrexdb.parse_config(conf)
+    
+    if create_embeddings:
+        dev_instance = NeDRexDevInstance()
+        dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
 
+        # create embeddings
+        try:
+            create_vector_indices.create_vector_indices()
+            # time.sleep(10)
+        except Exception as e:
+            print(e)
+            print("Failed to create vector indices")
+        dev_instance.remove()
+    
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
