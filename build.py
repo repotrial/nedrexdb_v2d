@@ -272,18 +272,18 @@ def restart_live(conf,create_embeddings):
     print(f"Config file: {conf}")
     nedrexdb.parse_config(conf)
     
-    if create_embeddings:
-        dev_instance = NeDRexDevInstance()
-        dev_instance.remove(neo4j_mode="import")
-        dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
-        # create embeddings
-        time.sleep(60)
-        try:
-            create_vector_indices.create_vector_indices()
-        except Exception as e:
-            print(e)
-            print("Failed to create vector indices")
-        dev_instance.remove()
+    # if create_embeddings:
+    #     dev_instance = NeDRexDevInstance()
+    #     dev_instance.remove(neo4j_mode="import")
+    #     dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+    #     # create embeddings
+    #     time.sleep(60)
+    #     try:
+    #         create_vector_indices.create_vector_indices()
+    #     except Exception as e:
+    #         print(e)
+    #         print("Failed to create vector indices")
+    #     dev_instance.remove()
     
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
