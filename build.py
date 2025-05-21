@@ -274,12 +274,12 @@ def restart_live(conf,create_embeddings):
     
     if create_embeddings:
         dev_instance = NeDRexDevInstance()
+        dev_instance.remove(neo4j_mode="import")
         dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
-
         # create embeddings
+        time.sleep(60)
         try:
             create_vector_indices.create_vector_indices()
-            # time.sleep(10)
         except Exception as e:
             print(e)
             print("Failed to create vector indices")
