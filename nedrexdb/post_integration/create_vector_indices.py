@@ -275,15 +275,33 @@ def create_vector_indices():
     node_list = NODE_EMBEDDING_CONFIG.keys() if not dev_nodes else dev_nodes
 
     # Only building embeddings for specified nodes
-    for node in node_list:
-        fill_vector_index(kg, "NODE", node)
-        index_names.append(f"{node.lower()}Embeddings")
+    retry_list = []
+    num_retries = 5
+    while num_retries > 0:
+        for node in node_list:
+            if not fill_vector_index(kg, "NODE", node):
+                retry_list.append(node)
+            else:
+                index_names.append(f"{node.lower()}Embeddings")
+        node_list = [node for node in retry_list]
+        retry_list = []
+    if len(node_list) > 0:
+        print(f"Could not create embeddings successfully for the following nodes: {node_list}")
 
 
     edge_list = EDGE_EMBEDDING_CONFIG.keys() if not dev_edges else dev_edges
-    for edge in edge_list:
-        fill_vector_index(kg, "RELATIONSHIP", edge)
-        index_names.append(f"{edge.lower()}Embeddings")
+    retry_list = []
+    num_retries = 5
+    while num_retries > 0:
+        for edge in edge_list:
+            if not fill_vector_index(kg, "RELATIONSHIP", edge):
+                retry_list.append(edge)
+            else:
+                index_names.append(f"{edge.lower()}Embeddings")
+        edge_list = [edge for edge in retry_list]
+        retry_list = []
+    if len(edge_list) > 0:
+        print(f"Could not create embeddings successfully for the following edges: {edge_list}")
 
     if wait_for_database_ready(kg, index_names):
         print("Ready to switch to read-only mode")
@@ -324,7 +342,7 @@ def get_edge_info_string(edge_name):
             info_string += f"+ '{suffix};'"
     return info_string
 
-def fill_vector_index(con, entityType, name):
+def fill_vector_index(con, entityType, name) -> bool:
 
     try:
         start = time.time()
@@ -343,9 +361,11 @@ def fill_vector_index(con, entityType, name):
             con.query(query, params=params)
         duration = time.time() - start
         print(f"Building {name} embedding indexes finished after {duration} seconds")
+        return True
     except Exception as e:
         print(e)
         print("Could not create vector index for " + name)
+        return False
 
 def create_node_vector_query(node_info_string, name):
     query = """
@@ -362,7 +382,7 @@ CALL apoc.ml.openai.embedding(
         path: $llm_path,
         model: $llm_model,
         enableBackOffRetries: true,
-        backOffRetries: 10,
+        backOffRetries: 20,
         exponentialBackoff: true
     }
 ) YIELD index, embedding
@@ -385,7 +405,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name):
             path: $llm_path,
             model: $llm_model,
             enableBackOffRetries: true,
-            backOffRetries: 10,
+            backOffRetries: 20,
             exponentialBackoff: true
         }
     ) YIELD index, embedding

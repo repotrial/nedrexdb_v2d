@@ -266,9 +266,9 @@ def parse_dev(version, download, version_update, prev_metadata):
 
 
 @click.option("--conf", required=True, type=click.Path(exists=True))
-@click.option("--create_embeddings", is_flag=True, default=False)
+# @click.option("--create_embeddings", is_flag=True, default=False)
 @cli.command()
-def restart_live(conf,create_embeddings):
+def restart_live(conf):
     print(f"Config file: {conf}")
     nedrexdb.parse_config(conf)
     
