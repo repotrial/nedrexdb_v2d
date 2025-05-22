@@ -371,8 +371,8 @@ def create_node_vector_query(node_info_string, name):
     query = """
       MATCH (n: """+name+""")
 WITH collect(n) as allNodes
-UNWIND range(0, size(allNodes)-1, 1000) as i
-WITH i, allNodes[i..i+1000] as batchNodes
+UNWIND range(0, size(allNodes)-1, 500) as i
+WITH i, allNodes[i..i+500] as batchNodes
 WHERE size(batchNodes) > 0
 CALL apoc.ml.openai.embedding(
     [x in batchNodes | """+node_info_string+"""], 
@@ -393,8 +393,8 @@ WITH batchNodes[index] as n, embedding CALL db.create.setNodeVectorProperty(n, "
 def create_edge_vector_query(edge_info_string, source_name, name, target_name):
     query = """MATCH (s: """+source_name+""")-[r: """+name+"""]-(t: """+target_name+""")
     WITH collect({s:s,r:r,t:t}) as allEntries
-    UNWIND range(0, size(allEntries)-1, 1000) as i
-    WITH i, allEntries[i..i+1000] as batchEntries
+    UNWIND range(0, size(allEntries)-1, 500) as i
+    WITH i, allEntries[i..i+500] as batchEntries
     WHERE size(batchEntries) > 0
     CALL apoc.ml.openai.embedding(
         [entry in batchEntries | """ + edge_info_string + """
