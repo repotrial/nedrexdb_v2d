@@ -8,11 +8,7 @@ setup_db() {
 
     # Handle DB updates
     if [[ "$SKIP_UPDATE" == "1" ]]; then
-#      if [[ "$CREATE_EMBEDDINGS" == "1" ]]; then
-#          ./build.py restart-live --conf "$config_file" --create_embeddings
-#        else
        ./build.py restart-live --conf "$config_file"
-#      fi
     else
         local build_args=(update --conf "$config_file")
 
@@ -52,9 +48,6 @@ setup_db() {
 
     echo "Finished setup of $db_type DB"
 }
-
-
-# [[ "$DOWNLOAD_ON_STARTUP" == "1" ]] && echo "Download: ON" && ./setup_data.sh /data/nedrex_files
 
 # Setup licensed DB if not skipped
 [[ "$SKIP_LICENSED" != "1" ]] &&  setup_db licensed
