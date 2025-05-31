@@ -35,7 +35,7 @@ from nedrexdb.db.parsers import (
     repotrial,
 )
 from nedrexdb.downloaders import get_versions, update_versions
-from nedrexdb.post_integration import (trim_uberon, drop_empty_collections,create_vector_indices)
+from nedrexdb.post_integration import (trim_uberon, drop_empty_collections, create_vector_indices)
 
 
 
@@ -80,10 +80,16 @@ def update(conf, download, version_update, create_embeddings):
     dev_instance.remove()
 
     # fetch embeddings from previous database
+    tobuild_embeddings = {"Drug"}
+    embeddings = {}
     if create_embeddings:
         dev_instance.set_up(use_existing_volume=True, neo4j_mode="db")
-        embeddings = fetch_embeddings()
-        print([(entry[0], entry[1][1]) for entry in embeddings][:5])
+        embeddings["Drug"] = fetch_embeddings()
+        check_list = [(entry[0], entry[1][1]) for entry in embeddings["Drug"]][:5]
+        print(check_list)
+        if check_list:
+            tobuild_embeddings.remove("Drug")
+        print(tobuild_embeddings)
         dev_instance.remove()
 
     dev_instance.set_up(use_existing_volume=False, neo4j_mode="import")
@@ -189,9 +195,12 @@ def update(conf, download, version_update, create_embeddings):
         dev_instance = NeDRexDevInstance()
         dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
 
+        # upsert previous embeddings, if they are still up-to-date
+        upsert_embeddings(embeddings["Drug"])
+
         # create embeddings
         try:
-            create_vector_indices.create_vector_indices()
+            create_vector_indices.create_vector_indices(tobuild_embeddings)
         except Exception as e:
             print(e)
             print("Failed to create vector indices")

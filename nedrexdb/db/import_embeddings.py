@@ -42,23 +42,14 @@ def fetch_embeddings():
     result = session.query(query)
     return [(record["id"], record["embedding"]) for record in result]
 
-def upsert_embeddings(session, data):
+def upsert_embeddings(data):
+    session = connect_to_session(session_type="dev")
     query = f"""
     UNWIND $nodes AS node
     MERGE (n:{LABEL} {{ {ID_PROPERTY}: node.id }})
     SET n.{EMBEDDING_PROPERTY} = node.embedding
     """
-    session.run(query, nodes=[{"id": id_, "embedding": emb} for id_, emb in data])
-
-def main():
-    source_driver = GraphDatabase.driver(uri)
-    target_driver = GraphDatabase.driver(uri)
-
-    with source_driver.session() as source_session, target_driver.session() as target_session:
-        embeddings = fetch_embeddings(source_session)
-        print(f"Fetched {len(embeddings)} embeddings from source Neo4j.")
-        upsert_embeddings(target_session, embeddings)
-        print(f"Upserted embeddings into target Neo4j.")
-
-    source_driver.close()
-    target_driver.close()
+    session.query(
+        query,
+        {"nodes": [{"id": id_, "embedding": emb} for id_, emb in data]}
+    )

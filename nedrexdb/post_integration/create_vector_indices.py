@@ -249,7 +249,10 @@ EDGE_EMBEDDING_CONFIG = {
 dev_nodes = None
 dev_edges = None
 
-def create_vector_indices():
+def create_vector_indices(tobuild=set()):
+    if not tobuild:
+        return
+
     neo4j_container = _config["db.dev.neo4j_name"]
     bolt_port = 7687
 
