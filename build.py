@@ -8,6 +8,7 @@ import nedrexdb
 from nedrexdb import config, downloaders
 from nedrexdb.control.docker import NeDRexDevInstance, NeDRexLiveInstance
 from nedrexdb.db import MongoInstance, mongo_to_neo, collection_stats
+from nedrexdb.db.import_embeddings import fetch_embeddings, upsert_embeddings
 from nedrexdb.db.parsers import (
     biogrid,
     disgenet,
@@ -77,10 +78,14 @@ def update(conf, download, version_update, create_embeddings):
 
     dev_instance = NeDRexDevInstance()
     dev_instance.remove()
+
+    # fetch embeddings from previous database
     if create_embeddings:
         dev_instance.set_up(use_existing_volume=True, neo4j_mode="db")
-
+        embeddings = fetch_embeddings()
+        print([(entry[0], entry[1][1]) for entry in embeddings][:5])
         dev_instance.remove()
+
     dev_instance.set_up(use_existing_volume=False, neo4j_mode="import")
     MongoInstance.connect("dev")
     MongoInstance.set_indexes()
