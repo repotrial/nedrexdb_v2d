@@ -149,7 +149,7 @@ def mongo_to_neo(nedrex_instance, db):
     _subprocess.call(command)
 
     # clean up
-    for node in nodes:
-        _os.remove(f"{workdir}/{node}.csv")
-    for edge in edges:
-        _os.remove(f"{workdir}/{edge}.csv")
+    #for node in nodes:
+    #    _os.remove(f"{workdir}/{node}.csv")
+    #for edge in edges:
+     #   _os.remove(f"{workdir}/{edge}.csv")
