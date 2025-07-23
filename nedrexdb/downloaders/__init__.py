@@ -1,5 +1,6 @@
 import datetime as _datetime
 import logging
+import os
 import shutil as _shutil
 import re as _re
 import ast
@@ -205,6 +206,11 @@ def update_versions(ignored_sources=set(), default_version=None):
         version = default_version
     else:
         raise Exception("should only be one document in the metadata collection")
+
+    if os.environ.get("FORCE_VERSION_OVERRIDE", "0") == "1":
+        if "default_version" in sources.keys():
+            version = sources["default_version"]
+
 
     v = Version(version)
     v.increment("patch")
