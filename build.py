@@ -35,8 +35,8 @@ from nedrexdb.db.parsers import (
     repotrial,
 )
 from nedrexdb.downloaders import get_versions, update_versions
-from nedrexdb.post_integration import (trim_uberon, drop_empty_collections,create_vector_indices)
-
+from nedrexdb.post_integration import (trim_uberon, drop_empty_collections)
+from nedrexdb.post_integration.neo4j_db_adjustments import create_constraints, create_vector_indices
 
 
 @click.group()
@@ -185,9 +185,13 @@ def update(conf, download, version_update, create_embeddings):
     # remove dev instance and set up live instance
     dev_instance.remove(neo4j_mode="import")
 
+    dev_instance = NeDRexDevInstance()
+    dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+    create_constraints()
+
     if create_embeddings:
-        dev_instance = NeDRexDevInstance()
-        dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+        # dev_instance = NeDRexDevInstance()
+        # dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
 
         # create embeddings
         try:
@@ -196,7 +200,8 @@ def update(conf, download, version_update, create_embeddings):
         except Exception as e:
             print(e)
             print("Failed to create vector indices")
-        dev_instance.remove()
+
+    dev_instance.remove()
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")

@@ -83,7 +83,6 @@ NODE_EMBEDDING_CONFIG = {
     }
 }
 
-
 EDGE_EMBEDDING_CONFIG = {
     "GeneAssociatedWithDisorder": {
         "source": "Gene",
@@ -157,9 +156,9 @@ EDGE_EMBEDDING_CONFIG = {
         "target": "Tissue",
         # "attributes": {
         #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-            # "TPM": {"prefix": "TPM: ", "suffix": "", "type": "string"},
-            # "nTPM": {"prefix": "nTPM: ", "suffix": "", "type": "string"},
-            # "pTPM": {"prefix": "pTPM: ", "suffix": "", "type": "string"},
+        # "TPM": {"prefix": "TPM: ", "suffix": "", "type": "string"},
+        # "nTPM": {"prefix": "nTPM: ", "suffix": "", "type": "string"},
+        # "pTPM": {"prefix": "pTPM: ", "suffix": "", "type": "string"},
         # }
     },
     "ProteinEncodedByGene": {
@@ -174,10 +173,10 @@ EDGE_EMBEDDING_CONFIG = {
     #     "source": "Protein",
     #     "link_term": "is expressed by",
     #     "target": "Tissue",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-            # "level": {"prefix": "Expression level: ", "suffix": "", "type": "string"},
-        # }
+    # "attributes": {
+    #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+    # "level": {"prefix": "Expression level: ", "suffix": "", "type": "string"},
+    # }
     # },
     "ProteinHasGoAnnotation": {
         "source": "Protein",
@@ -200,21 +199,21 @@ EDGE_EMBEDDING_CONFIG = {
     #     "source": "Protein",
     #     "link_term": "is in the pathway",
     #     "target": "Pathway",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        # }
+    # "attributes": {
+    #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    # }
     # },
     # "ProteinInteractsWithProtein": {
     #     "source": "Protein",
     #     "link_term": "interacts with",
     #     "target": "Protein",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-        #     "evidenceTypes": {"prefix": "Evidence Type: ", "suffix": "", "type": "list"},
-        #     "methods": {"prefix": "Method/Approach: ", "suffix": "", "type": "list"},
-        #     "subcellularLocations": {"prefix": "Subcellular Locations: ", "suffix": "", "type": "list"},
-        #     "tissues": {"prefix": "Tissues: ", "suffix": "", "type": "list"},
-        # }
+    # "attributes": {
+    #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+    #     "evidenceTypes": {"prefix": "Evidence Type: ", "suffix": "", "type": "list"},
+    #     "methods": {"prefix": "Method/Approach: ", "suffix": "", "type": "list"},
+    #     "subcellularLocations": {"prefix": "Subcellular Locations: ", "suffix": "", "type": "list"},
+    #     "tissues": {"prefix": "Tissues: ", "suffix": "", "type": "list"},
+    # }
     # },
     "SideEffectSameAsPhenotype": {
         "source": "SideEffect",
@@ -228,9 +227,9 @@ EDGE_EMBEDDING_CONFIG = {
     #     "source": "GenomicVariant",
     #     "link_term": "effects",
     #     "target": "Gene",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        # }
+    # "attributes": {
+    #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    # }
     # },
     "VariantAssociatedWithDisorder": {
         "source": "GenomicVariant",
@@ -249,8 +248,8 @@ EDGE_EMBEDDING_CONFIG = {
 dev_nodes = ["Disorder"]
 dev_edges = []
 
-def create_vector_indices():
-    print("Starting indexing")
+
+def get_kg_connection():
     neo4j_container = _config["db.dev.neo4j_name"]
     bolt_port = 7687
 
@@ -269,6 +268,26 @@ def create_vector_indices():
                 print("Could not connect to Neo4j database at " + NEO4J_URI)
                 return
             time.sleep(5)
+    return kg
+
+
+def create_unique_node_contraint(con,node_type, attribute):
+    query = f"CREATE CONSTRAINT {node_type.lower()}_{attribute.lower()}_unique FOR (d:{node_type}) REQUIRE d.{attribute} IS UNIQUE"
+    con.query(query)
+
+def create_constraints():
+    kg = get_kg_connection()
+    node_list = NODE_EMBEDDING_CONFIG.keys() if not dev_nodes else dev_nodes
+
+
+    for node in node_list:
+        create_unique_node_contraint(kg, node, "primaryDomainId")
+
+
+def create_vector_indices():
+    print("Starting indexing")
+
+    kg = get_kg_connection()
 
     index_names = []
 
@@ -288,8 +307,9 @@ def create_vector_indices():
     if len(node_list) > 0:
         print(f"Could not create embeddings successfully for the following nodes: {node_list}")
 
-
     edge_list = EDGE_EMBEDDING_CONFIG.keys() if not dev_edges else dev_edges
+    #TODO remove after testing
+    edge_list = []
     retry_list = []
     num_retries = 5
     while num_retries > 0:
@@ -314,7 +334,7 @@ def get_node_info_string(node_name):
     for attribute, format in NODE_EMBEDDING_CONFIG[node_name].items():
         prefix = f" {format.get('prefix', ' ')} "
         suffix = f" {format.get('suffix', ' ')} "
-        attribute_type =format.get('type', 'string')
+        attribute_type = format.get('type', 'string')
 
         info_string += f"+ '{prefix}'"
         if attribute_type == "list":
@@ -328,7 +348,7 @@ def get_node_info_string(node_name):
 def get_edge_info_string(edge_name):
     link_term = EDGE_EMBEDDING_CONFIG[edge_name]["link_term"]
     info_string = f"coalesce(entry.s.type, '') +' '+ coalesce(entry.s.displayName, '') +' with ID ' + entry.s.primaryDomainId + ' {link_term} ' + coalesce(entry.t.type, '') +' '+coalesce(entry.t.displayName, '')+'  with ID '+ entry.t.primaryDomainId +' and has properties:'"
-    if  "attributes" in EDGE_EMBEDDING_CONFIG[edge_name].keys():
+    if "attributes" in EDGE_EMBEDDING_CONFIG[edge_name].keys():
         for attribute, format in EDGE_EMBEDDING_CONFIG[edge_name]["attributes"].items():
             prefix = format.get('prefix', ' ')
             suffix = format.get('suffix', ' ')
@@ -342,8 +362,8 @@ def get_edge_info_string(edge_name):
             info_string += f"+ '{suffix};'"
     return info_string
 
-def fill_vector_index(con, entityType, name) -> bool:
 
+def fill_vector_index(con, entityType, name) -> bool:
     try:
         start = time.time()
         create_vector_index(con, entityType, name)
@@ -367,15 +387,16 @@ def fill_vector_index(con, entityType, name) -> bool:
         print("Could not create vector index for " + name)
         return False
 
+
 def create_node_vector_query(node_info_string, name):
     query = """
-      MATCH (n: """+name+""")
+      MATCH (n: """ + name + """)
 WITH collect(n) as allNodes
 UNWIND range(0, size(allNodes)-1, 500) as i
 WITH i, allNodes[i..i+500] as batchNodes
 WHERE size(batchNodes) > 0
 CALL apoc.ml.openai.embedding(
-    [x in batchNodes | """+node_info_string+"""], 
+    [x in batchNodes | """ + node_info_string + """], 
     $api_key, 
     {
         endpoint: $llm_base,
@@ -391,7 +412,7 @@ WITH batchNodes[index] as n, embedding CALL db.create.setNodeVectorProperty(n, "
 
 
 def create_edge_vector_query(edge_info_string, source_name, name, target_name):
-    query = """MATCH (s: """+source_name+""")-[r: """+name+"""]-(t: """+target_name+""")
+    query = """MATCH (s: """ + source_name + """)-[r: """ + name + """]-(t: """ + target_name + """)
     WITH collect({s:s,r:r,t:t}) as allEntries
     UNWIND range(0, size(allEntries)-1, 500) as i
     WITH i, allEntries[i..i+500] as batchEntries
@@ -414,17 +435,17 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name):
 
 
 def create_vector_index(con, entityType, name):
-    props = {"index_name":f"{name.lower()}Embeddings"}
+    props = {"index_name": f"{name.lower()}Embeddings"}
     if entityType == "NODE":
         con.query("""CREATE VECTOR INDEX $index_name IF NOT EXISTS
-        FOR (d: """+name+""") ON (d.embedding) 
+        FOR (d: """ + name + """) ON (d.embedding) 
         OPTIONS { indexConfig: {
           `vector.dimensions`: 1024,
           `vector.similarity_function`: 'cosine'
         }}""", params=props)
     else:
         con.query("""CREATE VECTOR INDEX $index_name IF NOT EXISTS
-               FOR ()-[r:"""+name+"""]-() ON (r.embedding) 
+               FOR ()-[r:""" + name + """]-() ON (r.embedding) 
                OPTIONS { indexConfig: {
                  `vector.dimensions`: 1024,
                  `vector.similarity_function`: 'cosine'
