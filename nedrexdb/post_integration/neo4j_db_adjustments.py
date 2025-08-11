@@ -271,7 +271,7 @@ def get_kg_connection():
     return kg
 
 
-def create_unique_node_contraint(con,node_type, attribute):
+def create_unique_node_constraint(con, node_type, attribute):
     query = f"CREATE CONSTRAINT {node_type.lower()}_{attribute.lower()}_unique FOR (d:{node_type}) REQUIRE d.{attribute} IS UNIQUE"
     con.query(query)
 
@@ -281,7 +281,7 @@ def create_constraints():
 
 
     for node in node_list:
-        create_unique_node_contraint(kg, node, "primaryDomainId")
+        create_unique_node_constraint(kg, node, "primaryDomainId")
 
 
 def create_vector_indices():
@@ -308,8 +308,6 @@ def create_vector_indices():
         print(f"Could not create embeddings successfully for the following nodes: {node_list}")
 
     edge_list = EDGE_EMBEDDING_CONFIG.keys() if not dev_edges else dev_edges
-    #TODO remove after testing
-    edge_list = []
     retry_list = []
     num_retries = 5
     while num_retries > 0:
