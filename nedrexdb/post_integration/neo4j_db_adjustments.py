@@ -245,41 +245,38 @@ EDGE_EMBEDDING_CONFIG = {
 }
 
 # only building embeddings for dev nodes and edges, except they are None.
-dev_nodes = ["Disorder"]
+# dev_nodes = ["Disorder", "Gene"]
+# dev_edges = []
+dev_nodes = None
 dev_edges = []
 
 
-def get_kg_connection():
-    neo4j_container = _config["db.dev.neo4j_name"]
-    bolt_port = 7687
+def get_kg_connection() -> Neo4jGraph:
+    NEO4J_URI = f'bolt://{_config["db.dev.neo4j_name"]}:7687'
 
-    NEO4J_URI = f'bolt://{neo4j_container}:{bolt_port}'
-
-    retry = 5
+    retry = 10
+    # kg = None
     while retry > 0:
         try:
             kg = Neo4jGraph(
                 url=NEO4J_URI, username="", password="", database='neo4j'
             )
-            break
+            return kg
         except Exception:
             retry -= 1
             if retry == 0:
                 print("Could not connect to Neo4j database at " + NEO4J_URI)
-                return
-            time.sleep(5)
-    return kg
+                return None
+            time.sleep(10)
 
 
 def create_unique_node_constraint(con, node_type, attribute):
-    query = f"CREATE CONSTRAINT {node_type.lower()}_{attribute.lower()}_unique FOR (d:{node_type}) REQUIRE d.{attribute} IS UNIQUE"
+    query = f"CREATE CONSTRAINT {node_type.lower()}_{attribute.lower()}_unique FOR (n:{node_type}) REQUIRE n.{attribute} IS UNIQUE"
     con.query(query)
 
 def create_constraints():
     kg = get_kg_connection()
     node_list = NODE_EMBEDDING_CONFIG.keys() if not dev_nodes else dev_nodes
-
-
     for node in node_list:
         create_unique_node_constraint(kg, node, "primaryDomainId")
 

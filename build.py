@@ -195,7 +195,7 @@ def update(conf, download, version_update, create_embeddings):
 
         # create embeddings
         try:
-            create_vector_indices.create_vector_indices()
+            create_vector_indices()
             # time.sleep(10)
         except Exception as e:
             print(e)
