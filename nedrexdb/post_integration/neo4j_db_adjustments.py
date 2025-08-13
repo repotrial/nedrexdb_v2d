@@ -246,9 +246,9 @@ EDGE_EMBEDDING_CONFIG = {
 
 # only building embeddings for dev nodes and edges, except they are None.
 # dev_nodes = ["Disorder", "Gene"]
-# dev_edges = []
-dev_nodes = None
 dev_edges = []
+dev_nodes = None
+# dev_edges = None
 
 
 def get_kg_connection() -> Neo4jGraph:
