@@ -301,6 +301,8 @@ def create_vector_indices():
                 index_names.append(f"{node.lower()}Embeddings")
         node_list = [node for node in retry_list]
         retry_list = []
+        num_retries -= 1
+
     if len(node_list) > 0:
         print(f"Could not create embeddings successfully for the following nodes: {node_list}")
 
@@ -315,6 +317,8 @@ def create_vector_indices():
                 index_names.append(f"{edge.lower()}Embeddings")
         edge_list = [edge for edge in retry_list]
         retry_list = []
+        num_retries -= 1
+
     if len(edge_list) > 0:
         print(f"Could not create embeddings successfully for the following edges: {edge_list}")
 
