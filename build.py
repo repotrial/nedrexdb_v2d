@@ -69,14 +69,17 @@ def update(conf, download, version_update, create_embeddings):
 
 # check for metadata of the current live version before fetching new data
     if download:
-        MongoInstance.connect("live")
-        prev_metadata = list(MongoInstance.DB["metadata"].find())
-        prev_metadata = {} if prev_metadata is None else prev_metadata[0]["source_databases"]
-        # log printing
-        print("PREVIOUS METADATA")
-        for source in prev_metadata:
-            print(f"{source}:\t{prev_metadata[source]['version']}"
-                  f" [{prev_metadata[source]['date']}]")
+        try:
+            MongoInstance.connect("live")
+            prev_metadata = list(MongoInstance.DB["metadata"].find())
+            prev_metadata = {} if prev_metadata is None else prev_metadata[0]["source_databases"]
+            # log printing
+            print("PREVIOUS METADATA")
+            for source in prev_metadata:
+                print(f"{source}:\t{prev_metadata[source]['version']}"
+                      f" [{prev_metadata[source]['date']}]")
+        except:
+            print("No previous metadata found")
 
     dev_instance = NeDRexDevInstance()
     dev_instance.remove()
