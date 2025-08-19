@@ -7,18 +7,18 @@ services:
     container_name: nedrexdb_v2
     build: .
     environment:
-      - DOWNLOAD_ON_STARTUP=0
+      - DOWNLOAD_ON_STARTUP=1
       - SKIP_UPDATE=0
-      - SKIP_OPEN=1
+      - SKIP_OPEN=0
       - SKIP_CLEAN=0
-      - TEST_MINIMUM=1
+      - TEST_MINIMUM=0
       - CREATE_EMBEDDINGS=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/nedrexdb_v2:/tmp
       - ./config/licensed_config.toml:/app/nedrexdb/.licensed_config.toml
       - ./config/open_config.toml:/app/nedrexdb/.open_config.toml
-      - ./nedrex_files:/data/nedrex_files
+      - /localscratch/nedrex_files:/data/nedrex_files
 #    restart: always
     networks:
       - nedrexdb_default
