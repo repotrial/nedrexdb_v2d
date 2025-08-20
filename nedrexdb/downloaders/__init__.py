@@ -87,7 +87,27 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
     # already up-to-date data
     no_download = [key for key in prev_metadata if key in current_metadata and
                    prev_metadata[key] == current_metadata[key]]
-
+    
+    if "opentargets" not in ignored_sources:
+        if "opentargets" not in no_download:
+            _download_opentargets()
+        else:
+            print("opentargets is already up-to-date")
+    if "ncg" not in ignored_sources:
+        if "ncg" not in no_download:
+            _download_ncg()
+        else:
+            print("ncg is already up-to-date")
+    if "intogen" not in ignored_sources:
+        if "intogen" not in no_download:
+            _download_intogen()
+        else:
+            print("intogen is already up-to-date")
+    if "orphanet" not in ignored_sources:
+        if "orphanet" not in no_download:
+            _download_orphanet()
+        else:
+            print("orphanet is already up-to-date")
     if "chembl" not in ignored_sources:
         if "chembl" not in no_download:
             _download_chembl()
@@ -104,7 +124,11 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
         # Catch case to skip sources with bespoke downloaders entirely.
         if source in {
             "biogrid",
-            "chembl"
+            "chembl",
+            "ncg",
+            "opentargets",
+            "cosmic",
+            "intogen",
         }:
             continue
 
@@ -179,12 +203,6 @@ def update_versions(ignored_sources=set(), default_version=None):
         metadata["source_databases"]["biogrid"] = {"date": f"{biogrid_date}", "version": biogrid_version}
         # Catch case to skip sources with bespoke version grabbers entirely.
         exclude_keys.add("biogrid")
-
-    _download_opentargets()
-    _download_ncg()
-    #_download_cosmic()
-    _download_intogen()
-    _download_orphanet()
 
     for source in filter(lambda i: i not in exclude_keys, sources):
 

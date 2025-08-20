@@ -34,15 +34,14 @@ def download_orphanet():
         username=None,
         password=None,
     )
-    print("Downloader step passed", zip_fname)
+
     try:
         d.download()
     except _HTTPError as E:
         logger.warning(f"Unable to download Orphanet mapping: {E}")
         return
     files = list(target_dir.iterdir())
-    print(files)
-    print("download step passed")
+
     # Unzip the zip
     with change_directory(target_dir):
         _sp.call(["unzip", f"{zip_fname.resolve()}"])
