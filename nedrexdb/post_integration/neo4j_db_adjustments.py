@@ -363,6 +363,7 @@ def get_edge_info_string(edge_name):
 
 
 def fill_vector_index(con, entityType, name) -> bool:
+    retries = 5
     try:
         start = time.time()
         create_vector_index(con, entityType, name)
@@ -371,13 +372,22 @@ def fill_vector_index(con, entityType, name) -> bool:
         if entityType == "NODE":
             info_string = get_node_info_string(name)
             query = create_node_vector_query(info_string, name)
-            con.query(query, params=params)
         else:
             info_string = get_edge_info_string(name)
             source_name = EDGE_EMBEDDING_CONFIG[name]["source"]
             target_name = EDGE_EMBEDDING_CONFIG[name]["target"]
             query = create_edge_vector_query(info_string, source_name, name, target_name)
-            con.query(query, params=params)
+        while retries > 0:
+            retries -=1
+            try:
+                con.query(query, params=params)
+                break
+            except Exception as e:
+                print(e)
+                print(f"Encountered an issue! Retry {6-retries} retrying in 60s...")
+                if retries == 0:
+                    raise e
+                time.sleep(60)
         duration = time.time() - start
         print(f"Building {name} embedding indexes finished after {duration} seconds")
         return True
