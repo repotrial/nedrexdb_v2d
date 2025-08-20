@@ -24,7 +24,7 @@ def download_ncg():
         if _os.path.isfile(target_fname):
             _os.remove(target_fname)
 
-        logger.debug("Downloading NCG")
+        logger.info("Downloading NCG")
         try:
             # Send the request and save response directly to a file
             response = requests.post(url, data=data)
