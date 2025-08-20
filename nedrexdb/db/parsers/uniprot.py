@@ -1,3 +1,4 @@
+
 import gzip as _gzip
 import re as _re
 import sys as _sys
@@ -19,6 +20,7 @@ from nedrexdb.db.models.nodes.protein import Protein
 from nedrexdb.db.models.edges.protein_encoded_by_gene import (
     ProteinEncodedByGene,
 )
+from nedrexdb.logger import logger
 
 from nedrexdb.logger import logger
 get_file_location = _get_file_location_factory("uniprot")
