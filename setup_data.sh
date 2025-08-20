@@ -13,6 +13,12 @@ wget https://cloud.uni-hamburg.de/public.php/dav/files/9wNb5HWL7RBH6ng/?accept=z
 echo "Downloaded disgenet.zip"
 wget https://cloud.uni-hamburg.de/s/PxWXAMY5bfS3ZcA/download/repotrial.zip -q -O repotrial.zip
 echo "Downloaded repotrial.zip"
+wget -nv https://zenodo.org/records/12806709/files/cosmic.zip?download=1 -q -O cosmic.zip
+echo "Downloaded cosmic.zip"
+wget -nv https://zenodo.org/records/12806709/files/intogen.zip?download=1 -q -O intogen.zip
+echo "Downloaded intogen.zip"
+wget -nv https://zenodo.org/records/12806709/files/ncg.zip?download=1 -q -O ncg.zip
+echo "Downloaded ncg.zip"
 
 for file in *.zip; do
     echo "Unzipping $file..."

@@ -238,8 +238,9 @@ class IIDRow:
 
 
 class IIDParser:
-    def __init__(self, f):
+    def __init__(self, f, method_scores):
         self.f: _Path = f
+        self.method_scores = method_scores
 
         if self.f.name.endswith(".gz") or self.f.name.endswith(".gzip"):
             self.gzipped = True
@@ -258,7 +259,7 @@ class IIDParser:
         reader = _DictReader(f, delimiter="\t", fieldnames=fieldnames)
         updates = (IIDRow(row).parse() for row in reader)
         updates = (ppi for ppi in updates if ppi.memberOne in proteins and ppi.memberTwo in proteins)
-        updates = (ppi.generate_update() for ppi in updates)
+        updates = (ppi.generate_update(self.method_scores, MongoInstance.DB) for ppi in updates)
 
         for chunk in _tqdm(_chunked(updates, 1_000), leave=False, desc="Parsing IID"):
             MongoInstance.DB[_PPI.collection_name].bulk_write(chunk)
@@ -266,6 +267,6 @@ class IIDParser:
         f.close()
 
 
-def parse_ppis():
+def parse_ppis(method_scores):
     filename = get_file_location("human")
-    IIDParser(filename).parse()
+    IIDParser(filename, method_scores).parse()
