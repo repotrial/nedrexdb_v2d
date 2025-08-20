@@ -18,22 +18,17 @@ from nedrexdb import config as _config
 from nedrexdb import mconfig as _mconfig
 from nedrexdb.common import Downloader
 from nedrexdb.db import MongoInstance
-<<<<<<< HEAD
 from nedrexdb.db.parsers import unichem
 from nedrexdb.downloaders.biogrid import download_biogrid as _download_biogrid, get_latest_biogrid_version
 from nedrexdb.downloaders.chembl import download_chembl as _download_chembl, get_latest_chembl_version
-from nedrexdb.exceptions import (
-    ProcessError as _ProcessError,
-)
-=======
-from nedrexdb.downloaders.biogrid import download_biogrid as _download_biogrid
-from nedrexdb.downloaders.chembl import download_chembl as _download_chembl
 from nedrexdb.downloaders.ncg import download_ncg as _download_ncg
 from nedrexdb.downloaders.cosmic import download_cosmic as _download_cosmic
 from nedrexdb.downloaders.intogen import download_intogen as _download_intogen
 from nedrexdb.downloaders.orphanet import download_orphanet as _download_orphanet
 from nedrexdb.downloaders.opentargets import download_opentargets as _download_opentargets
->>>>>>> repo4eu_dev
+from nedrexdb.exceptions import (
+    ProcessError as _ProcessError,
+)
 
 
 class Version:
@@ -169,7 +164,6 @@ def update_versions(ignored_sources=set(), default_version=None):
 
     metadata = {"source_databases": {}}
 
-<<<<<<< HEAD
     print(f"ignore sources for versions: {ignored_sources}")
 
     if "chembl" not in ignored_sources:
@@ -185,42 +179,16 @@ def update_versions(ignored_sources=set(), default_version=None):
         metadata["source_databases"]["biogrid"] = {"date": f"{biogrid_date}", "version": biogrid_version}
         # Catch case to skip sources with bespoke version grabbers entirely.
         exclude_keys.add("biogrid")
-=======
+
     _download_opentargets()
     _download_ncg()
     #_download_cosmic()
     _download_intogen()
     _download_orphanet()
 
-    chembl_date = _datetime.datetime.now().date()
-    chembl_version = _download_chembl()
-    metadata["source_databases"]["chembl"] = {"date": f"{chembl_date}", "version": chembl_version}
-
-    biogrid_date = _datetime.datetime.now().date()
-    biogrid_version = _download_biogrid()
-
-    metadata["source_databases"]["biogrid"] = {"date": f"{biogrid_date}", "version": biogrid_version}
->>>>>>> repo4eu_dev
-
     for source in filter(lambda i: i not in exclude_keys, sources):
 
-<<<<<<< HEAD
         print(f"checking version of {source}")
-=======
-        # Catch case to skip sources with bespoke downloaders.
-        if source in {
-            "biogrid",
-            "drugbank",
-            "chembl",
-            "ncg",
-            "cosmic",
-            "intogen",
-            "orphanet",
-            "opentargets",
-        }:
-            continue
-        (download_dir / source).mkdir(exist_ok=True)
->>>>>>> repo4eu_dev
 
         # update metadata
         meta = sources[source]
