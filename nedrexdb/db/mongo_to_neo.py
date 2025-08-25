@@ -115,6 +115,12 @@ def mongo_to_neo(nedrex_instance, db):
         cols.append(":TYPE")
         df.to_csv(f"{workdir}/{edge}.csv", columns=cols, index=False)
 
+    _subprocess.call([
+        "docker", "exec", nedrex_instance.neo4j_container_name,
+        "chown", "-R", "neo4j:neo4j", "/data", "/import", "/logs", "/var/lib/neo4j/plugins", "/app"
+    ])
+
+
     command = [
         "docker",
         "exec",
@@ -122,19 +128,28 @@ def mongo_to_neo(nedrex_instance, db):
         "neo4j",
         nedrex_instance.neo4j_container_name,
         "neo4j-admin",
+        "database",
         "import",
+        "full",
+        "neo4j",
         f"--array-delimiter={delimiter}",
         "--multiline-fields=true",
+        "--overwrite-destination=true",
+        "--ignore-empty-strings=true",
+        "--skip-bad-relationships=true",
+        "--skip-duplicate-nodes=true",
     ]
     for node in nodes:
-        command += ["--nodes", f"/import/{node}.csv"]
+        command += ["--nodes=/import/" + node + ".csv"]
     for edge in edges:
-        command += ["--relationships", f"/import/{edge}.csv"]
-    print(command)
+        command += ["--relationships=/import/" + edge + ".csv"]
+    # command += ["--database=nedrex"]
+
+    print(" ".join(command))
     _subprocess.call(command)
 
     # clean up
     for node in nodes:
-        _os.remove(f"{workdir}/{node}.csv")
+       _os.remove(f"{workdir}/{node}.csv")
     for edge in edges:
-        _os.remove(f"{workdir}/{edge}.csv")
+       _os.remove(f"{workdir}/{edge}.csv")

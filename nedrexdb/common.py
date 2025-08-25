@@ -28,11 +28,11 @@ class Downloader(_BaseModel):
     password: _Optional[str]
 
     @_validator("url")
-    def url_https_or_http(cls, v):
-        if any(v.startswith(i) for i in ("http://", "https://")):
+    def url_https_or_http_or_ftp(cls, v):
+        if any(v.startswith(i) for i in ("ftp://", "http://", "https://")):
             return v
         else:
-            raise ValueError(f"url {v!r} is not http(s)")
+            raise ValueError(f"url {v!r} is not http(s) or ftp")
 
     def download(self):
         for _ in range(3):
@@ -69,6 +69,7 @@ class Downloader(_BaseModel):
                     "--no-verbose",
                     "--read-timeout",
                     "10",
+                    "-q",
                     "-O",
                     f"{self.target.resolve()}",
                     self.url,

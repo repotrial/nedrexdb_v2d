@@ -56,7 +56,8 @@ RUN touch /var/log/nedrexdb.log
 COPY . ./
 RUN rm -rf cron
 RUN pip install .[dependencies]
-RUN mamba install -c conda-forge urllib3=2.3.0 -y
+
+#RUN mamba install -c conda-forge urllib3=2.3.0 -y
 RUN mamba install -c conda-forge openjdk=17 -y
 
 CMD cron && bash build.sh >> /var/log/nedrexdb.log 2>&1 & tail -f /var/log/nedrexdb.log

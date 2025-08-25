@@ -22,7 +22,7 @@ def getData(target_dir, url):
             "--no-parent",
             "--no-host-directories",
             "--cut-dirs",
-            "8",
+            "6",
             "-P",
             f"{target_dir.resolve()}/",
             url,

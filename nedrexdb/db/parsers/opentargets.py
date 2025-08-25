@@ -74,6 +74,7 @@ class OpenTargetsParser:
         spark = (
             _SparkSession.builder
             .master('local[*]')
+            .config("spark.driver.memory", "12g")
             .getOrCreate()
         )
 

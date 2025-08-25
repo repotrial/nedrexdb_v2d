@@ -6,6 +6,9 @@ services:
     container_name: nedrexdb_v2
     environment:
       - DOWNLOAD_ON_STARTUP=1
+      - SKIP_UPDATE=0
+      - SKIP_OPEN=0
+      - SKIP_CLEAN=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/nedrexdb_v2:/tmp

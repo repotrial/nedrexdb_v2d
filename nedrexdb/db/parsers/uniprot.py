@@ -22,6 +22,7 @@ from nedrexdb.db.models.edges.protein_encoded_by_gene import (
 )
 from nedrexdb.logger import logger
 
+from nedrexdb.logger import logger
 get_file_location = _get_file_location_factory("uniprot")
 
 _field_size_limit(_sys.maxsize)

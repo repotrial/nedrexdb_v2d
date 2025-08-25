@@ -1,9 +1,13 @@
+import time
 import time as _time
 from abc import ABC as _ABC, abstractmethod as _abstractmethod
 
 import docker as _docker
+from docker.errors import NotFound, APIError
+from subprocess import run, CalledProcessError
 
 from nedrexdb import config as _config
+
 
 _client = _docker.from_env()
 
@@ -39,6 +43,16 @@ def get_mongo_volumes():
     volumes.sort(key=lambda i: i.name, reverse=True)
     return volumes
 
+def update_neo4j_image_version():
+    command = ["docker", "pull", _config["db.neo4j_image"]]
+    result = run(
+        command,
+        capture_output=True,
+        text=True
+    )
+    print(result.stdout)
+    print(result.stderr)
+
 
 def generate_neo4j_volume_name():
     timestamp = _time.time_ns() // 1_000_000  # time in ms
@@ -71,6 +85,8 @@ class _NeDRexInstance(_ABC):
 
 
 class _NeDRexBaseInstance(_NeDRexInstance):
+    GRACEFUL_SHUTDOWN_TIMEOUT = 1200
+
     @property
     def mongo_container_name(self):
         return _config[f"db.{self.version}.container_name"]
@@ -78,6 +94,10 @@ class _NeDRexBaseInstance(_NeDRexInstance):
     @property
     def neo4j_container_name(self):
         return f'{_config[f"db.{self.version}.container_name"]}_neo4j'
+
+    @property
+    def db_mode(self):
+        return f'{_config["api.mode"]}'
 
     @property
     def neo4j_http_port(self):
@@ -151,24 +171,40 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             "image": get_neo4j_image(),
             "detach": True,
             "name": self.neo4j_container_name,
-            "volumes": {volume: {"mode": "rw", "bind": "/data"}, "/tmp/nedrexdb_v2": {"mode": "ro", "bind": "/import"}},
+            "volumes": {volume: {"bind": "/data", "mode": "rw"}},
             "ports": {7474: ("127.0.0.1", self.neo4j_http_port), 7687: ("127.0.0.1", self.neo4j_bolt_port)},
-            "environment": {"NEO4J_AUTH": "none"},
+            "environment": {
+                "NEO4J_AUTH": "none",
+                "NEO4J_PLUGINS": '["apoc"]',
+                "NEO4J_ACCEPT_LICENSE_AGREEMENT": "yes",
+                "NEO4J_server_config_strict__validation_enabled": "false",
+            },
             "network": self.network_name,
             "remove": False,
-            "restart_policy":{"Name":"always"}
+            "restart_policy": {"Name": "always"}
         }
 
+        if self.db_mode == "open":
+            kwargs["ports"][7474] = self.neo4j_http_port
+            kwargs["ports"][7687] = self.neo4j_bolt_port
+
         if neo4j_mode == "import":
+            kwargs["volumes"].update({"/tmp/nedrexdb_v2": {"bind": "/import", "mode": "ro"}})
+            kwargs["environment"]["NEO4J_dbms_memory_heap_max__size"] = "4G"
+            kwargs["environment"]["NEO4J_dbms_memory_pagecache_size"] = "2G"
             kwargs["stdin_open"] = True
             kwargs["tty"] = True
             kwargs["entrypoint"] = "/bin/bash"
 
         elif neo4j_mode == "db":
-            kwargs["environment"]["NEO4J_dbms_read__only"] = "true"
+            kwargs["environment"]["NEO4J_server_databases_read__only"] = "true"
+            kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "true"
+        elif neo4j_mode == "db-write":
+            kwargs["environment"]["NEO4J_server_databases_read__only"] = "false"
+            kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "false"
+
         else:
             raise Exception(f"neo4j_mode {neo4j_mode!r} is invalid")
-
         _client.containers.run(**kwargs)
 
     def _set_up_mongo(self, use_existing_volume):
@@ -191,7 +227,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             ports={27017: ("127.0.0.1", self.mongo_port)},
             network=self.network_name,
             remove=False,
-            restart_policy={"Name":"always"}
+            restart_policy={"Name": "always"}
         )
 
     def _set_up_express(self):
@@ -206,10 +242,72 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             network=self.network_name,
             environment={"ME_CONFIG_MONGODB_SERVER": self.mongo_container_name},
             remove=False,
-            restart_policy={"Name":"always"},
+            restart_policy={"Name": "always"}
         )
 
-    def _remove_neo4j(self, remove_db_volume=False):
+
+
+
+    def shutdown_neo4j_container(self) -> bool:
+        """
+        Gracefully shut down and remove the Neo4j container.
+
+        Returns:
+            bool: True if shutdown was successful, False otherwise
+        """
+        if not self._stop_neo4j_process():
+            print("Failed to gracefully stop Neo4j process")
+            # try:
+            #     self.neo4j_container.remove()
+            # except Exception:
+            #     pass
+
+        return self._remove_neo4_container()
+
+    def _stop_neo4j_process(self) -> bool:
+        """Attempt to gracefully stop the Neo4j process within the container."""
+        print("Attempting to gracefully stop Neo4j process")
+        update_command = ["docker", "update", "--restart=no", self.neo4j_container_name]
+        update = run(update_command)
+        update.check_returncode()
+        try:
+            result = run(
+                ["docker", "exec", self.neo4j_container_name, "neo4j", "stop"],
+                capture_output=True,
+                text=True,
+                timeout=self.GRACEFUL_SHUTDOWN_TIMEOUT
+            )
+            result = result.stdout == "Stopping Neo4j............" and result.returncode == 137
+            if result:
+                print("Neo4j process stopped")
+            time.sleep(5)
+            return result
+
+        except (CalledProcessError, TimeoutError) as e:
+            print(f"Failed to stop Neo4j process: {str(e)}")
+            return False
+
+    def _stop_neo4j_container(self) -> bool:
+        """Stop the Docker container."""
+        try:
+            self.neo4j_container.stop(timeout=self.GRACEFUL_SHUTDOWN_TIMEOUT)
+            return True
+
+        except (NotFound, APIError) as e:
+            print(f"Failed to stop container: {str(e)}")
+            return False
+
+    def _remove_neo4_container(self) -> bool:
+        """Remove the Docker container."""
+        try:
+            self.neo4j_container.remove(force=True)
+            return True
+
+        except (NotFound, APIError) as e:
+            print(f"Failed to remove container: {str(e)}")
+            return False
+
+    def _remove_neo4j(self, remove_db_volume=False, neo4j_mode="db"):
         if not self.neo4j_container:
             return
 
@@ -221,8 +319,10 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         volumes_to_remove = [
             mount["Name"] for mount in mounts if mount["Type"] == "volume" and mount["Destination"] in volumes_to_remove
         ]
-
-        self.neo4j_container.remove(force=True)
+        if neo4j_mode=='import':
+            self.neo4j_container.remove(force=True)
+        else:
+            self.shutdown_neo4j_container()
 
         for vol_name in volumes_to_remove:
             _client.volumes.get(vol_name).remove(force=True)
@@ -261,20 +361,19 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             pass
 
     def set_up(self, use_existing_volume=True, neo4j_mode="db"):
-        print("Setting up Live NeDRex instance...")
-        # self._set_up_network()
-        self._set_up_mongo(use_existing_volume=use_existing_volume)
+        print(f"Setting up {self.db_mode} NeDRex instance...")
         self._set_up_neo4j(use_existing_volume=use_existing_volume, neo4j_mode=neo4j_mode)
-        self._set_up_express()
+        if neo4j_mode != "db-write":
+            self._set_up_mongo(use_existing_volume=use_existing_volume)
+            self._set_up_express()
 
-    def remove(self, remove_db_volume=False, remove_configdb_volume=True):
+    def remove(self, remove_db_volume=False, remove_configdb_volume=True, neo4j_mode="db"):
         self._remove_mongo(
             remove_db_volume=remove_db_volume,
             remove_configdb_volume=remove_configdb_volume,
         )
-        self._remove_neo4j(remove_db_volume=remove_db_volume)
         self._remove_express()
-        # self._remove_network()
+        self._remove_neo4j(remove_db_volume=remove_db_volume, neo4j_mode=neo4j_mode)
 
 
 class NeDRexLiveInstance(_NeDRexBaseInstance):
