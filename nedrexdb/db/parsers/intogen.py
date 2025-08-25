@@ -96,6 +96,18 @@ class IntOGenParser:
 
         symbol2entrez = {gene["approvedSymbol"]: gene["primaryDomainId"]
                          for gene in Gene.find(MongoInstance.DB)}
+        
+        # remove rows with symbols that cannot be mapped to entrez
+        f_dict_tmp = []
+        not_mapped = []
+        for row in f_dict:
+            if row["SYMBOL"] in symbol2entrez:
+                f_dict_tmp.append(row)
+            else:
+                not_mapped.append(row["SYMBOL"])
+        if not_mapped:
+            logger.warning(f"{len(f_dict) - len(f_dict_tmp)} intogen rows were left out, because symbol2entrez could not map: {set(not_mapped)}")
+        f_dict = f_dict_tmp
 
         updates = (IntOGenRow(row).parse(self.intogen2mondo, symbol2entrez)
                    for row in f_dict)
