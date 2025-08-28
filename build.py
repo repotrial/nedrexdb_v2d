@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import time
-import pandas as pd
 
 import click
 import os
@@ -39,16 +37,12 @@ from nedrexdb.db.parsers import (
     intogen,
     orphanet,
     opentargets,
+    hippie
 )
 from nedrexdb.downloaders import get_versions, update_versions
 from nedrexdb.post_integration import (trim_uberon, drop_empty_collections)
 from nedrexdb.post_integration.neo4j_db_adjustments import create_constraints, create_vector_indices
 
-def parse_method_scores():
-    method_scores_file = "./nedrexdb/data/hippie_perplexity_technique_scores.tsv"
-    method_scores = pd.read_csv(method_scores_file, sep='\t', usecols=['methods', 'score'])
-    method_scores_dict = dict(zip(method_scores['methods'], method_scores['score']))
-    return method_scores_dict
 
 @click.group()
 def cli():
@@ -121,8 +115,6 @@ def update(conf, download, version_update, create_embeddings):
         if version_update:
             get_versions(version_update)
 
-        methods_scores = parse_method_scores()
-
         # Parse sources contributing only nodes (and edges amongst those nodes)
         go.parse_go()
         mondo.parse_mondo_json()
@@ -149,18 +141,23 @@ def update(conf, download, version_update, create_embeddings):
         unichem.parse()
         repotrial.parse()
 
+        #Loading annotation information
+        hippie_method_scores = hippie.parse_perplexity_techinque_scores()
+
         # Sources adding edges.
-        biogrid.parse_ppis(methods_scores)
         ctd.parse()
         disgenet.parse_gene_disease_associations()
         intogen.parse_gene_disease_associations()
         orphanet.parse_gene_disease_associations()
-        opentargets.parse_gene_disease_associations()    
+        opentargets.parse_gene_disease_associations()
         ncg.parse_gene_disease_associations()
+
         go.parse_goa()
         hpa.parse_hpa()
-        iid.parse_ppis(methods_scores)
-        intact.parse(methods_scores)
+
+        biogrid.parse_ppis(hippie_method_scores)
+        iid.parse_ppis(hippie_method_scores)
+        intact.parse(hippie_method_scores)
 
         if version == "licensed":
             omim.parse_gene_disease_associations()

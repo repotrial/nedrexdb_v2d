@@ -1,26 +1,6 @@
-[api]
-mode="open"
-status="live"
-port=7123
-host="127.0.0.1"
-base="/open"
-
-rate_limiting_enabled = false
-rate_limit = "1/second"
-require_api_keys = false
-pagination_max = 10000
-
-redis_port = 5379
-redis_port_internal = 6379
-redis_host="open-nedrex-redis"
-redis_nedrex_db = 1
-redis_rate_limit_db = 2
-redis_queue_db = 3
-
-mongo_port=26018
-mongo_port_internal=27017
-mongo_db = "nedrexapi"
-network = "nedrexdb_default"
+version_type = "open"
+static_outside = "../nedrex_files/nedrex_api/static" # your path
+data_outside = "../nedrex_files/nedrex_api/data" # your path
 
 node_collections = [
     "disorder",
@@ -58,22 +38,14 @@ edge_collections = [
     "variant_associated_with_disorder",
 ]
 
-[api.directories]
-static = "/data/nedrex_files/nedrex_api/static"
-static_outside = "/localscratch/nedrex_files/nedrex_api/static"
-data = "/data/nedrex_files/nedrex_api/data"
-data_outside = "/localscratch/nedrex_files/nedrex_api/data"
-scripts = "/app/nedrexapi/scripts"
-
 [tools]
 bicon_python = "/opt/conda/envs/bicon/bin/python"
 
 [embeddings]
-server_base="None"
-model="None"               
+server_base="https://dev.chat.cosy.bio/ollama/v1"
+model="snowflake-arctic-embed2:latest"
 path="embeddings"
-user="None"
-pass="none"
+api_key="sk-9473c13be6d6488789d48c08e40c3a2b"
 
 [chat]
 server_base="None"  
@@ -129,8 +101,6 @@ version = "2022AB"
 [sources.bioontology.meddra_mappings]
 filename = "meddra.json"
 
-
-
 [sources.chembl]
 version_url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/"
 version_pattern = '''href="chembl_\d+_sqlite\.tar\.gz"'''
@@ -159,13 +129,11 @@ version_pattern = '''>CTD_chemicals_diseases\.tsv\.gz</a></td><td align="right">
 [sources.ctd.chemical_disease_relationships]
 url = "http://ctdbase.org/reports/CTD_chemicals_diseases.tsv.gz"
 
-
 [sources.disgenet]
 version = "24.1"
 
 [sources.disgenet.gene_disease_associations]
 url = "https://www.disgenet.org/static/disgenet_ap1/files/downloads/curated_gene_disease_associations.tsv.gz"
-
 
 [sources.drugbank]
 version = "5.1.10"
@@ -193,6 +161,9 @@ url = "http://purl.obolibrary.org/obo/go.owl"
 
 [sources.go.go_annotations]
 url = "http://geneontology.org/gene-associations/goa_human.gaf.gz"
+
+[sources.hippie.perplexity_scores]
+filename="hippie_perplexity_technique_scores.tsv"
 
 [sources.hpa]
 version_url = "https://www.proteinatlas.org/about/download"
@@ -244,6 +215,13 @@ version_pattern = '''>Homo_sapiens\.gene_info\.gz</a>      [\d-]+'''
 [sources.ncbi.gene_info]
 url = "https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz"
 
+
+[sources.ncg]
+[sources.ncg.annotation]
+url = "http://network-cancer-genes.org/download.php"
+filename = "NCG_cancerdrivers_systemslevelproperties.tsv"
+[sources.ncg.mapping]
+filename = "ncg2mondo.json"
 
 [sources.omim]
 [sources.omim.genemap2]

@@ -41,6 +41,7 @@ FROM nedrexdb_base
 RUN apt-get update && apt-get upgrade -y && apt-get autoclean -y && apt-get autoremove -y && apt-get clean -y
 
 RUN mamba update pip tqdm cryptography
+RUN mamba install -c conda-forge openjdk=17 -y
 
 WORKDIR /data/nedrex_files/
 RUN mkdir -p nedrex_api/static
@@ -57,7 +58,5 @@ COPY . ./
 RUN rm -rf cron
 RUN pip install .[dependencies]
 
-#RUN mamba install -c conda-forge urllib3=2.3.0 -y
-RUN mamba install -c conda-forge openjdk=17 -y
 
 CMD cron && bash build.sh >> /var/log/nedrexdb.log 2>&1 & tail -f /var/log/nedrexdb.log

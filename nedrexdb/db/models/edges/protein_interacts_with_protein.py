@@ -33,7 +33,7 @@ class ProteinInteractsWithProtein(_BaseModel, ProteinInteractsWithProteinBase):
     jointTissues: list[str] = []
     brainTissues: list[str] = []
     subcellularLocations: list[str] = []
-    methods_score: float = 0.0
+    hippie_methods_score: float = 0.0
 
     def generate_update(self, method_scores, db):
         tnow = _datetime.datetime.utcnow()
@@ -58,7 +58,7 @@ class ProteinInteractsWithProtein(_BaseModel, ProteinInteractsWithProteinBase):
             "$set": {
                 "updated": tnow,
                 "type": self.edge_type,
-                "methods_score": methods_score,
+                "hippie_methods_score": methods_score,
             },
             "$addToSet": {
                 "methods": {"$each": self.methods},

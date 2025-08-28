@@ -129,13 +129,14 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
             "opentargets",
             "cosmic",
             "intogen",
+            "hippie"
         }:
             continue
 
         # Catch case to skip sources with bespoke downloaders after setting metadata.
         if source in {
             "drugbank",
-            "disgenet"
+            "disgenet",
         }:
             continue
 
