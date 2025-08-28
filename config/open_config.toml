@@ -2,18 +2,57 @@ version_type = "open"
 static_outside = "../nedrex_files/nedrex_api/static" # your path
 data_outside = "../nedrex_files/nedrex_api/data" # your path
 
+node_collections = [
+    "disorder",
+    "drug",
+    "gene",
+    "genomic_variant",
+    "go",
+    "pathway",
+    "protein",
+    "phenotype",
+    "tissue",
+    "side_effect",
+    "signature",
+    ]
+
+edge_collections = [
+    "disorder_has_phenotype",
+    "disorder_is_subtype_of_disorder",
+    "drug_has_contraindication",
+    "drug_has_indication",
+    "drug_has_target",
+    "drug_has_side_effect",
+    "gene_associated_with_disorder",
+    "go_is_subtype_of_go",
+    "molecule_similarity_molecule",
+    "protein_encoded_by_gene",
+    "protein_has_go_annotation",
+    "protein_has_signature",
+    "protein_in_pathway",
+    "protein_interacts_with_protein",
+    "protein_expressed_in_tissue",
+    "gene_expressed_in_tissue",
+    "side_effect_same_as_phenotype",
+    "variant_affects_gene",
+    "variant_associated_with_disorder",
+]
+
+[tools]
+bicon_python = "/opt/conda/envs/bicon/bin/python"
+
 [embeddings]
-server_base="https://dev.llm.cosy.bio/v1"
+server_base="https://dev.chat.cosy.bio/ollama/v1"
 model="snowflake-arctic-embed2:latest"
 path="embeddings"
-api_key="none"
+api_key="sk-****************************"
 
 [chat]
-server_base="https://dev.llm.cosy.bio/v1"
-model="qwen3:latest"
-
+server_base="None"  
+model="None"
 [db]
-neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:prod"
+version = "open"
+neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:dev"
 mongo_image = "mongo:5.0.27"
 mongo_express_image = "mongo-express:0.54.0"
 mongo_db = "nedrex"
@@ -50,7 +89,7 @@ express_container_name = "open_nedrex_live_express"
 
 [sources]
 directory = "downloads"
-default_version = "2.1.0"
+default_version = "2.2.0"
 
 [sources.biogrid]
 [sources.biogrid.human_data]
@@ -68,6 +107,7 @@ version_pattern = '''href="chembl_\d+_sqlite\.tar\.gz"'''
 
 [sources.chembl.sqlite]
 url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_{}_sqlite.tar.gz"
+
 
 [sources.chembl.unichem]
 url = "ftp://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id1/src1src2.txt.gz"
@@ -89,13 +129,11 @@ version_pattern = '''>CTD_chemicals_diseases\.tsv\.gz</a></td><td align="right">
 [sources.ctd.chemical_disease_relationships]
 url = "http://ctdbase.org/reports/CTD_chemicals_diseases.tsv.gz"
 
-
 [sources.disgenet]
 version = "24.1"
 
 [sources.disgenet.gene_disease_associations]
 url = "https://www.disgenet.org/static/disgenet_ap1/files/downloads/curated_gene_disease_associations.tsv.gz"
-
 
 [sources.drugbank]
 version = "5.1.10"
@@ -123,6 +161,9 @@ url = "http://purl.obolibrary.org/obo/go.owl"
 
 [sources.go.go_annotations]
 url = "http://geneontology.org/gene-associations/goa_human.gaf.gz"
+
+[sources.hippie.perplexity_scores]
+filename="hippie_perplexity_technique_scores.tsv"
 
 [sources.hpa]
 version_url = "https://www.proteinatlas.org/about/download"
@@ -174,6 +215,13 @@ version_pattern = '''>Homo_sapiens\.gene_info\.gz</a>      [\d-]+'''
 [sources.ncbi.gene_info]
 url = "https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz"
 
+
+[sources.ncg]
+[sources.ncg.annotation]
+url = "http://network-cancer-genes.org/download.php"
+filename = "NCG_cancerdrivers_systemslevelproperties.tsv"
+[sources.ncg.mapping]
+filename = "ncg2mondo.json"
 
 [sources.omim]
 [sources.omim.genemap2]

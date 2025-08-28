@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import time
 
 import click
 import os
@@ -33,6 +32,12 @@ from nedrexdb.db.parsers import (
     sider,
     uberon,
     repotrial,
+    cosmic,
+    ncg,
+    intogen,
+    orphanet,
+    opentargets,
+    hippie
 )
 from nedrexdb.downloaders import get_versions, update_versions
 from nedrexdb.post_integration import (trim_uberon, drop_empty_collections)
@@ -118,6 +123,7 @@ def update(conf, download, version_update, create_embeddings):
         uniprot.parse_proteins()
 
         # Sources that add node type but require existing nodes, too
+        cosmic.parse_gene_disease_associations()
         clinvar.parse()
 
         if version == "licensed":
@@ -135,14 +141,23 @@ def update(conf, download, version_update, create_embeddings):
         unichem.parse()
         repotrial.parse()
 
+        #Loading annotation information
+        hippie_method_scores = hippie.parse_perplexity_techinque_scores()
+
         # Sources adding edges.
-        biogrid.parse_ppis()
         ctd.parse()
         disgenet.parse_gene_disease_associations()
+        intogen.parse_gene_disease_associations()
+        orphanet.parse_gene_disease_associations()
+        opentargets.parse_gene_disease_associations()
+        ncg.parse_gene_disease_associations()
+
         go.parse_goa()
         hpa.parse_hpa()
-        iid.parse_ppis()
-        intact.parse()
+
+        biogrid.parse_ppis(hippie_method_scores)
+        iid.parse_ppis(hippie_method_scores)
+        intact.parse(hippie_method_scores)
 
         if version == "licensed":
             omim.parse_gene_disease_associations()

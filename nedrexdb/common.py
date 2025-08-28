@@ -66,6 +66,7 @@ class Downloader(_BaseModel):
             subprocess.call(
                 (
                     "wget",
+                    "--no-verbose",
                     "--read-timeout",
                     "10",
                     "-q",
