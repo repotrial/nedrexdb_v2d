@@ -43,7 +43,7 @@ bicon_python = "/opt/conda/envs/bicon/bin/python"
 
 [embeddings]
 server_base="https://dev.chat.cosy.bio/ollama/v1"
-model="snowflake-arctic-embed2:latest"
+model="granite-embedding:latest"
 path="embeddings"
 api_key="sk-****************************"
 

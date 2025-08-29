@@ -307,7 +307,8 @@ def get_versions(no_download):
         v.increment("patch")
         metadata["version"] = f"{v}"
 
-    for source in metadata["source_databases"].keys():
+    metadata_keys= {k for k in metadata["source_databases"].keys()}
+    for source in metadata_keys:
         if source not in _config["sources"]:
             del metadata["source_databases"][source]
 
