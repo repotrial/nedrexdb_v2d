@@ -31,6 +31,8 @@ RUN "${CONDA_DIR}/etc/profile.d/mamba.sh"
 RUN conda init bash
 
 RUN mamba update -n base -c defaults mamba conda
+RUN mamba install -c conda-forge openjdk=17 -y
+
 RUN mamba install -y python=3.10
 RUN mamba update -y --all
 RUN pip install pip==23
@@ -39,9 +41,6 @@ RUN chmod 777 -R /opt/conda
 
 FROM nedrexdb_base
 RUN apt-get update && apt-get upgrade -y && apt-get autoclean -y && apt-get autoremove -y && apt-get clean -y
-
-RUN mamba update pip tqdm cryptography
-RUN mamba install -c conda-forge openjdk=17 -y
 
 WORKDIR /data/nedrex_files/
 RUN mkdir -p nedrex_api/static

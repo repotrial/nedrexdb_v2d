@@ -474,7 +474,7 @@ def create_node_vector_query(node_info_string, name):
          RETURN count(*)',
         {{
             batchSize: 10,
-            parallel: true,
+            parallel: false,
             params: {{
                 api_key: $api_key,
                 llm_base: $llm_base,
@@ -517,7 +517,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name):
           RETURN count(*)',
           {{
             batchSize: 10,
-            parallel: true,
+            parallel: false,
             params: {{
                 api_key: $api_key,
                 llm_base: $llm_base,
@@ -566,7 +566,6 @@ def wait_for_database_ready(con, index_names=['bad_default']):
                 print(f"- Type: {index['type']}")
                 print(f"- Labels: {index['labelsOrTypes']}")
                 print(f"- Properties: {index['properties']}")
-
                 return index['state'] == 'ONLINE'
             else:
                 print(f"\nNo index found with name {index_name}")
