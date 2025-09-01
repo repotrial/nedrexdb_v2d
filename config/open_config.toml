@@ -42,8 +42,9 @@ edge_collections = [
 bicon_python = "/opt/conda/envs/bicon/bin/python"
 
 [embeddings]
-server_base="https://dev.chat.cosy.bio/ollama/v1"
+server_base="https://dev.llm-1.cosy.bio/v1"
 model="granite-embedding:latest"
+embedding_length=384
 path="embeddings"
 api_key="sk-****************************"
 
@@ -108,7 +109,6 @@ version_pattern = '''href="chembl_\d+_sqlite\.tar\.gz"'''
 [sources.chembl.sqlite]
 url = "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_{}_sqlite.tar.gz"
 
-
 [sources.chembl.unichem]
 url = "ftp://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id1/src1src2.txt.gz"
 
@@ -121,6 +121,9 @@ url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz"
 
 [sources.clinvar.human_data_xml]
 url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarVCVRelease_00-latest.xml.gz"
+
+[sources.cosmic.census]
+filename = "CosmicMutantExportCensus.tsv.gz"
 
 [sources.ctd]
 version_url = "https://ctdbase.org/reports/"

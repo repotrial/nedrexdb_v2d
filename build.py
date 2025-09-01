@@ -208,21 +208,19 @@ def update(conf, download, version_update, create_embeddings):
     create_constraints()
 
     if create_embeddings:
-        # dev_instance = NeDRexDevInstance()
-        # dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
 
         # create embeddings
-        try:
-            create_vector_indices()
-            # time.sleep(10)
-        except Exception as e:
-            print(e)
-            print("Failed to create vector indices")
+        # try:
+        create_vector_indices()
+        # except Exception as e:
+        #     print(e)
+        #     print("Failed to create vector indices")
 
     dev_instance.remove()
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
+
 
 def parse_dev(version, download, version_update, prev_metadata):
     # control source downloads
@@ -263,7 +261,6 @@ def parse_dev(version, download, version_update, prev_metadata):
 
     if version_update:
         get_versions(version_update)
-
 
     mondo.parse_mondo_json()
     ncbi.parse_gene_info()

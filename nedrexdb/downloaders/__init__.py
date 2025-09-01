@@ -22,7 +22,7 @@ from nedrexdb.db.parsers import unichem
 from nedrexdb.downloaders.biogrid import download_biogrid as _download_biogrid, get_latest_biogrid_version
 from nedrexdb.downloaders.chembl import download_chembl as _download_chembl, get_latest_chembl_version
 from nedrexdb.downloaders.ncg import download_ncg as _download_ncg
-from nedrexdb.downloaders.cosmic import download_cosmic as _download_cosmic
+# from nedrexdb.downloaders.cosmic import download_cosmic as _download_cosmic
 from nedrexdb.downloaders.intogen import download_intogen as _download_intogen
 from nedrexdb.downloaders.orphanet import download_orphanet as _download_orphanet
 from nedrexdb.downloaders.opentargets import download_opentargets as _download_opentargets

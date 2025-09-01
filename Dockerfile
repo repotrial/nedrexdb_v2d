@@ -58,5 +58,4 @@ COPY . ./
 RUN rm -rf cron
 RUN pip install .[dependencies]
 
-
 CMD cron && bash build.sh >> /var/log/nedrexdb.log 2>&1 & tail -f /var/log/nedrexdb.log
