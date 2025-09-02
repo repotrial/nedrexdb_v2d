@@ -28,7 +28,7 @@ env:
 
 jobs:
   build-base:
- #   if: github.event_name == 'schedule'
+   # if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,9 +54,16 @@ jobs:
         uses: docker/metadata-action@v5.0.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}
-          # Use 'latest' tag for the scheduled base image build
           tags: |
+            # Create the 'latest' tag when the trigger is a weekly schedule
             type=schedule,pattern=latest
+            
+            # Create a tag based on the branch name when you push to a branch
+            # e.g., a push to the 'dev' branch creates the 'dev' tag
+            type=ref,event=branch
+            
+            # Create a tag for the git commit SHA for traceability
+            type=sha,prefix=,format=short
 
       - name: Build and push base Docker image
         uses: docker/build-push-action@v5.0.0
