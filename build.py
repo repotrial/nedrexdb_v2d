@@ -264,6 +264,7 @@ def parse_dev(version, download, version_update, prev_metadata):
 
     mondo.parse_mondo_json()
     ncbi.parse_gene_info()
+    opentargets.parse_gene_disease_associations()
     if version == "licensed":
         drugbank._parse_drugbank()
     elif version == "open":

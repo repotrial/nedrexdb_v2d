@@ -1,5 +1,6 @@
 FROM ghcr.io/repotrial/nedrexdb_v2d-base:dev
 RUN apt-get update && apt-get upgrade -y && apt-get autoclean -y && apt-get autoremove -y && apt-get clean -y
+RUN mamba install -c conda-forge openjdk=17 -y
 
 WORKDIR /data/nedrex_files/
 RUN mkdir -p nedrex_api/static
