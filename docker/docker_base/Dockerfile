@@ -31,8 +31,6 @@ RUN "${CONDA_DIR}/etc/profile.d/mamba.sh"
 RUN conda init bash
 
 RUN mamba update -n base -c defaults mamba conda
-RUN mamba install -c conda-forge openjdk=17 -y
-
 RUN mamba install -y python=3.10
 RUN mamba update -y --all
 RUN pip install pip==23
