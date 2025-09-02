@@ -403,7 +403,6 @@ def fill_vector_index(con, entityType, name) -> bool:
             source_name = EDGE_EMBEDDING_CONFIG[name]["source"]
             target_name = EDGE_EMBEDDING_CONFIG[name]["target"]
             query = create_edge_vector_query(info_string, source_name, name, target_name)
-            print(query)
         while retries > 0:
             retries -= 1
             try:
