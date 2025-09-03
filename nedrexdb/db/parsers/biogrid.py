@@ -8,6 +8,7 @@ from nedrexdb.db import MongoInstance
 from nedrexdb.db.parsers import _get_file_location_factory
 from nedrexdb.db.models.nodes.protein import Protein
 from nedrexdb.db.models.edges.protein_interacts_with_protein import ProteinInteractsWithProtein
+from nedrexdb.logger import logger
 
 get_file_location = _get_file_location_factory("biogrid")
 
@@ -120,5 +121,6 @@ class BioGridParser:
 
 
 def parse_ppis(method_scores):
+    logger.info("Parsing Biogrid")
     filename = get_file_location("human_data")
     BioGridParser(filename, method_scores).parse()

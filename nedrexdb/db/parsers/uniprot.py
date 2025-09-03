@@ -20,7 +20,6 @@ from nedrexdb.db.models.nodes.protein import Protein
 from nedrexdb.db.models.edges.protein_encoded_by_gene import (
     ProteinEncodedByGene,
 )
-from nedrexdb.logger import logger
 
 from nedrexdb.logger import logger
 get_file_location = _get_file_location_factory("uniprot")
@@ -175,6 +174,7 @@ def parse_proteins():
 
 
 def parse_idmap():
+    logger.info("Parsing UniProt ID-Map")
     fieldnames = (
         "UniProtKB-AC",
         "UniProtKB-ID",

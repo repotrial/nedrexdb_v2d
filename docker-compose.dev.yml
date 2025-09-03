@@ -7,9 +7,11 @@ services:
     container_name: nedrexdb_v2
     build:
       context: .
-      dockerfile: Dockerfile.full
+#      dockerfile: Dockerfile.full
+      dockerfile: Dockerfile
     environment:
-      - DOWNLOAD_ON_STARTUP=0
+      - DOWNLOAD_ON_STARTUP=1
+      - LOG_LEVEL=INFO
       - SKIP_UPDATE=0
       - SKIP_OPEN=0
       - SKIP_LICENSED=1

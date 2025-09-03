@@ -130,7 +130,7 @@ def update(conf, download, version_update, create_embeddings):
             drugbank._parse_drugbank()  # requires proteins to be parsed first
         elif version == "open":
             drugbank.parse_drugbank()
-            chembl.parse_chembl()
+        chembl.parse_chembl()
         uniprot_signatures.parse()  # requires proteins to be parsed first
         hpo.parse()  # requires disorders to be parsed first
         reactome.parse()  # requires protein to be parsed first
@@ -229,18 +229,20 @@ def parse_dev(version, download, version_update, prev_metadata):
                        "go",
                        "uberon",
                        "clinvar",
-                       "hpo",
                        "hpa",
                        "uniprot",
                        "reactome",
-                       "bioontology",
                        "drug_central",
                        "unichem",
                        "repotrial",
                        "iid",
                        "intact",
                        "omim",
-                       "sider"}
+                       "ncg",
+                       "intogen",
+                       "opentargets",
+                       "orphanet"
+                       }
     if download:
         # fallback version is rarely needed. Do not change that file, only use the config!
         default_version = None
@@ -263,8 +265,9 @@ def parse_dev(version, download, version_update, prev_metadata):
         get_versions(version_update)
 
     mondo.parse_mondo_json()
-    ncbi.parse_gene_info()
-    opentargets.parse_gene_disease_associations()
+    # hpo.parse()
+    # bioontology.parse()
+    # ncbi.parse_gene_info()
     if version == "licensed":
         drugbank._parse_drugbank()
     elif version == "open":
@@ -273,17 +276,17 @@ def parse_dev(version, download, version_update, prev_metadata):
     disgenet.parse_gene_disease_associations()
 
 
-#    if download:
-#        # fallback version is rarely needed. Do not change that file, only use the config!
-#        default_version = None
-#        if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
-#            with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
-#                default_version = fallback_file.readline().rstrip()
-#        nedrex_version = update_versions(ignored_sources=ignored_sources, default_version=default_version)
-#        with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
-#            fallback_file.write(f"{nedrex_version}")
-#    if version_update:
-#        get_versions(version_update)
+   # if download:
+   #     # fallback version is rarely needed. Do not change that file, only use the config!
+   #     default_version = None
+   #     if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
+   #         with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
+   #             default_version = fallback_file.readline().rstrip()
+   #     nedrex_version = update_versions(ignored_sources=ignored_sources, default_version=default_version)
+   #     with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
+   #         fallback_file.write(f"{nedrex_version}")
+   # if version_update:
+   #     get_versions(version_update)
 
 
 @click.option("--conf", required=True, type=click.Path(exists=True))

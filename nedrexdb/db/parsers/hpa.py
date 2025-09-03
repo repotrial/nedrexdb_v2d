@@ -12,6 +12,7 @@ from nedrexdb.db.models.nodes.gene import Gene
 from nedrexdb.db.models.nodes.protein import Protein
 from nedrexdb.db.models.edges.gene_expressed_in_tissue import GeneExpressedInTissue
 from nedrexdb.db.models.edges.protein_expressed_in_tissue import ProteinExpressedInTissue
+from nedrexdb.logger import logger
 
 get_file_location = _get_file_location_factory("hpa")
 
@@ -153,6 +154,7 @@ def iter_entries():
 
 
 def parse_hpa():
+    logger.info("Parsing Human Protein Atlas")
     tissues = {i["primaryDomainId"] for i in Tissue.find(MongoInstance.DB)}
     genes = {i["primaryDomainId"] for i in Gene.find(MongoInstance.DB)}
     proteins = {i["primaryDomainId"] for i in Protein.find(MongoInstance.DB)}

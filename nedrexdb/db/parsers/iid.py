@@ -9,6 +9,7 @@ from nedrexdb.db import MongoInstance
 from nedrexdb.db.models.edges.protein_interacts_with_protein import ProteinInteractsWithProtein as _PPI
 from nedrexdb.db.models.nodes.protein import Protein as _Protein
 from nedrexdb.db.parsers import _get_file_location_factory
+from nedrexdb.logger import logger
 
 get_file_location = _get_file_location_factory("iid")
 
@@ -268,5 +269,6 @@ class IIDParser:
 
 
 def parse_ppis(method_scores):
+    logger.info("Parsing IID")
     filename = get_file_location("human")
     IIDParser(filename, method_scores).parse()

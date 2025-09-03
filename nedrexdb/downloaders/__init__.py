@@ -125,7 +125,8 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
             "opentargets",
             "cosmic",
             "intogen",
-            "hippie"
+            "hippie",
+            "sider"
         }:
             continue
 

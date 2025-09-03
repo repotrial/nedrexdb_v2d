@@ -15,6 +15,8 @@ wget https://cloud.uni-hamburg.de/s/PxWXAMY5bfS3ZcA/download/repotrial.zip -q -O
 echo "Downloaded repotrial.zip"
 wget https://cloud.uni-hamburg.de/public.php/dav/files/SXmWg6Q7aLEkdf6/?accept=zip -q -O hippie.zip
 echo "Downloaded hippie.zip"
+wget https://cloud.uni-hamburg.de/public.php/dav/files/WepcTz56PsNNa4P/?accept=zip -q -O sider.zip
+echo "Downloaded sider.zip"
 wget -nv https://zenodo.org/records/12806709/files/cosmic.zip?download=1 -q -O cosmic.zip
 echo "Downloaded cosmic.zip"
 wget -nv https://zenodo.org/records/12806709/files/intogen.zip?download=1 -q -O intogen.zip

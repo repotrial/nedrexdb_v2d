@@ -11,6 +11,7 @@ from nedrexdb.db.parsers import _get_file_location_factory
 from nedrexdb.db.models.nodes.drug import Drug
 from nedrexdb.db.models.nodes.side_effect import SideEffect
 from nedrexdb.db.models.edges.drug_has_side_effect import DrugHasSideEffect
+from nedrexdb.logger import logger
 
 get_file_location = _get_file_location_factory("sider")
 
@@ -44,7 +45,9 @@ def umls_to_meddra_map():
 
 
 def parse():
+    logger.info("Parsing Sider")
     fname = get_file_location("frequency_data")
+    logger.info(f"Sider file: {fname}")
 
     pc_db_map = pubchem_to_drugbank_map()
     mt_md_map = umls_to_meddra_map()
@@ -74,6 +77,6 @@ def parse():
                 )
 
                 updates.append(dhse.generate_update())
-
+    logger.debug(f"Identified {len(updates)} DrugHasSideEffect edges")
     for chunk in tqdm(chunked(updates, 1_000)):
         MongoInstance.DB[DrugHasSideEffect.collection_name].bulk_write(chunk)

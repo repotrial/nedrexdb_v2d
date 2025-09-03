@@ -267,8 +267,7 @@ filename = "ORPHAnomenclature_MasterFile_en_2024.xlsx"
 version = "4.1"
 
 [sources.sider.frequency_data]
-url = "http://sideeffects.embl.de/media/download/meddra_freq.tsv.gz"
-
+filename = "meddra_freq.tsv.gz"
 
 [sources.repotrial]
 version = "1.0.0"
