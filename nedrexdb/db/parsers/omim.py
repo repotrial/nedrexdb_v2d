@@ -12,6 +12,7 @@ from nedrexdb.db.models.edges.gene_associated_with_disorder import GeneAssociate
 from nedrexdb.db.models.nodes.gene import Gene
 from nedrexdb.db.models.nodes.disorder import Disorder
 from nedrexdb.db.parsers import _get_file_location_factory
+from nedrexdb.logger import logger
 
 
 get_file_location = _get_file_location_factory("omim")
@@ -115,6 +116,7 @@ class GeneMap2Parser:
 
 
 def parse_gene_disease_associations():
+    logger.info("Parsing Omim")
     gm2_file = _Path(get_file_location("genemap2"))
     parser = GeneMap2Parser(gm2_file)
     parser.parse()

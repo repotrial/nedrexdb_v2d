@@ -165,6 +165,7 @@ def parse_go():
 
 
 def parse_goa():
+    logger.info("Parsing GO")
     go_terms = {doc["primaryDomainId"] for doc in GO.find(MongoInstance.DB)}
     proteins = {doc["primaryDomainId"] for doc in Protein.find(MongoInstance.DB)}
 

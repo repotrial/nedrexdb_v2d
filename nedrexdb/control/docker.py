@@ -361,7 +361,10 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             pass
 
     def set_up(self, use_existing_volume=True, neo4j_mode="db"):
-        print(f"Setting up {self.db_mode} NeDRex instance...")
+        if neo4j_mode != "db-write":
+            print(f"Setting up {self.db_mode} NeDRex instance in not-running & write mode...")
+        else:
+            print(f"Setting up {self.db_mode} NeDRex instance in running & write mode...")
         self._set_up_neo4j(use_existing_volume=use_existing_volume, neo4j_mode=neo4j_mode)
         if neo4j_mode != "db-write":
             self._set_up_mongo(use_existing_volume=use_existing_volume)

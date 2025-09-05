@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import time
 
 import click
 import os
@@ -33,6 +32,12 @@ from nedrexdb.db.parsers import (
     sider,
     uberon,
     repotrial,
+    cosmic,
+    ncg,
+    intogen,
+    orphanet,
+    opentargets,
+    hippie
 )
 from nedrexdb.downloaders import get_versions, update_versions
 from nedrexdb.post_integration import (trim_uberon, drop_empty_collections)
@@ -118,13 +123,14 @@ def update(conf, download, version_update, create_embeddings):
         uniprot.parse_proteins()
 
         # Sources that add node type but require existing nodes, too
+        cosmic.parse_gene_disease_associations()
         clinvar.parse()
 
         if version == "licensed":
             drugbank._parse_drugbank()  # requires proteins to be parsed first
         elif version == "open":
             drugbank.parse_drugbank()
-            chembl.parse_chembl()
+        chembl.parse_chembl()
         uniprot_signatures.parse()  # requires proteins to be parsed first
         hpo.parse()  # requires disorders to be parsed first
         reactome.parse()  # requires protein to be parsed first
@@ -135,14 +141,23 @@ def update(conf, download, version_update, create_embeddings):
         unichem.parse()
         repotrial.parse()
 
+        #Loading annotation information
+        hippie_method_scores = hippie.parse_perplexity_techinque_scores()
+
         # Sources adding edges.
-        biogrid.parse_ppis()
         ctd.parse()
         disgenet.parse_gene_disease_associations()
+        intogen.parse_gene_disease_associations()
+        orphanet.parse_gene_disease_associations()
+        opentargets.parse_gene_disease_associations()
+        ncg.parse_gene_disease_associations()
+
         go.parse_goa()
         hpa.parse_hpa()
-        iid.parse_ppis()
-        intact.parse()
+
+        biogrid.parse_ppis(hippie_method_scores)
+        iid.parse_ppis(hippie_method_scores)
+        intact.parse(hippie_method_scores)
 
         if version == "licensed":
             omim.parse_gene_disease_associations()
@@ -193,21 +208,19 @@ def update(conf, download, version_update, create_embeddings):
     create_constraints()
 
     if create_embeddings:
-        # dev_instance = NeDRexDevInstance()
-        # dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
 
         # create embeddings
-        try:
-            create_vector_indices()
-            # time.sleep(10)
-        except Exception as e:
-            print(e)
-            print("Failed to create vector indices")
+        # try:
+        create_vector_indices()
+        # except Exception as e:
+        #     print(e)
+        #     print("Failed to create vector indices")
 
     dev_instance.remove()
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
+
 
 def parse_dev(version, download, version_update, prev_metadata):
     # control source downloads
@@ -216,18 +229,20 @@ def parse_dev(version, download, version_update, prev_metadata):
                        "go",
                        "uberon",
                        "clinvar",
-                       "hpo",
                        "hpa",
                        "uniprot",
                        "reactome",
-                       "bioontology",
                        "drug_central",
                        "unichem",
                        "repotrial",
                        "iid",
                        "intact",
                        "omim",
-                       "sider"}
+                       "ncg",
+                       "intogen",
+                       "opentargets",
+                       "orphanet"
+                       }
     if download:
         # fallback version is rarely needed. Do not change that file, only use the config!
         default_version = None
@@ -249,9 +264,10 @@ def parse_dev(version, download, version_update, prev_metadata):
     if version_update:
         get_versions(version_update)
 
-
     mondo.parse_mondo_json()
-    ncbi.parse_gene_info()
+    # hpo.parse()
+    # bioontology.parse()
+    # ncbi.parse_gene_info()
     if version == "licensed":
         drugbank._parse_drugbank()
     elif version == "open":
@@ -260,17 +276,17 @@ def parse_dev(version, download, version_update, prev_metadata):
     disgenet.parse_gene_disease_associations()
 
 
-#    if download:
-#        # fallback version is rarely needed. Do not change that file, only use the config!
-#        default_version = None
-#        if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
-#            with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
-#                default_version = fallback_file.readline().rstrip()
-#        nedrex_version = update_versions(ignored_sources=ignored_sources, default_version=default_version)
-#        with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
-#            fallback_file.write(f"{nedrex_version}")
-#    if version_update:
-#        get_versions(version_update)
+   # if download:
+   #     # fallback version is rarely needed. Do not change that file, only use the config!
+   #     default_version = None
+   #     if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
+   #         with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
+   #             default_version = fallback_file.readline().rstrip()
+   #     nedrex_version = update_versions(ignored_sources=ignored_sources, default_version=default_version)
+   #     with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
+   #         fallback_file.write(f"{nedrex_version}")
+   # if version_update:
+   #     get_versions(version_update)
 
 
 @click.option("--conf", required=True, type=click.Path(exists=True))

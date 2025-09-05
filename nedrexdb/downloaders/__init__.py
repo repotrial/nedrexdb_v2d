@@ -3,12 +3,9 @@ import logging
 import os
 import shutil as _shutil
 import re as _re
-import ast
 import time
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-import toml
-
 
 import requests
 from pathlib import Path as _Path
@@ -21,6 +18,10 @@ from nedrexdb.db import MongoInstance
 from nedrexdb.db.parsers import unichem
 from nedrexdb.downloaders.biogrid import download_biogrid as _download_biogrid, get_latest_biogrid_version
 from nedrexdb.downloaders.chembl import download_chembl as _download_chembl, get_latest_chembl_version
+from nedrexdb.downloaders.ncg import download_ncg as _download_ncg
+from nedrexdb.downloaders.intogen import download_intogen as _download_intogen
+from nedrexdb.downloaders.orphanet import download_orphanet as _download_orphanet
+from nedrexdb.downloaders.opentargets import download_opentargets as _download_opentargets
 from nedrexdb.exceptions import (
     ProcessError as _ProcessError,
 )
@@ -82,7 +83,27 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
     # already up-to-date data
     no_download = [key for key in prev_metadata if key in current_metadata and
                    prev_metadata[key] == current_metadata[key]]
-
+    
+    if "opentargets" not in ignored_sources:
+        if "opentargets" not in no_download:
+            _download_opentargets()
+        else:
+            print("opentargets is already up-to-date")
+    if "ncg" not in ignored_sources:
+        if "ncg" not in no_download:
+            _download_ncg()
+        else:
+            print("ncg is already up-to-date")
+    if "intogen" not in ignored_sources:
+        if "intogen" not in no_download:
+            _download_intogen()
+        else:
+            print("intogen is already up-to-date")
+    if "orphanet" not in ignored_sources:
+        if "orphanet" not in no_download:
+            _download_orphanet()
+        else:
+            print("orphanet is already up-to-date")
     if "chembl" not in ignored_sources:
         if "chembl" not in no_download:
             _download_chembl()
@@ -99,14 +120,20 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
         # Catch case to skip sources with bespoke downloaders entirely.
         if source in {
             "biogrid",
-            "chembl"
+            "chembl",
+            "ncg",
+            "opentargets",
+            "cosmic",
+            "intogen",
+            "hippie",
+            "sider"
         }:
             continue
 
         # Catch case to skip sources with bespoke downloaders after setting metadata.
         if source in {
             "drugbank",
-            "disgenet"
+            "disgenet",
         }:
             continue
 
@@ -277,7 +304,8 @@ def get_versions(no_download):
         v.increment("patch")
         metadata["version"] = f"{v}"
 
-    for source in metadata["source_databases"].keys():
+    metadata_keys= {k for k in metadata["source_databases"].keys()}
+    for source in metadata_keys:
         if source not in _config["sources"]:
             del metadata["source_databases"][source]
 

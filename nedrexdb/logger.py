@@ -1,4 +1,5 @@
 import sys as _sys
+import os
 
 from loguru import logger
 
@@ -10,4 +11,4 @@ log_format = (
     "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
     "<level>{message}</level>"
 )
-logger.add(_sys.stderr, format=log_format, level="DEBUG")
+logger.add(_sys.stderr, format=log_format, level=os.environ.get("LOG_LEVEL", "INFO"))

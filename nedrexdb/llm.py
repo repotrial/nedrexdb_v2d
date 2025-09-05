@@ -1,7 +1,9 @@
 from nedrexdb import config as _config
 
-_LLM_BASE=_config["embeddings.server_base"]
-_LLM_model=_config[f"embeddings.model"]
-_LLM_path=_config[f"embeddings.path"]
+_LLM_embeddings = _config["embeddings"]
+_LLM_BASE=_LLM_embeddings["server_base"]
+_LLM_model=_LLM_embeddings["model"]
+_LLM_path=_LLM_embeddings["path"]
+_LLM_embedding_length=_LLM_embeddings.get("embedding_length",1024)
 
-_LLM_API_KEY=_config[f"embeddings"].get("api_key", "no-key")
+_LLM_API_KEY=_LLM_embeddings.get("api_key", "no-key")
