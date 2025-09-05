@@ -28,7 +28,7 @@ env:
 
 jobs:
   build-base:
-#    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
