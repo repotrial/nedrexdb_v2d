@@ -47,7 +47,6 @@ def umls_to_meddra_map():
 def parse():
     logger.info("Parsing Sider")
     fname = get_file_location("frequency_data")
-    logger.info(f"Sider file: {fname}")
 
     pc_db_map = pubchem_to_drugbank_map()
     mt_md_map = umls_to_meddra_map()
