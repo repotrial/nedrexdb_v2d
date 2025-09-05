@@ -79,7 +79,6 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-main:
-    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -137,7 +136,7 @@ jobs:
           cache-to: type=gha, mode=max
 
   build-neo4j:
-#    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
