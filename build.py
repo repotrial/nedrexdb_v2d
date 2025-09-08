@@ -109,7 +109,9 @@ def update(conf, download, version_update, create_embeddings):
             # do the download
             logger.debug("Download: ON")
             current_metadata = nedrex_versions["source_databases"]
-            subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
+            logger.info("Starting dump downloads")
+            loglevel_info_or_debug = os.environ.get("LOG_LEVEL", "INFO") in ["DEBUG", "INFO"]
+            subprocess.run(["./setup_data.sh", "/data/nedrex_files", "1" if loglevel_info_or_debug else "0"])
             downloaders.download_all(prev_metadata=prev_metadata, current_metadata=current_metadata)
 
         if version_update:
@@ -259,6 +261,7 @@ def parse_dev(version, download, version_update, prev_metadata):
         # do the download
         logger.debug("Download: ON")
         current_metadata = nedrex_versions["source_databases"]
+        logger.info("Starting dump downloads")
         subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
         downloaders.download_all(ignored_sources=ignored_sources,
                                  prev_metadata=prev_metadata,

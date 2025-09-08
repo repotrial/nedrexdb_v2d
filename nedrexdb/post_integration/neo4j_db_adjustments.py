@@ -250,19 +250,23 @@ EDGE_EMBEDDING_CONFIG = {
 # dev_edges = []
 dev_nodes = None
 dev_edges = None
+open_con = None
 
 
 def get_kg_connection() -> Neo4jGraph:
+    global open_con
     NEO4J_URI = f'bolt://{_config["db.dev.neo4j_name"]}:7687'
-    logger.debug(f"Opening connection to {NEO4J_URI}")
 
     retry = 10
     while retry > 0:
         try:
-            kg = Neo4jGraph(
-                url=NEO4J_URI, username="", password="", database='neo4j'
-            )
-            return kg
+            if open_con is None:
+                logger.debug(f"Opening connection to {NEO4J_URI}")
+                open_con = Neo4jGraph(
+                    url=NEO4J_URI, username="", password="", database='neo4j'
+                )
+            if open_con is not None:
+                return open_con
         except Exception:
             retry -= 1
             if retry == 0:
@@ -271,15 +275,24 @@ def get_kg_connection() -> Neo4jGraph:
         time.sleep(30)
 
 
+def close_kg_connection():
+    global open_con
+    if open_con is not None:
+        open_con.close()
+        open_con = None
+
+
 def create_unique_node_constraint(con, node_type, attribute):
     query = f"CREATE CONSTRAINT {node_type.lower()}_{attribute.lower()}_unique FOR (n:{node_type}) REQUIRE n.{attribute} IS UNIQUE"
     con.query(query)
 
 def create_constraints():
+    logger.info("Creating unique constraints for IDs")
     kg = get_kg_connection()
     node_list = NODE_EMBEDDING_CONFIG.keys() if not dev_nodes else dev_nodes
     for node in node_list:
         create_unique_node_constraint(kg, node, "primaryDomainId")
+    close_kg_connection()
 
 
 def create_vector_indices():
@@ -327,6 +340,7 @@ def create_vector_indices():
         logger.info("Ready to switch to read-only mode")
     else:
         logger.error("Something went wrong with the index build")
+    close_kg_connection()
 
 
 def get_node_info_string(node_name, node_embedding_config):

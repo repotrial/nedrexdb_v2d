@@ -11,4 +11,5 @@ log_format = (
     "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
     "<level>{message}</level>"
 )
-logger.add(_sys.stderr, format=log_format, level=os.environ.get("LOG_LEVEL", "INFO"))
+os.environ["LOG_LEVEL"] = os.environ.get("LOG_LEVEL", "INFO")
+logger.add(_sys.stderr, format=log_format, level=os.environ.get("LOG_LEVEL"))
