@@ -1,6 +1,7 @@
 from langchain_neo4j import Neo4jGraph
 from nedrexdb import config as _config
 import time
+from nedrexdb.logger import logger
 
 NODE_EMBEDDING_CONFIG = {
     "Disorder": {
@@ -253,6 +254,7 @@ dev_edges = None
 
 def get_kg_connection() -> Neo4jGraph:
     NEO4J_URI = f'bolt://{_config["db.dev.neo4j_name"]}:7687'
+    logger.debug(f"Opening connection to {NEO4J_URI}")
 
     retry = 10
     while retry > 0:
@@ -264,9 +266,9 @@ def get_kg_connection() -> Neo4jGraph:
         except Exception:
             retry -= 1
             if retry == 0:
-                print("Could not connect to Neo4j database at " + NEO4J_URI)
+                logger.error(f"Failed to connect to Neo4j at {NEO4J_URI} after {10} retries!")
                 return None
-            time.sleep(10)
+        time.sleep(30)
 
 
 def create_unique_node_constraint(con, node_type, attribute):
@@ -281,7 +283,7 @@ def create_constraints():
 
 
 def create_vector_indices():
-    print("Starting indexing")
+    logger.info("Starting indexing")
 
     kg = get_kg_connection()
 
@@ -303,7 +305,7 @@ def create_vector_indices():
         num_retries -= 1
 
     if len(node_list) > 0:
-        print(f"Could not create embeddings successfully for the following nodes: {node_list}")
+        logger.warning(f"Could not create embeddings successfully for the following nodes: {node_list}")
 
     edge_list = EDGE_EMBEDDING_CONFIG.keys() if not dev_edges else dev_edges
     retry_list = []
@@ -319,12 +321,12 @@ def create_vector_indices():
         num_retries -= 1
 
     if len(edge_list) > 0:
-        print(f"Could not create embeddings successfully for the following edges: {edge_list}")
+        logger.warning(f"Could not create embeddings successfully for the following edges: {edge_list}")
 
     if wait_for_database_ready(kg, index_names):
-        print("Ready to switch to read-only mode")
+        logger.info("Ready to switch to read-only mode")
     else:
-        print("Something went wrong with the index build")
+        logger.error("Something went wrong with the index build")
 
 
 def get_node_info_string(node_name, node_embedding_config):
@@ -408,16 +410,16 @@ def fill_vector_index(con, entityType, name) -> bool:
                 break
             except Exception as e:
                 print(e)
-                print(f"Encountered an issue! Retry {6 - retries} retrying in 60s...")
+                logger.error(f"Encountered an issue! Retry {6 - retries} retrying in 60s...")
                 if retries == 0:
                     raise e
                 time.sleep(60)
         duration = time.time() - start
-        print(f"Building {name} embedding indexes finished after {duration} seconds")
+        logger.info(f"Building {name} embedding indexes finished after {duration} seconds")
         return True
     except Exception as e:
         print(e)
-        print("Could not create vector index for " + name)
+        logger.error("Could not create vector index for " + name)
         return False
 
 def get_info_string(element_type, name, node_config, edge_config):
@@ -555,17 +557,17 @@ def wait_for_database_ready(con, index_names=['bad_default']):
 
             if result:
                 index = result[0]
-                print(f"\nIndex details:")
-                print(f"- Name: {index['name']}")
-                print(f"- State: {index['state']}")
-                print(f"- Type: {index['type']}")
-                print(f"- Labels: {index['labelsOrTypes']}")
-                print(f"- Properties: {index['properties']}")
+                logger.debug(f"\nIndex details:")
+                logger.debug(f"- Name: {index['name']}")
+                logger.debug(f"- State: {index['state']}")
+                logger.debug(f"- Type: {index['type']}")
+                logger.debug(f"- Labels: {index['labelsOrTypes']}")
+                logger.debug(f"- Properties: {index['properties']}")
                 return index['state'] == 'ONLINE'
             else:
-                print(f"\nNo index found with name {index_name}")
+                logger.warning(f"\nNo index found with name {index_name}")
                 return False
 
         except Exception as e:
-            print(f"\nError checking index: {str(e)}")
+            logger.error(f"\nError checking index: {str(e)}")
             return False

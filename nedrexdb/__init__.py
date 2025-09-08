@@ -22,7 +22,7 @@ class _Config:
             self.data = _toml.load(f)
             # from here on, set defaults for minimal config
             if "version_type" in self.data.keys():
-                print("USING MINIMAL CONFIG MODE")
+                logger.info("Pulling configuration from defaults if necessary...")
                 vt = self.data["version_type"]
                 defaults_dict = {'api': {'mode': f'{vt}',
                                          'status': 'live',

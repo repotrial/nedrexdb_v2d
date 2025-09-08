@@ -41,7 +41,7 @@ def download_opentargets():
     url = _config["sources.opentargets"]["gene_disease_associations"]["url"]
     url_mapping = _config["sources.opentargets"]["mapping_diseases"]["url"]
     url_associations_summary = _config["sources.opentargets"]["gene_disease_associations_summary"]["url"]
-    print(target_dir.resolve())
+    logger.debug(target_dir.resolve())
 
 
     # OpenTargets downloads a directory -> delete old directory first, in case content was changed

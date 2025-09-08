@@ -39,7 +39,7 @@ def download_intogen():
     d.download()
     with _cd(intogen_dir):
         _subprocess.call(
-            ["unzip", "-d", zip_dir, zip_fname],
+            ["unzip", "-qd", zip_dir, zip_fname],
             stdout=_subprocess.DEVNULL,
             stderr=_subprocess.DEVNULL,
         )

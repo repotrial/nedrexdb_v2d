@@ -11,6 +11,7 @@ import requests
 from pathlib import Path as _Path
 
 import nedrexdb
+from nedrexdb.logger import logger
 from nedrexdb import config as _config
 from nedrexdb import mconfig as _mconfig
 from nedrexdb.common import Downloader
@@ -61,7 +62,7 @@ def update_version(name, source_url, unique_pattern, mode="date", skip_digits=0)
     except:
         version = "N/A"
     date = _datetime.datetime.now().date()
-    print(f"{name}: date: {date}, version: {version}")
+    logger.debug(f"{name}: date: {date}, version: {version}")
     return {"date": f"{date}", "version": version}
 
 def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_metadata={}):
@@ -78,7 +79,7 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
                     "version_url", "version_pattern", "version_mode", "skip_digits"}
     exclude_keys.update(ignored_sources)
 
-    print(f"ignore sources for download: {ignored_sources}")
+    logger.debug(f"ignore sources for download: {ignored_sources}")
 
     # already up-to-date data
     no_download = [key for key in prev_metadata if key in current_metadata and
@@ -88,32 +89,32 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
         if "opentargets" not in no_download:
             _download_opentargets()
         else:
-            print("opentargets is already up-to-date")
+            logger.debug("opentargets is already up-to-date")
     if "ncg" not in ignored_sources:
         if "ncg" not in no_download:
             _download_ncg()
         else:
-            print("ncg is already up-to-date")
+            logger.debug("ncg is already up-to-date")
     if "intogen" not in ignored_sources:
         if "intogen" not in no_download:
             _download_intogen()
         else:
-            print("intogen is already up-to-date")
+            logger.debug("intogen is already up-to-date")
     if "orphanet" not in ignored_sources:
         if "orphanet" not in no_download:
             _download_orphanet()
         else:
-            print("orphanet is already up-to-date")
+            logger.debug("orphanet is already up-to-date")
     if "chembl" not in ignored_sources:
         if "chembl" not in no_download:
             _download_chembl()
         else:
-            print("chembl is already up-to-date")
+            logger.debug("chembl is already up-to-date")
     if "biogrid" not in ignored_sources:
         if "biogrid" not in no_download:
             _download_biogrid()
         else:
-            print("biogrid is already up-to-date")
+            logger.debug("biogrid is already up-to-date")
 
     for source in filter(lambda i: i not in exclude_keys, sources):
 
@@ -170,7 +171,7 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
                         retries -= 1
                         time.sleep(timeout)
         else:
-            print(f"{source} is already up-to-date")
+            logger.debug(f"{source} is already up-to-date")
 
 def validate_download(file, source):
     if source == "unichem":
@@ -186,7 +187,7 @@ def update_versions(ignored_sources=set(), default_version=None):
 
     metadata = {"source_databases": {}}
 
-    print(f"ignore sources for versions: {ignored_sources}")
+    logger.debug(f"ignore sources for versions: {ignored_sources}")
 
     if "chembl" not in ignored_sources:
         chembl_date = _datetime.datetime.now().date()
@@ -204,7 +205,7 @@ def update_versions(ignored_sources=set(), default_version=None):
 
     for source in filter(lambda i: i not in exclude_keys, sources):
 
-        print(f"checking version of {source}")
+        logger.info(f"checking version of {source}")
 
         # update metadata
         meta = sources[source]
@@ -318,7 +319,8 @@ def get_versions(no_download):
             MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
             break  # Success, exit the loop
         except PyMongoError as e:
-            print(f"Attempt {attempt} failed: {e}")
+            logger.warning(f"Attempt {attempt} failed: {e}")
             if attempt == max_retries:
+                logger.error(f"Metadata could not be set!")
                 raise  # Re-raise the exception after final attempt
             time.sleep(retry_delay)

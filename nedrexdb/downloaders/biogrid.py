@@ -22,6 +22,7 @@ def get_latest_biogrid_version() -> str:
     url = "https://wiki.thebiogrid.org/doku.php/statistics"
     response = requests.get(url)
     if response.status_code != 200:
+        logger.error("got non-zero status code while scraping BioGRID to get latest version")
         raise _ProcessError("got non-zero status code while scraping BioGRID to get latest version")
 
     soup = BeautifulSoup(response.text, features="lxml")
@@ -67,6 +68,7 @@ def download_biogrid():
                 _os.remove(f)
 
     if counter != 1:
+        logger.error(f"More than one BioGRID file containing 'Homo_sapiens' was found")
         raise _AssumptionError("more than one BioGRID file containing 'Homo_sapiens' was found")
 
     return version

@@ -3,6 +3,8 @@ from collections import defaultdict
 from tqdm import tqdm
 
 from nedrexdb import config as _config
+from nedrexdb.logger import logger
+import time as _time
 
 
 def profile_collections(db):
@@ -10,20 +12,20 @@ def profile_collections(db):
     edges = _config["api.edge_collections"]
 
     collections = nodes + edges
-    print("Starting collection profiling...")
+    logger.info("Starting collection profiling...")
     for coll in collections:
         if coll not in db.list_collection_names():
-            print(f"WARNING: Collection '{coll}' does not exist in database, skipping...")
+            logger.warning(f"Collection '{coll}' does not exist in database, skipping...")
             continue
 
-        print(f"Profiling collection: {coll}")
+        logger.info(f"Profiling collection: {coll}")
         doc_count = 0
         attr_counts = defaultdict(int)
 
         try:
             total_docs = db[coll].count_documents({})
             if total_docs == 0:
-                print(f"WARNING: Collection '{coll}' is empty")
+                logger.warning(f"Collection '{coll}' is empty")
                 continue
 
             for doc in tqdm(db[coll].find(), total=total_docs, desc=f"Processing {coll}", leave=False):
@@ -43,9 +45,11 @@ def profile_collections(db):
                 },
                 upsert=True
             )
-            print(f"Successfully profiled {coll}: {doc_count} documents")
+            logger.info(f"Successfully profiled {coll}: {doc_count} documents")
+            _time.sleep(60)
+            logger.debug("Giving Neo4j some time to finish internal processes.")
         except Exception as e:
-            print(f"Error profiling {coll}: {str(e)}")
+            logger.error(f"Error profiling {coll}: {str(e)}")
             raise
 
 
@@ -57,4 +61,5 @@ def verify_collections_after_profiling(db):
 
     missing = actual_collections - metadata_collections
     if missing:
+        logger.error(f"Collections missing from metadata after profiling: {missing}")
         raise Exception(f"Collections missing from metadata after profiling: {missing}")

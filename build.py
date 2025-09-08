@@ -3,6 +3,7 @@
 import click
 import os
 import subprocess
+import time
 
 import nedrexdb
 from nedrexdb import config, downloaders
@@ -42,7 +43,7 @@ from nedrexdb.db.parsers import (
 from nedrexdb.downloaders import get_versions, update_versions
 from nedrexdb.post_integration import (trim_uberon, drop_empty_collections)
 from nedrexdb.post_integration.neo4j_db_adjustments import create_constraints, create_vector_indices
-
+from nedrexdb.logger import logger
 
 @click.group()
 def cli():
@@ -55,10 +56,10 @@ def cli():
 @click.option("--create_embeddings", is_flag=True, default=False)
 @cli.command()
 def update(conf, download, version_update, create_embeddings):
-    print(f"Config file: {conf}")
-    print(f"Download updates: {download}")
-    print(f"Update DB versions: {version_update}")
-    print(f"Create embeddings: {create_embeddings}")
+    logger.debug(f"Config file: {conf}")
+    logger.info(f"Download updates: {download}")
+    logger.info(f"Update DB versions: {version_update}")
+    logger.info(f"Create embeddings: {create_embeddings}")
 
     nedrexdb.parse_config(conf)
 
@@ -78,13 +79,12 @@ def update(conf, download, version_update, create_embeddings):
             MongoInstance.connect("live")
             prev_metadata = list(MongoInstance.DB["metadata"].find())
             prev_metadata = {} if prev_metadata is None else prev_metadata[0]["source_databases"]
-            # log printing
-            print("PREVIOUS METADATA")
+            logger.debug("PREVIOUS METADATA")
             for source in prev_metadata:
-                print(f"{source}:\t{prev_metadata[source]['version']}"
+                logger.debug(f"{source}:\t{prev_metadata[source]['version']}"
                       f" [{prev_metadata[source]['date']}]")
         except:
-            print("No previous metadata found")
+            logger.warning("No previous metadata found")
 
     dev_instance = NeDRexDevInstance()
     dev_instance.remove()
@@ -107,7 +107,7 @@ def update(conf, download, version_update, create_embeddings):
                 fallback_file.write(f"{nedrex_versions['version']}")
 
             # do the download
-            print("Download: ON")
+            logger.debug("Download: ON")
             current_metadata = nedrex_versions["source_databases"]
             subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
             downloaders.download_all(prev_metadata=prev_metadata, current_metadata=current_metadata)
@@ -197,6 +197,7 @@ def update(conf, download, version_update, create_embeddings):
     # Profile the collections
     collection_stats.profile_collections(MongoInstance.DB)
 
+
     collection_stats.verify_collections_after_profiling(MongoInstance.DB)
 
 
@@ -205,16 +206,18 @@ def update(conf, download, version_update, create_embeddings):
 
     dev_instance = NeDRexDevInstance()
     dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+    #Let neo4j spinn up properly before connecting
+    time.sleep(60)
     create_constraints()
 
     if create_embeddings:
 
         # create embeddings
-        # try:
-        create_vector_indices()
-        # except Exception as e:
-        #     print(e)
-        #     print("Failed to create vector indices")
+        try:
+            create_vector_indices()
+        except Exception as e:
+            print(e)
+            logger.warning("Failed to create vector indices")
 
     dev_instance.remove()
     live_instance = NeDRexLiveInstance()
@@ -254,7 +257,7 @@ def parse_dev(version, download, version_update, prev_metadata):
             fallback_file.write(f"{nedrex_versions['version']}")
 
         # do the download
-        print("Download: ON")
+        logger.debug("Download: ON")
         current_metadata = nedrex_versions["source_databases"]
         subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
         downloaders.download_all(ignored_sources=ignored_sources,
@@ -293,7 +296,7 @@ def parse_dev(version, download, version_update, prev_metadata):
 # @click.option("--create_embeddings", is_flag=True, default=False)
 @cli.command()
 def restart_live(conf):
-    print(f"Config file: {conf}")
+    logger.debug(f"Config file: {conf}")
     nedrexdb.parse_config(conf)
     
     # if create_embeddings:

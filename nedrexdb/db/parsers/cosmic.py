@@ -225,7 +225,7 @@ class COSMICParser:
                 bulk_write_results = MongoInstance.DB[this_collection_name].bulk_write(
                     these_updates)
                 if bulk_write_results.bulk_api_result['writeErrors'] or bulk_write_results.bulk_api_result['writeConcernErrors']:
-                    print(bulk_write_results.bulk_api_result)
+                    logger.debug(bulk_write_results.bulk_api_result)
 
 
 
