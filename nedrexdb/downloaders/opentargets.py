@@ -15,7 +15,7 @@ def getData(target_dir, url):
     _sp.call(
         (
             "wget",
-            "--no-verbose",
+            "--no-verbose" if _os.environ["LOG_LEVEL"] == "DEBUG" else "-q",
             "--read-timeout",
             "10",
             "--recursive",
