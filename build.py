@@ -38,7 +38,6 @@ from nedrexdb.downloaders import get_versions, update_versions
 from nedrexdb.post_integration import (trim_uberon, drop_empty_collections, create_vector_indices)
 
 
-
 @click.group()
 def cli():
     pass
@@ -65,39 +64,51 @@ def update(conf, download, version_update, create_embeddings):
     version_update_skip = set()
     prev_metadata = {}
 
-# check for metadata of the current live version before fetching new data
+    # check for metadata of the current live version before fetching new data
     if download:
-        MongoInstance.connect("live")
-        prev_metadata = list(MongoInstance.DB["metadata"].find())
-        prev_metadata = {} if prev_metadata is None else prev_metadata[0]["source_databases"]
-        # log printing
-        print("PREVIOUS METADATA")
-        for source in prev_metadata:
-            print(f"{source}:\t{prev_metadata[source]['version']}"
-                  f" [{prev_metadata[source]['date']}]")
+        try:
+            MongoInstance.connect("live")
+            if create_embeddings:
+                # find sources used previously to create embeddings
+                distinct_per_collection = {}
+                for collection_name in MongoInstance.DB.list_collection_names():
+                    if collection_name not in ["metadata", '_collections']:
+                        collection = MongoInstance.DB[collection_name]
+                        # Get distinct values for the field `dataSources`
+                        try:
+                            distinct_values = collection.distinct("dataSources")
+                        except Exception as e:
+                            print(f"⚠️ Could not fetch distinct dataSources for collection '{collection_name}': {e}")
+                            continue
+                        if distinct_values:
+                            distinct_per_collection[collection_name.replace("_", "")] = distinct_values
+                            print(f"Found distinct dataSources for collection {collection_name}")
+            # needed for metadata comparisons
+            prev_metadata = list(MongoInstance.DB["metadata"].find())
+            prev_metadata = {} if prev_metadata is None else prev_metadata[0]["source_databases"]
+            # log printing
+            print("PREVIOUS METADATA")
+            for source in prev_metadata:
+                print(f"{source}:\t{prev_metadata[source]['version']}"
+                      f" [{prev_metadata[source]['date']}]")
+        except:
+            print("NO PREVIOUS METADATA FOUND")
 
+    # init neo4j (while not needed for download & parsing of data - mongoDB does that)
     dev_instance = NeDRexDevInstance()
-    dev_instance.remove()
-
-    # fetch embeddings from previous database
-    tobuild_embeddings = {"Drug"}
-    embeddings = {}
-    if create_embeddings:
-        dev_instance.set_up(use_existing_volume=True, neo4j_mode="db")
-        embeddings["Drug"] = fetch_embeddings()
-        check_list = [(entry[0], entry[1][1]) for entry in embeddings["Drug"]][:5]
-        print(check_list)
-        if check_list:
-            tobuild_embeddings.remove("Drug")
-        print(tobuild_embeddings)
-        dev_instance.remove()
-
-    dev_instance.set_up(use_existing_volume=False, neo4j_mode="import")
-    MongoInstance.connect("dev")
-    MongoInstance.set_indexes()
+    #dev_instance.remove()
 
     if os.environ.get("TEST_MINIMUM", 0) == '1':
-        parse_dev(version=version, download=download, version_update=version_update, prev_metadata=prev_metadata)
+        # only pass dev_instance if embeddings are created
+        instance = None
+        if create_embeddings:
+            instance = dev_instance
+        embeddings, tobuild_embeddings = parse_dev(version=version,
+                                                   download=download,
+                                                   version_update=version_update,
+                                                   prev_metadata=prev_metadata,
+                                                   distinct_per_collection=distinct_per_collection,
+                                                   dev_instance=instance)
     else:
         if download:
             # update metadata
@@ -124,9 +135,22 @@ def update(conf, download, version_update, create_embeddings):
         if version_update:
             get_versions(version_update)
 
+        if create_embeddings:
+            embeddings, tobuild_embeddings = manage_embeddings(dev_instance=dev_instance,
+                                                               distinct_per_collection=distinct_per_collection)
+
+        # prepare neo4j for import from mongoDB
+        dev_instance.set_up(use_existing_volume=False, neo4j_mode="import")
+
+        # MongoDB data download & import
+        MongoInstance.connect("dev")
+        MongoInstance.set_indexes()
+
+        MongoInstance.DB["metadata"].replace_one({}, nedrex_versions, upsert=True)
+
         # Parse sources contributing only nodes (and edges amongst those nodes)
         go.parse_go()
-        mondo.parse_mondo_json()
+        mondo.parse_mondo_json()  # disorder nodes
         ncbi.parse_gene_info()
         uberon.parse()
         uniprot.parse_proteins()
@@ -171,11 +195,6 @@ def update(conf, download, version_update, create_embeddings):
         # Post-processing
         trim_uberon.trim_uberon()
 
-
-
-
-
-
     # clean up for export
     drop_empty_collections.drop_empty_collections()
 
@@ -187,29 +206,128 @@ def update(conf, download, version_update, create_embeddings):
 
     collection_stats.verify_collections_after_profiling(MongoInstance.DB)
 
-
-    # remove dev instance and set up live instance
-    dev_instance.remove(neo4j_mode="import")
+    if not create_embeddings:
+        # remove dev instance and set up live instance
+        dev_instance.remove(neo4j_mode="import")
 
     if create_embeddings:
-        dev_instance = NeDRexDevInstance()
-        dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+        embedding_deps = {}
+        # find sources used now to build mongo
+        for collection_name in MongoInstance.DB.list_collection_names():
+            if collection_name not in ["metadata", '_collections']:
+                collection = MongoInstance.DB[collection_name]
+                # Get distinct values for the field `dataSources`
+                try:
+                    distinct_values = collection.distinct("dataSources")
+                except Exception as e:
+                    print(f"⚠️ Could not fetch new distinct dataSources for collection '{collection_name}': {e}")
+                    continue
+                collection_name = collection_name.replace("_", "")
+                if (collection_name not in distinct_per_collection.keys() or
+                        distinct_per_collection[collection_name] != distinct_values):
+                    embeddings.pop(collection_name, None)
+                    tobuild_embeddings.add(collection_name)
+                    print("Collection name:")
+                    print(collection_name)
+                if distinct_values:
+                    embedding_deps[collection_name] = distinct_values
 
-        # upsert previous embeddings, if they are still up-to-date
-        upsert_embeddings(embeddings["Drug"])
+        for collection_name in embeddings.keys():
+            import_embedding = True
+            for dependency in embedding_deps[collection_name]:
+                # check if dependency is up-to-date to decide whether an embedding can be imported or has to be built
+                if dependency not in no_download:
+                    import_embedding = False
 
-        # create embeddings
-        try:
-            create_vector_indices.create_vector_indices(tobuild_embeddings)
-        except Exception as e:
-            print(e)
-            print("Failed to create vector indices")
-        dev_instance.remove()
+                # check which embeddings can be build based on current metadata
+                if dependency not in current_metadata.keys():
+                    import_embedding = None
+                    break
+
+            if not import_embedding:
+                embeddings.pop(collection_name)
+                tobuild_embeddings.add(collection_name)
+
+        print(embeddings.keys())
+        print("tobuild:")
+        print(tobuild_embeddings)
+
+        dev_instance.remove(neo4j_mode="import")
+        manage_embeddings(dev_instance=dev_instance,
+                          read=False,
+                          embeddings=embeddings,
+                          tobuild_embeddings=tobuild_embeddings)
+
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
 
-def parse_dev(version, download, version_update, prev_metadata):
+
+# put all embedding management in here to properly separate it from the essential code
+def manage_embeddings(dev_instance,
+                      distinct_per_collection={},
+                      read=True,
+                      embeddings=None,
+                      tobuild_embeddings=None):
+    # goal: "read" embeddings from previous build to not have to create them again (if metadata is unchanged)
+    if read:
+        toimport_embeddings = set()
+        tobuild_embeddings = set()
+        # fetch embeddings from previous database
+        for collection_name in config["embeddings"]["embedding_dependencies"]:
+            if collection_name in distinct_per_collection.keys():
+                toimport_embeddings.add(collection_name)
+            else:
+                tobuild_embeddings.add(collection_name)
+
+        print("To import embeddings:")
+        print(toimport_embeddings)
+
+        if toimport_embeddings:
+            dev_instance.set_up(use_existing_volume=True, neo4j_mode="db")
+            embeddings = fetch_embeddings(toimport_embeddings)
+            dev_instance.remove()
+        else:
+            embeddings = {}
+
+        try:
+            check_list = [(entry[0], entry[1][1]) for entry in embeddings["drug"]][:5]
+            print("Printing drug check list in next line...")
+            print(check_list)
+        except:
+            print("Cannot print drug check list")
+
+        # if embedding was not built in the last version even though metadata did not change
+        for key in list(embeddings.keys()):
+            if not embeddings[key]:
+                tobuild_embeddings.add(key)
+                embeddings.pop(key)
+
+        print("To build embeddings:")
+        print(tobuild_embeddings)
+
+        return embeddings, tobuild_embeddings
+
+    else:
+        dev_instance = NeDRexDevInstance()
+        dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+
+        # upsert previous embeddings, if they are still up-to-date
+        upsert_embeddings(embeddings)
+
+        # create embeddings
+        try:
+            for key in config["embeddings"]["embedding_dependencies"]:
+                if key not in tobuild_embeddings:
+                    config["embeddings"]["embedding_dependencies"].pop(key)
+            create_vector_indices.create_vector_indices(config["embeddings"]["embedding_dependencies"])
+        except Exception as e:
+            print(e)
+            print("Failed to create vector indices")
+        dev_instance.remove()
+
+
+def parse_dev(version, download, version_update, prev_metadata, distinct_per_collection, dev_instance):
     # control source downloads
     ignored_sources = {"chembl",
                        "biogrid",
@@ -227,10 +345,10 @@ def parse_dev(version, download, version_update, prev_metadata):
                        "iid",
                        "intact",
                        "omim",
-                       "sider", # from here on, temp.
-                       "ctd",
+                       "sider",  # from here on, temp.
+                       #"ctd",
                        "disgenet",
-                       "mondo",
+                       #"mondo",
                        "ncbi"}
     if download:
         # fallback version is rarely needed. Do not change that file, only use the config!
@@ -259,6 +377,19 @@ def parse_dev(version, download, version_update, prev_metadata):
     if version_update:
         get_versions(version_update)
 
+    if dev_instance is not None:
+        embeddings, tobuild_embeddings = manage_embeddings(dev_instance=dev_instance,
+                                                           distinct_per_collection=distinct_per_collection)
+
+    # prepare neo4j for import from mongoDB
+    dev_instance.set_up(use_existing_volume=False, neo4j_mode="import")
+
+    # MongoDB data download & import
+    MongoInstance.connect("dev")
+    MongoInstance.set_indexes()
+
+    MongoInstance.DB["metadata"].replace_one({}, nedrex_versions, upsert=True)
+
     if "mondo" not in ignored_sources:
         mondo.parse_mondo_json()
     if "ncbi" not in ignored_sources:
@@ -268,12 +399,15 @@ def parse_dev(version, download, version_update, prev_metadata):
             drugbank._parse_drugbank()
         elif version == "open":
             drugbank.parse_drugbank()
+    if "drug_central" not in ignored_sources:
+        drug_central.parse_drug_central()
     if "ctd" not in ignored_sources:
         ctd.parse()
     if "disgenet" not in ignored_sources:
         disgenet.parse_gene_disease_associations()
 
-
+    if dev_instance:
+        return embeddings, tobuild_embeddings
 
 
 @click.option("--conf", required=True, type=click.Path(exists=True))

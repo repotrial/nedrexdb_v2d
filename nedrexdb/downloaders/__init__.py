@@ -191,8 +191,11 @@ def update_versions(ignored_sources=set(), default_version=None):
             version = meta["version"] if "version" in meta.keys() else f"{date}"
             metadata["source_databases"][source] = {"date": f"{date}", "version": version}
 
+    try:
+        docs = list(MongoInstance.DB["metadata"].find())
+    except:
+        docs = []
 
-    docs = list(MongoInstance.DB["metadata"].find())
     if len(docs) == 1:
         version = docs[0]["version"]
     elif len(docs) == 0:
@@ -207,8 +210,7 @@ def update_versions(ignored_sources=set(), default_version=None):
 
     metadata["version"] = f"{v}"
 
-    MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
-
+    #MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
 
     return metadata
 
@@ -267,7 +269,8 @@ def get_versions(no_download):
         v.increment("patch")
         metadata["version"] = f"{v}"
 
-    for source in metadata["source_databases"].keys():
+    metadata_keys = {k for k in metadata["source_databases"].keys()}
+    for source in metadata_keys:
         if source not in _config["sources"]:
             del metadata["source_databases"][source]
 

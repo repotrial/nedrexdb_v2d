@@ -38,6 +38,7 @@ class _Config:
                                          'redis_queue_db': 3,
                                          'mongo_port_internal': 27017,
                                          'mongo_db': 'nedrexapi',
+                                         #'network': ,
                                          'node_collections': ['disorder',
                                                               'drug',
                                                               'gene',
