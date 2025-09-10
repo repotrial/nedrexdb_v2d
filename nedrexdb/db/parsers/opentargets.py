@@ -1,9 +1,11 @@
+import os
 import gzip as _gzip
 from collections import defaultdict as _defaultdict
 from csv import DictReader as _DictReader
 from itertools import chain as _chain
 from pathlib import Path as _Path
 
+import pyspark
 from more_itertools import chunked as _chunked
 from tqdm import tqdm as _tqdm
 
@@ -77,6 +79,7 @@ class OpenTargetsParser:
             .config("spark.driver.memory", "12g")
             .getOrCreate()
         )
+        spark.sparkContext.setLogLevel(logLevel=os.environ.get("LOG_LEVEL"))
 
         # read evidence dataset
         df = spark.read.parquet(str(self.f))
