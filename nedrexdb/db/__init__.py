@@ -3,6 +3,7 @@ from dataclasses import dataclass as _dataclass
 from pymongo import MongoClient as _MongoClient
 
 from nedrexdb import config as _config
+from nedrexdb.logger import logger
 from nedrexdb.db.models.nodes import (
     disorder as _disorder,
     drug as _drug,
@@ -49,7 +50,7 @@ class MongoInstance:
         port = _config[f"db.{version}.mongo_port"]
         host = _config[f"db.{version}.mongo_name"]
         dbname = _config["db.mongo_db"]
-        print(f"Connecting to MongoDB... {host}:{port}")
+        logger.debug(f"Connecting to MongoDB... {host}:{port}")
         cls.CLIENT = _MongoClient(host=host, port=27017)
         cls.DB = cls.CLIENT[dbname]
 

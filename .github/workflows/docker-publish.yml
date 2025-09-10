@@ -6,24 +6,78 @@ name: Docker
 # documentation.
 
 on:
-#  schedule:
-#    - cron: '37 8 * * *'
+  schedule:
+    - cron: '0 8 * * 4'
   push:
-    branches: [ "master", "dev" ]
+#    branches: [ "repo4eu_main", "repo4eu_dev" ]
+    branches: [ "master", "dev"]
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
   pull_request:
-    branches: [ "master", "dev" ]
+#    branches: [ "repo4eu_main", "repo4eu_dev" ]
+    branches: [ "master", "dev"]
 
 env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}
+  BASE_IMAGE_NAME: ${{ github.repository }}-base
   NEO4J_IMAGE_NAME: ${{ github.repository }}-neo4j
 
 
 jobs:
+  build-base:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.0.0
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata for base image
+        id: meta-base
+        uses: docker/metadata-action@v5.0.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}
+          tags: |
+            # Create the 'latest' tag when the trigger is a weekly schedule
+            type=schedule,pattern=latest
+            
+            # Create a tag based on the branch name when you push to a branch
+            # e.g., a push to the 'dev' branch creates the 'dev' tag
+            type=ref,event=branch
+            
+            # Create a tag for the git commit SHA for traceability
+            type=sha,prefix=,format=short
+
+      - name: Build and push base Docker image
+        uses: docker/build-push-action@v5.0.0
+        with:
+          context: ./docker/docker_base
+          file: ./docker/docker_base/Dockerfile
+          # Always push the base image when this job runs
+          push: true
+          tags: ${{ steps.meta-base.outputs.tags }}
+          labels: ${{ steps.meta-base.outputs.labels }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   build-main:
     runs-on: ubuntu-latest
     permissions:
@@ -48,7 +102,7 @@ jobs:
         with:
           install: true
           use: true
-          
+
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
       - name: Log into registry ${{ env.REGISTRY }}
@@ -77,11 +131,12 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha, mode=max
 
   build-neo4j:
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -119,8 +174,8 @@ jobs:
         id: build-and-push-neo4j
         uses: docker/build-push-action@v5.0.0
         with:
-          context: ./neo4j
-          file: ./neo4j/Dockerfile
+          context: ./docker/neo4j
+          file: ./docker/neo4j/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-neo4j.outputs.tags }}
           labels: ${{ steps.meta-neo4j.outputs.labels }}

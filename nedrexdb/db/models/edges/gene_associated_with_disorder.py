@@ -28,6 +28,7 @@ class GeneAssociatedWithDisorder(_BaseModel, GeneAssociatedWithDisorderBase):
     omimMappingCode: _Optional[int] = None
     omimFlags: list[str] = []
     score: _Optional[float] = None
+    scoreOpenTargets: _Optional[float] = None
 
     def generate_update(self):
         tnow = _datetime.datetime.utcnow()
@@ -44,6 +45,8 @@ class GeneAssociatedWithDisorder(_BaseModel, GeneAssociatedWithDisorderBase):
 
         if self.score:
             update["$set"]["score"] = self.score
+        if self.scoreOpenTargets:
+            update["$set"]["scoreOpenTargets"] = self.scoreOpenTargets
         if self.omimMappingCode:
             update["$set"]["omimMappingCode"] = self.omimMappingCode
 

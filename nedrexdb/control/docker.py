@@ -1,3 +1,4 @@
+import time
 import time as _time
 from abc import ABC as _ABC, abstractmethod as _abstractmethod
 
@@ -6,7 +7,7 @@ from docker.errors import NotFound, APIError
 from subprocess import run, CalledProcessError
 
 from nedrexdb import config as _config
-
+from nedrexdb.logger import logger
 
 _client = _docker.from_env()
 
@@ -42,6 +43,16 @@ def get_mongo_volumes():
     volumes.sort(key=lambda i: i.name, reverse=True)
     return volumes
 
+def update_neo4j_image_version():
+    command = ["docker", "pull", _config["db.neo4j_image"]]
+    result = run(
+        command,
+        capture_output=True,
+        text=True
+    )
+    logger.debug(result.stdout)
+    logger.warning(result.stderr)
+
 
 def generate_neo4j_volume_name():
     timestamp = _time.time_ns() // 1_000_000  # time in ms
@@ -74,7 +85,7 @@ class _NeDRexInstance(_ABC):
 
 
 class _NeDRexBaseInstance(_NeDRexInstance):
-    GRACEFUL_SHUTDOWN_TIMEOUT = 600
+    GRACEFUL_SHUTDOWN_TIMEOUT = 1200
 
     @property
     def mongo_container_name(self):
@@ -245,7 +256,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             bool: True if shutdown was successful, False otherwise
         """
         if not self._stop_neo4j_process():
-            print("Failed to gracefully stop Neo4j process")
+            logger.warning("Failed to gracefully stop Neo4j process")
             # try:
             #     self.neo4j_container.remove()
             # except Exception:
@@ -255,7 +266,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
 
     def _stop_neo4j_process(self) -> bool:
         """Attempt to gracefully stop the Neo4j process within the container."""
-        print("Attempting to gracefully stop Neo4j process")
+        logger.debug("Attempting to gracefully stop Neo4j process")
         update_command = ["docker", "update", "--restart=no", self.neo4j_container_name]
         update = run(update_command)
         update.check_returncode()
@@ -266,11 +277,14 @@ class _NeDRexBaseInstance(_NeDRexInstance):
                 text=True,
                 timeout=self.GRACEFUL_SHUTDOWN_TIMEOUT
             )
-            print(result.stdout)
-            return result.returncode == 0
+            result = result.stdout == "Stopping Neo4j............" and result.returncode == 137
+            if result:
+                logger.debug("Neo4j process stopped")
+            time.sleep(5)
+            return result
 
         except (CalledProcessError, TimeoutError) as e:
-            print(f"Failed to stop Neo4j process: {str(e)}")
+            logger.warning(f"Failed to stop Neo4j process: {str(e)}")
             return False
 
     def _stop_neo4j_container(self) -> bool:
@@ -280,7 +294,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             return True
 
         except (NotFound, APIError) as e:
-            print(f"Failed to stop container: {str(e)}")
+            logger.warning(f"Failed to stop container: {str(e)}")
             return False
 
     def _remove_neo4_container(self) -> bool:
@@ -290,7 +304,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             return True
 
         except (NotFound, APIError) as e:
-            print(f"Failed to remove container: {str(e)}")
+            logger.warning(f"Failed to remove container: {str(e)}")
             return False
 
     def _remove_neo4j(self, remove_db_volume=False, neo4j_mode="db"):
@@ -347,7 +361,10 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             pass
 
     def set_up(self, use_existing_volume=True, neo4j_mode="db"):
-        print("Setting up Live NeDRex instance...")
+        if neo4j_mode != "db-write":
+            logger.info(f"Setting up {self.db_mode} NeDRex instance in not-running & write mode...")
+        else:
+            logger.info(f"Setting up {self.db_mode} NeDRex instance in running & write mode...")
         self._set_up_neo4j(use_existing_volume=use_existing_volume, neo4j_mode=neo4j_mode)
         if neo4j_mode != "db-write":
             self._set_up_mongo(use_existing_volume=use_existing_volume)

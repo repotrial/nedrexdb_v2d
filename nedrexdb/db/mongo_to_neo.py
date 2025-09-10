@@ -5,8 +5,10 @@ from pathlib import Path as _Path
 
 import numpy as _np
 import pandas as _pd
+import time as _time
 
 from nedrexdb import config as _config
+from nedrexdb.logger import logger
 
 _TYPE_MAP = {bool: "boolean", int: "int", float: "double", str: "string"}
 
@@ -56,7 +58,7 @@ def mongo_to_neo(nedrex_instance, db):
     workdir = _Path("/tmp")
 
     for node in nodes:
-        print(node)
+        logger.debug(node)
         cursor = db[node].find()
         df = _pd.DataFrame(flatten(i) for i in cursor)
         # replace NaN with empty strings
@@ -83,7 +85,7 @@ def mongo_to_neo(nedrex_instance, db):
         df.to_csv(f"{workdir}/{node}.csv", index=False)
 
     for edge in edges:
-        print(edge)
+        logger.debug(edge)
         cursor = db[edge].find()
         df = _pd.DataFrame(flatten(i) for i in cursor)
         # replace NaN with empty strings
@@ -119,8 +121,7 @@ def mongo_to_neo(nedrex_instance, db):
         "docker", "exec", nedrex_instance.neo4j_container_name,
         "chown", "-R", "neo4j:neo4j", "/data", "/import", "/logs", "/var/lib/neo4j/plugins", "/app"
     ])
-
-
+    _time.sleep(30)
     command = [
         "docker",
         "exec",
@@ -145,11 +146,14 @@ def mongo_to_neo(nedrex_instance, db):
         command += ["--relationships=/import/" + edge + ".csv"]
     # command += ["--database=nedrex"]
 
-    print(" ".join(command))
+    logger.info("Importing files into Neo4j...")
+    logger.debug("Running: "+" ".join(command))
     _subprocess.call(command)
-
+    logger.info("Waiting 60s for Neo4j to run internal processes...")
+    _time.sleep(60)
     # clean up
     for node in nodes:
-        _os.remove(f"{workdir}/{node}.csv")
+       _os.remove(f"{workdir}/{node}.csv")
     for edge in edges:
-        _os.remove(f"{workdir}/{edge}.csv")
+       _os.remove(f"{workdir}/{edge}.csv")
+    logger.info("Neo4j import done!")

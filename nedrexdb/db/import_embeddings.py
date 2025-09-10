@@ -1,8 +1,9 @@
 from langchain_neo4j import Neo4jGraph
 from nedrexdb import config as _config
-from nedrexdb.post_integration.create_vector_indices import create_vector_index
+from nedrexdb.post_integration.neo4j_db_adjustments import create_vector_index
 from nedrexdb.post_integration.embedding_config import NODE_EMBEDDING_CONFIG, EDGE_EMBEDDING_CONFIG
 import time
+from nedrexdb.logger import logger
 
 node_keys = {key.lower(): key for key in NODE_EMBEDDING_CONFIG.keys()}
 edge_keys = {key.lower(): key for key in EDGE_EMBEDDING_CONFIG.keys()}
@@ -24,7 +25,7 @@ def connect_to_session(session_type):
         except Exception:
             retry -= 1
             if retry == 0:
-                print("Could not connect to Neo4j database at " + NEO4J_URI)
+                logger.error("Could not connect to Neo4j database at " + NEO4J_URI)
                 return
             time.sleep(5)
     return kg
@@ -57,7 +58,7 @@ def fetch_embeddings(toimport_embeddings):
                 for record in query_result
             ]
         else:
-            print(f"Embedding {name} is not defined.")
+            logger.debug(f"Embedding {name} is not defined.")
 
     return result
 
@@ -99,4 +100,4 @@ def upsert_embeddings(embeddings):
                 }
             )
         else:
-            print(f"Could not upsert Embedding {name}.")
+            logger.error(f"Could not upsert Embedding {name}.")

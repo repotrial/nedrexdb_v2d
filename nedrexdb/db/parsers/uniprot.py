@@ -1,3 +1,4 @@
+
 import gzip as _gzip
 import re as _re
 import sys as _sys
@@ -20,6 +21,7 @@ from nedrexdb.db.models.edges.protein_encoded_by_gene import (
     ProteinEncodedByGene,
 )
 
+from nedrexdb.logger import logger
 get_file_location = _get_file_location_factory("uniprot")
 
 _field_size_limit(_sys.maxsize)
@@ -158,6 +160,7 @@ def _iter_gzipped_swiss(fname, reviewed):
 
 
 def parse_proteins():
+    logger.info("Parsing uniprot proteins")
     filenames = [get_file_location("trembl"), get_file_location("swissprot")]
     uniprot_records = _itertools.chain(*[_iter_gzipped_swiss(filenames[filenum], bool(filenum)) for filenum in (0, 1)])
     updates = (UniProtRecord(record).parse().generate_update() for record in uniprot_records)
@@ -171,6 +174,7 @@ def parse_proteins():
 
 
 def parse_idmap():
+    logger.info("Parsing UniProt ID-Map")
     fieldnames = (
         "UniProtKB-AC",
         "UniProtKB-ID",

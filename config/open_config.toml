@@ -2,18 +2,58 @@ version_type = "open"
 static_outside = "../nedrex_files/nedrex_api/static" # your path
 data_outside = "../nedrex_files/nedrex_api/data" # your path
 
+node_collections = [
+    "disorder",
+    "drug",
+    "gene",
+    "genomic_variant",
+    "go",
+    "pathway",
+    "protein",
+    "phenotype",
+    "tissue",
+    "side_effect",
+    "signature",
+    ]
+
+edge_collections = [
+    "disorder_has_phenotype",
+    "disorder_is_subtype_of_disorder",
+    "drug_has_contraindication",
+    "drug_has_indication",
+    "drug_has_target",
+    "drug_has_side_effect",
+    "gene_associated_with_disorder",
+    "go_is_subtype_of_go",
+    "molecule_similarity_molecule",
+    "protein_encoded_by_gene",
+    "protein_has_go_annotation",
+    "protein_has_signature",
+    "protein_in_pathway",
+    "protein_interacts_with_protein",
+    "protein_expressed_in_tissue",
+    "gene_expressed_in_tissue",
+    "side_effect_same_as_phenotype",
+    "variant_affects_gene",
+    "variant_associated_with_disorder",
+]
+
+[tools]
+bicon_python = "/opt/conda/envs/bicon/bin/python"
+
 [embeddings]
-server_base="https://dev.llm.cosy.bio/v1"
-model="snowflake-arctic-embed2:latest"
+server_base="https://dev.llm-1.cosy.bio/v1"
+model="granite-embedding:latest"
+embedding_length=384
 path="embeddings"
-api_key=""
+api_key="sk-****************************"
 
 [chat]
-server_base="https://dev.llm.cosy.bio/v1"
-model="gemma3:latest"
-
+server_base="None"  
+model="None"
 [db]
-neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:prod"
+version = "open"
+neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:dev"
 mongo_image = "mongo:5.0.27"
 mongo_express_image = "mongo-express:0.54.0"
 mongo_db = "nedrex"
@@ -50,7 +90,7 @@ express_container_name = "open_nedrex_live_express"
 
 [sources]
 directory = "downloads"
-default_version = "2.1.0"
+default_version = "2.3.0"
 
 [sources.biogrid]
 [sources.biogrid.human_data]
@@ -82,6 +122,15 @@ url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz"
 [sources.clinvar.human_data_xml]
 url = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarVCVRelease_00-latest.xml.gz"
 
+[sources.cosmic]
+#TODO cosmic version?
+
+[sources.cosmic.census]
+filename = "CosmicMutantExportCensus.tsv.gz"
+
+[sources.cosmic.mapping]
+filename = "cancer_uniques_mondo.tsv"
+
 [sources.ctd]
 version_url = "https://ctdbase.org/reports/"
 version_pattern = '''>CTD_chemicals_diseases\.tsv\.gz</a></td><td align="right">[\d-]+'''
@@ -89,13 +138,11 @@ version_pattern = '''>CTD_chemicals_diseases\.tsv\.gz</a></td><td align="right">
 [sources.ctd.chemical_disease_relationships]
 url = "http://ctdbase.org/reports/CTD_chemicals_diseases.tsv.gz"
 
-
 [sources.disgenet]
 version = "24.1"
 
 [sources.disgenet.gene_disease_associations]
 url = "https://www.disgenet.org/static/disgenet_ap1/files/downloads/curated_gene_disease_associations.tsv.gz"
-
 
 [sources.drugbank]
 version = "5.1.10"
@@ -124,6 +171,9 @@ url = "http://purl.obolibrary.org/obo/go.owl"
 [sources.go.go_annotations]
 url = "http://geneontology.org/gene-associations/goa_human.gaf.gz"
 
+[sources.hippie.perplexity_scores]
+filename="hippie_perplexity_technique_scores.tsv"
+
 [sources.hpa]
 version_url = "https://www.proteinatlas.org/about/download"
 version_pattern = '''data available in the Human Protein Atlas version \d+\.\d+'''
@@ -150,6 +200,14 @@ version_pattern = '''content: "version [\d-]+'''
 [sources.iid.human]
 url = "http://iid.ophid.utoronto.ca/static/download/human_annotated_PPIs.txt.gz"
 
+[sources.intogen]
+
+[sources.intogen.drivers]
+url = "https://www.intogen.org/download"
+filename = "Compendium_Cancer_Genes.tsv"
+
+[sources.intogen.mapping]
+filename = "intogen2mondo.json"
 
 [sources.intact]
 version_url = "https://ftp.ebi.ac.uk/pub/databases/intact/current/psimitab/"
@@ -175,17 +233,41 @@ version_pattern = '''>Homo_sapiens\.gene_info\.gz</a>      [\d-]+'''
 url = "https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz"
 
 
+[sources.ncg]
+[sources.ncg.annotation]
+url = "http://network-cancer-genes.org/download.php"
+filename = "NCG_cancerdrivers_systemslevelproperties.tsv"
+[sources.ncg.mapping]
+filename = "ncg2mondo.json"
+
 [sources.omim]
 [sources.omim.genemap2]
 url = "https://data.omim.org/downloads/DIcI6kd8S96Xx9TDthBjCw/genemap2.txt"
 
+[sources.opentargets]
+[sources.opentargets.gene_disease_associations]
+filename = "association_by_datasource_direct"
+url = "ftp://ftp.ebi.ac.uk/pub/databases/opentargets/platform/25.06/output/association_by_datasource_direct"
+[sources.opentargets.gene_disease_associations_summary]
+filename = "association_overall_direct"
+url = "ftp://ftp.ebi.ac.uk/pub/databases/opentargets/platform/25.06/output/association_overall_direct"
+[sources.opentargets.mapping_diseases]
+filename = "disease"
+url = "ftp://ftp.ebi.ac.uk/pub/databases/opentargets/platform/25.06/output/disease"
+
+[sources.orphanet]
+[sources.orphanet.data]
+url = "https://www.orphadata.com/data/xml/en_product6.xml"
+filename = "en_product6.xml"
+[sources.orphanet.mapping]
+url = "https://www.orphadata.com/data/nomenclature/packs/Orphanet_Nomenclature_Pack_EN.zip"
+filename = "ORPHAnomenclature_MasterFile_en_2024.xlsx"
 
 [sources.sider]
 version = "4.1"
 
 [sources.sider.frequency_data]
-url = "http://sideeffects.embl.de/media/download/meddra_freq.tsv.gz"
-
+filename = "meddra_freq.tsv.gz"
 
 [sources.repotrial]
 version = "1.0.0"

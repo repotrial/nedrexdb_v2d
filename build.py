@@ -3,10 +3,11 @@
 import click
 import os
 import subprocess
+import time
 
 import nedrexdb
 from nedrexdb import config, downloaders
-from nedrexdb.control.docker import NeDRexDevInstance, NeDRexLiveInstance
+from nedrexdb.control.docker import NeDRexDevInstance, NeDRexLiveInstance, update_neo4j_image_version
 from nedrexdb.db import MongoInstance, mongo_to_neo, collection_stats
 from nedrexdb.db.import_embeddings import fetch_embeddings, upsert_embeddings
 from nedrexdb.db.parsers import (
@@ -33,10 +34,17 @@ from nedrexdb.db.parsers import (
     sider,
     uberon,
     repotrial,
+    cosmic,
+    ncg,
+    intogen,
+    orphanet,
+    opentargets,
+    hippie
 )
 from nedrexdb.downloaders import get_versions, update_versions
-from nedrexdb.post_integration import (trim_uberon, drop_empty_collections, create_vector_indices)
-
+from nedrexdb.post_integration import (trim_uberon, drop_empty_collections)
+from nedrexdb.post_integration.neo4j_db_adjustments import create_constraints, create_vector_indices
+from nedrexdb.logger import logger
 
 @click.group()
 def cli():
@@ -49,10 +57,10 @@ def cli():
 @click.option("--create_embeddings", is_flag=True, default=False)
 @cli.command()
 def update(conf, download, version_update, create_embeddings):
-    print(f"Config file: {conf}")
-    print(f"Download updates: {download}")
-    print(f"Update DB versions: {version_update}")
-    print(f"Create embeddings: {create_embeddings}")
+    logger.debug(f"Config file: {conf}")
+    logger.info(f"Download updates: {download}")
+    logger.info(f"Update DB versions: {version_update}")
+    logger.info(f"Create embeddings: {create_embeddings}")
 
     nedrexdb.parse_config(conf)
 
@@ -64,13 +72,25 @@ def update(conf, download, version_update, create_embeddings):
     version_update_skip = set()
     prev_metadata = {}
 
+    update_neo4j_image_version()
+    # find sources used previously to create embeddings
+    distinct_per_collection = {}
+
     # check for metadata of the current live version before fetching new data
     if download:
+        # try:
+        #     MongoInstance.connect("live")
+        #     prev_metadata = list(MongoInstance.DB["metadata"].find())
+        #     prev_metadata = {} if prev_metadata is None else prev_metadata[0]["source_databases"]
+        #     logger.debug("PREVIOUS METADATA")
+        #     for source in prev_metadata:
+        #         logger.debug(f"{source}:\t{prev_metadata[source]['version']}"
+        #               f" [{prev_metadata[source]['date']}]")
+        # except:
+        #     logger.warning("No previous metadata found")
         try:
             MongoInstance.connect("live")
             if create_embeddings:
-                # find sources used previously to create embeddings
-                distinct_per_collection = {}
                 for collection_name in MongoInstance.DB.list_collection_names():
                     if collection_name not in ["metadata", '_collections']:
                         collection = MongoInstance.DB[collection_name]
@@ -78,21 +98,21 @@ def update(conf, download, version_update, create_embeddings):
                         try:
                             distinct_values = collection.distinct("dataSources")
                         except Exception as e:
-                            print(f"⚠️ Could not fetch distinct dataSources for collection '{collection_name}': {e}")
+                            logger.warning(f"Could not fetch distinct dataSources for collection '{collection_name}': {e}")
                             continue
                         if distinct_values:
                             distinct_per_collection[collection_name.replace("_", "")] = distinct_values
-                            print(f"Found distinct dataSources for collection {collection_name}")
+                            logger.debug(f"Found distinct dataSources for collection {collection_name}")
             # needed for metadata comparisons
             prev_metadata = list(MongoInstance.DB["metadata"].find())
             prev_metadata = {} if prev_metadata is None else prev_metadata[0]["source_databases"]
             # log printing
-            print("PREVIOUS METADATA")
+            logger.debug("PREVIOUS METADATA")
             for source in prev_metadata:
-                print(f"{source}:\t{prev_metadata[source]['version']}"
+                logger.debug(f"{source}:\t{prev_metadata[source]['version']}"
                       f" [{prev_metadata[source]['date']}]")
         except:
-            print("NO PREVIOUS METADATA FOUND")
+            logger.warning("NO PREVIOUS METADATA FOUND")
 
     # init neo4j (while not needed for download & parsing of data - mongoDB does that)
     dev_instance = NeDRexDevInstance()
@@ -103,7 +123,7 @@ def update(conf, download, version_update, create_embeddings):
         instance = None
         if create_embeddings:
             instance = dev_instance
-        embeddings, tobuild_embeddings = parse_dev(version=version,
+            embeddings, tobuild_embeddings = parse_dev(version=version,
                                                    download=download,
                                                    version_update=version_update,
                                                    prev_metadata=prev_metadata,
@@ -121,8 +141,13 @@ def update(conf, download, version_update, create_embeddings):
             with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
                 fallback_file.write(f"{nedrex_versions['version']}")
 
-            print("Download: ON")
+            # do the download
+            logger.debug("Download: ON")
             current_metadata = nedrex_versions["source_databases"]
+            logger.info("Starting dump downloads")
+            loglevel_info_or_debug = os.environ.get("LOG_LEVEL", "INFO") in ["DEBUG", "INFO"]
+            subprocess.run(["./setup_data.sh", "/data/nedrex_files", "1" if loglevel_info_or_debug else "0"])
+            downloaders.download_all(prev_metadata=prev_metadata, current_metadata=current_metadata)
             # already up-to-date data
             no_download = [key for key in prev_metadata if key in current_metadata and
                            prev_metadata[key]['version'] == current_metadata[key]['version']]
@@ -156,13 +181,14 @@ def update(conf, download, version_update, create_embeddings):
         uniprot.parse_proteins()
 
         # Sources that add node type but require existing nodes, too
+        cosmic.parse_gene_disease_associations()
         clinvar.parse()
 
         if version == "licensed":
             drugbank._parse_drugbank()  # requires proteins to be parsed first
         elif version == "open":
             drugbank.parse_drugbank()
-            chembl.parse_chembl()
+        chembl.parse_chembl()
         uniprot_signatures.parse()  # requires proteins to be parsed first
         hpo.parse()  # requires disorders to be parsed first
         reactome.parse()  # requires protein to be parsed first
@@ -173,14 +199,24 @@ def update(conf, download, version_update, create_embeddings):
         unichem.parse()
         repotrial.parse()
 
+        #Loading annotation information
+        hippie_method_scores = hippie.parse_perplexity_techinque_scores()
+
         # Sources adding edges.
-        biogrid.parse_ppis()
         ctd.parse()
+
         disgenet.parse_gene_disease_associations()
+        intogen.parse_gene_disease_associations()
+        orphanet.parse_gene_disease_associations()
+        opentargets.parse_gene_disease_associations()
+        ncg.parse_gene_disease_associations()
+
         go.parse_goa()
         hpa.parse_hpa()
-        iid.parse_ppis()
-        intact.parse()
+
+        biogrid.parse_ppis(hippie_method_scores)
+        iid.parse_ppis(hippie_method_scores)
+        intact.parse(hippie_method_scores)
 
         if version == "licensed":
             omim.parse_gene_disease_associations()
@@ -194,6 +230,22 @@ def update(conf, download, version_update, create_embeddings):
 
         # Post-processing
         trim_uberon.trim_uberon()
+        
+        #if download:
+            # fallback version is rarely needed. Do not change that file, only use the config!
+         #   default_version = None
+         #   if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
+         #       with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
+         #           default_version = fallback_file.readline().rstrip()
+         #   nedrex_version = update_versions(version_update_skip, default_version=default_version)
+         #   with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
+         #       fallback_file.write(f"{nedrex_version}")
+        #if version_update:
+         #   get_versions(version_update)
+
+
+
+
 
     # clean up for export
     drop_empty_collections.drop_empty_collections()
@@ -210,6 +262,7 @@ def update(conf, download, version_update, create_embeddings):
         # remove dev instance and set up live instance
         dev_instance.remove(neo4j_mode="import")
 
+
     if create_embeddings:
         embedding_deps = {}
         # find sources used now to build mongo
@@ -220,15 +273,15 @@ def update(conf, download, version_update, create_embeddings):
                 try:
                     distinct_values = collection.distinct("dataSources")
                 except Exception as e:
-                    print(f"⚠️ Could not fetch new distinct dataSources for collection '{collection_name}': {e}")
+                    logger.warning(f"Could not fetch new distinct dataSources for collection '{collection_name}': {e}")
                     continue
                 collection_name = collection_name.replace("_", "")
                 if (collection_name not in distinct_per_collection.keys() or
                         distinct_per_collection[collection_name] != distinct_values):
                     embeddings.pop(collection_name, None)
                     tobuild_embeddings.add(collection_name)
-                    print("Collection name:")
-                    print(collection_name)
+                    logger.debug("Collection name:")
+                    logger.debug(collection_name)
                 if distinct_values:
                     embedding_deps[collection_name] = distinct_values
 
@@ -248,11 +301,20 @@ def update(conf, download, version_update, create_embeddings):
                 embeddings.pop(collection_name)
                 tobuild_embeddings.add(collection_name)
 
-        print(embeddings.keys())
-        print("tobuild:")
-        print(tobuild_embeddings)
+        logger.debug(embeddings.keys())
+        logger.debug("tobuild:")
+        logger.debug(tobuild_embeddings)
 
         dev_instance.remove(neo4j_mode="import")
+
+    dev_instance = NeDRexDevInstance()
+    dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+    #Let neo4j spinn up properly before connecting
+    time.sleep(60)
+    create_constraints()
+    dev_instance.remove()
+
+    if create_embeddings:
         manage_embeddings(dev_instance=dev_instance,
                           read=False,
                           embeddings=embeddings,
@@ -280,10 +342,10 @@ def manage_embeddings(dev_instance,
             else:
                 tobuild_embeddings.add(collection_name)
 
-        print("To import embeddings:")
-        print(toimport_embeddings)
+        logger.info("To import embeddings:")
+        logger.info(toimport_embeddings)
 
-        if toimport_embeddings:
+        if not toimport_embeddings:
             dev_instance.set_up(use_existing_volume=True, neo4j_mode="db")
             embeddings = fetch_embeddings(toimport_embeddings)
             dev_instance.remove()
@@ -292,10 +354,10 @@ def manage_embeddings(dev_instance,
 
         try:
             check_list = [(entry[0], entry[1][1]) for entry in embeddings["drug"]][:5]
-            print("Printing drug check list in next line...")
-            print(check_list)
+            logger.debug("Printing drug check list in next line...")
+            logger.debug(check_list)
         except:
-            print("Cannot print drug check list")
+            logger.warning("Cannot print drug check list")
 
         # if embedding was not built in the last version even though metadata did not change
         for key in list(embeddings.keys()):
@@ -303,8 +365,8 @@ def manage_embeddings(dev_instance,
                 tobuild_embeddings.add(key)
                 embeddings.pop(key)
 
-        print("To build embeddings:")
-        print(tobuild_embeddings)
+        logger.info("To build embeddings:")
+        logger.info(tobuild_embeddings)
 
         return embeddings, tobuild_embeddings
 
@@ -317,14 +379,19 @@ def manage_embeddings(dev_instance,
 
         # create embeddings
         try:
+            # create_vector_indices()
             for key in config["embeddings"]["embedding_dependencies"]:
                 if key not in tobuild_embeddings:
                     config["embeddings"]["embedding_dependencies"].pop(key)
-            create_vector_indices.create_vector_indices(config["embeddings"]["embedding_dependencies"])
+            create_vector_indices(config["embeddings"]["embedding_dependencies"])
         except Exception as e:
             print(e)
-            print("Failed to create vector indices")
-        dev_instance.remove()
+            logger.warning("Failed to create vector indices")
+
+    dev_instance.remove()
+    live_instance = NeDRexLiveInstance()
+    live_instance.remove()
+    live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
 
 
 def parse_dev(version, download, version_update, prev_metadata, distinct_per_collection, dev_instance):
@@ -345,6 +412,10 @@ def parse_dev(version, download, version_update, prev_metadata, distinct_per_col
                        "iid",
                        "intact",
                        "omim",
+                       "ncg",
+                       "intogen",
+                       "opentargets",
+                       "orphanet",
                        "sider",  # from here on, temp.
                        #"ctd",
                        "disgenet",
@@ -360,8 +431,11 @@ def parse_dev(version, download, version_update, prev_metadata, distinct_per_col
         with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
             fallback_file.write(f"{nedrex_versions['version']}")
 
-        print("Download: ON")
+        # do the download
+        logger.debug("Download: ON")
         current_metadata = nedrex_versions["source_databases"]
+        logger.info("Starting dump downloads")
+        subprocess.run(["./setup_data.sh", "/data/nedrex_files"])
         # already up-to-date data
         no_download = [key for key in prev_metadata if key in current_metadata and
                        prev_metadata[key]['version'] == current_metadata[key]['version']]
@@ -377,6 +451,16 @@ def parse_dev(version, download, version_update, prev_metadata, distinct_per_col
     if version_update:
         get_versions(version_update)
 
+    mondo.parse_mondo_json()
+    # hpo.parse()
+    # bioontology.parse()
+    # ncbi.parse_gene_info()
+    if version == "licensed":
+        drugbank._parse_drugbank()
+    elif version == "open":
+        drugbank.parse_drugbank()
+    ctd.parse()
+    disgenet.parse_gene_disease_associations()
     if dev_instance is not None:
         embeddings, tobuild_embeddings = manage_embeddings(dev_instance=dev_instance,
                                                            distinct_per_collection=distinct_per_collection)
@@ -406,6 +490,19 @@ def parse_dev(version, download, version_update, prev_metadata, distinct_per_col
     if "disgenet" not in ignored_sources:
         disgenet.parse_gene_disease_associations()
 
+
+   # if download:
+   #     # fallback version is rarely needed. Do not change that file, only use the config!
+   #     default_version = None
+   #     if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
+   #         with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
+   #             default_version = fallback_file.readline().rstrip()
+   #     nedrex_version = update_versions(ignored_sources=ignored_sources, default_version=default_version)
+   #     with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
+   #         fallback_file.write(f"{nedrex_version}")
+   # if version_update:
+   #     get_versions(version_update)
+
     if dev_instance:
         return embeddings, tobuild_embeddings
 
@@ -413,7 +510,7 @@ def parse_dev(version, download, version_update, prev_metadata, distinct_per_col
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @cli.command()
 def restart_live(conf):
-    print(f"Config file: {conf}")
+    logger.debug(f"Config file: {conf}")
     nedrexdb.parse_config(conf)
 
     live_instance = NeDRexLiveInstance()
