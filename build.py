@@ -4,6 +4,7 @@ import click
 import os
 import subprocess
 import time
+from pymongo.errors import PyMongoError
 
 import nedrexdb
 from nedrexdb import config, downloaders
@@ -75,29 +76,34 @@ def update(conf, download, version_update, create_embeddings):
     prev_metadata = {}
     distinct_per_collection = None
     nedrex_versions = None
+    embeddings = None
+    tobuild_embeddings = None
+    no_download = None
+    current_metadata = None
 
     update_neo4j_image_version()
 
     # check for metadata of the current live version before fetching new data
-    if download:
-        try:
-            MongoInstance.connect("live")
-            if create_embeddings:
-                # find sources used previously to create embeddings
-                distinct_per_collection = {}
-                for collection_name in MongoInstance.DB.list_collection_names():
-                    if collection_name not in ["metadata", '_collections']:
-                        collection = MongoInstance.DB[collection_name]
-                        # Get distinct values for the field `dataSources`
-                        try:
-                            distinct_values = collection.distinct("dataSources")
-                        except Exception as e:
-                            logger.info(
-                                f"⚠️ Could not fetch distinct dataSources for collection '{collection_name}': {e}")
-                            continue
-                        if distinct_values:
-                            distinct_per_collection[collection_name.replace("_", "")] = distinct_values
-                            logger.debug(f"Found distinct dataSources for collection {collection_name}")
+
+    try:
+        MongoInstance.connect("live")
+        if create_embeddings:
+            # find sources used previously to create embeddings
+            distinct_per_collection = {}
+            for collection_name in MongoInstance.DB.list_collection_names():
+                if collection_name not in ["metadata", '_collections']:
+                    collection = MongoInstance.DB[collection_name]
+                    # Get distinct values for the field `dataSources`
+                    try:
+                        distinct_values = collection.distinct("dataSources")
+                    except Exception as e:
+                        logger.info(
+                            f"⚠️ Could not fetch distinct dataSources for collection '{collection_name}': {e}")
+                        continue
+                    if distinct_values:
+                        distinct_per_collection[collection_name.replace("_", "")] = distinct_values
+                        logger.debug(f"Found distinct dataSources for collection {collection_name}")
+        if download:
             # needed for metadata comparisons
             prev_metadata = list(MongoInstance.DB["metadata"].find())
             prev_metadata = {} if prev_metadata is None else prev_metadata[0]["source_databases"]
@@ -105,23 +111,21 @@ def update(conf, download, version_update, create_embeddings):
             for source in prev_metadata:
                 logger.debug(f"{source}:\t{prev_metadata[source]['version']}"
                              f" [{prev_metadata[source]['date']}]")
-        except:
-            logger.warning("No previous metadata found")
+    except:
+        logger.warning("No previous metadata found/failed Mongo live connection")
 
     dev_instance = NeDRexDevInstance()
 
     if os.environ.get("TEST_MINIMUM", 0) == '1':
         # only pass dev_instance if embeddings are created
-        instance = None
-        if create_embeddings:
-            instance = dev_instance
         embeddings, tobuild_embeddings, no_download, current_metadata = (
             parse_dev(version=version,
                       download=download,
                       version_update=version_update,
                       prev_metadata=prev_metadata,
                       distinct_per_collection=distinct_per_collection,
-                      dev_instance=instance))
+                      dev_instance=dev_instance,
+                      create_embeddings=create_embeddings))
     else:
         if download:
             # update metadata
@@ -153,7 +157,7 @@ def update(conf, download, version_update, create_embeddings):
             downloaders.download_all(no_download_meta=no_download)
 
         if version_update:
-            get_versions(version_update)
+            nedrex_versions = get_versions(version_update)
 
         if create_embeddings:
             embeddings, tobuild_embeddings = manage_embeddings(dev_instance=dev_instance,
@@ -165,6 +169,7 @@ def update(conf, download, version_update, create_embeddings):
         # MongoDB data download & import
         MongoInstance.connect("dev")
         MongoInstance.set_indexes()
+
 
         MongoInstance.DB["metadata"].replace_one({}, nedrex_versions, upsert=True)
 
@@ -360,6 +365,7 @@ def manage_embeddings(dev_instance,
             for key in config["embeddings"]["embedding_dependencies"]:
                 if key not in tobuild_embeddings:
                     config["embeddings"]["embedding_dependencies"].remove(key)
+            logger.info("Create vector indices: building embeddings")
             create_vector_indices(config["embeddings"]["embedding_dependencies"])
         except Exception as e:
             logger.debug(e)
@@ -367,7 +373,8 @@ def manage_embeddings(dev_instance,
         dev_instance.remove()
 
 
-def parse_dev(version, download, version_update, prev_metadata, distinct_per_collection, dev_instance):
+def parse_dev(version, download, version_update, prev_metadata,
+              distinct_per_collection, dev_instance, create_embeddings):
     # control source downloads
     ignored_sources = {"chembl",
                        "biogrid",
@@ -388,9 +395,14 @@ def parse_dev(version, download, version_update, prev_metadata, distinct_per_col
                        "ncg",
                        "intogen",
                        "opentargets",
-                       "orphanet"
+                       "orphanet",
+                       "ncbi"
                        }
     nedrex_versions = None
+    no_download = None
+    embeddings = None
+    tobuild_embeddings = None
+    current_metadata = None
     if download:
         # fallback version is rarely needed. Do not change that file, only use the config!
         default_version = None
@@ -419,11 +431,10 @@ def parse_dev(version, download, version_update, prev_metadata, distinct_per_col
             subprocess.run(["./setup_data.sh", "/data/nedrex_files", "1" if loglevel_info_or_debug else "0"])
         downloaders.download_all(ignored_sources=ignored_sources,
                                  no_download_meta=no_download)
-
     if version_update:
-        get_versions(version_update)
+        nedrex_versions = get_versions(version_update)
 
-    if dev_instance is not None:
+    if create_embeddings:
         embeddings, tobuild_embeddings = manage_embeddings(dev_instance=dev_instance,
                                                            distinct_per_collection=distinct_per_collection)
 
@@ -438,8 +449,10 @@ def parse_dev(version, download, version_update, prev_metadata, distinct_per_col
 
     if "mondo" not in ignored_sources:
         mondo.parse_mondo_json()
-    # hpo.parse()
-    # bioontology.parse()
+    if "hpo" not in ignored_sources:
+        hpo.parse()
+    if "bioontology" not in ignored_sources:
+        bioontology.parse()
     if "ncbi" not in ignored_sources:
         ncbi.parse_gene_info()
     if "drugbank" not in ignored_sources:
@@ -454,8 +467,7 @@ def parse_dev(version, download, version_update, prev_metadata, distinct_per_col
     if "disgenet" not in ignored_sources:
         disgenet.parse_gene_disease_associations()
 
-    if dev_instance:
-        return embeddings, tobuild_embeddings, no_download, current_metadata
+    return embeddings, tobuild_embeddings, no_download, current_metadata
 
 
 @click.option("--conf", required=True, type=click.Path(exists=True))
@@ -464,19 +476,6 @@ def parse_dev(version, download, version_update, prev_metadata, distinct_per_col
 def restart_live(conf):
     logger.debug(f"Config file: {conf}")
     nedrexdb.parse_config(conf)
-
-    # if create_embeddings:
-    #     dev_instance = NeDRexDevInstance()
-    #     dev_instance.remove(neo4j_mode="import")
-    #     dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
-    #     # create embeddings
-    #     time.sleep(60)
-    #     try:
-    #         create_vector_indices.create_vector_indices()
-    #     except Exception as e:
-    #         print(e)
-    #         print("Failed to create vector indices")
-    #     dev_instance.remove()
 
     live_instance = NeDRexLiveInstance()
     live_instance.remove()

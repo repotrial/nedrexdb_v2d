@@ -5,7 +5,6 @@ import shutil as _shutil
 import re as _re
 import time
 from pymongo import MongoClient
-from pymongo.errors import PyMongoError
 
 import requests
 from pathlib import Path as _Path
@@ -299,22 +298,10 @@ def get_versions(no_download):
         v.increment("patch")
         metadata["version"] = f"{v}"
 
-    metadata_keys= {k for k in metadata["source_databases"].keys()}
+    metadata_keys = {k for k in metadata["source_databases"].keys()}
     for source in metadata_keys:
         if source not in _config["sources"]:
             del metadata["source_databases"][source]
 
+    return metadata
 
-    max_retries = 5
-    retry_delay = 1  # seconds
-
-    for attempt in range(1, max_retries + 1):
-        try:
-            MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
-            break  # Success, exit the loop
-        except PyMongoError as e:
-            logger.warning(f"Attempt {attempt} failed: {e}")
-            if attempt == max_retries:
-                logger.error(f"Metadata could not be set!")
-                raise  # Re-raise the exception after final attempt
-            time.sleep(retry_delay)
