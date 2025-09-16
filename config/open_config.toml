@@ -1,6 +1,6 @@
 version_type = "open"
-static_outside = "../nedrex_files/nedrex_api/static" # your path
-data_outside = "../nedrex_files/nedrex_api/data" # your path
+static_outside = "../nedrex_files/nedrex_api/static" # your path, but should work without change
+data_outside = "../nedrex_files/nedrex_api/data" # your path, but should work without change
 
 node_collections = [
     "disorder",
@@ -47,6 +47,38 @@ model="granite-embedding:latest"
 embedding_length=384
 path="embeddings"
 api_key="sk-****************************"
+embedding_dependencies = [
+    "drug",
+    "disorder",
+    "disorderissubtypeofdisorder",
+    "drughasindication",
+    "gene",
+    #"genomicvariant",
+    "go",
+    "pathway",
+    "protein",
+    "phenotype",
+    "tissue",
+    "sideeffect",
+    "signature",
+    "disorderhasphenotype",
+    "drughascontraindication",
+    "drughastarget",
+    "drughassideeffect",
+    "geneassociatedwithdisorder",
+    #"goissubtypeofgo",
+    "moleculesimilaritymolecule",
+    "proteinencodedbygene",
+    "proteinhasgoannotation",
+    #"proteinhassignature",
+    #"proteininpathway",
+    #"proteininteractswithprotein",
+    #"proteinexpressedintissue",
+    "geneexpressedintissue",
+    "sideeffectsameasphenotype",
+    #"variantaffectsgene",
+    "variantassociatedwithdisorder"
+]
 
 [chat]
 server_base="None"  
