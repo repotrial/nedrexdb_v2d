@@ -5,7 +5,6 @@ import shutil as _shutil
 import re as _re
 import time
 from pymongo import MongoClient
-from pymongo.errors import PyMongoError
 
 import requests
 from pathlib import Path as _Path
@@ -65,7 +64,7 @@ def update_version(name, source_url, unique_pattern, mode="date", skip_digits=0)
     logger.debug(f"{name}: date: {date}, version: {version}")
     return {"date": f"{date}", "version": version}
 
-def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_metadata={}):
+def download_all(force=False, ignored_sources=set(), no_download_meta={}):
     base = _Path(_config["db.root_directory"])
     download_dir = base / _config["sources.directory"]
 
@@ -80,38 +79,34 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
     exclude_keys.update(ignored_sources)
 
     logger.debug(f"ignore sources for download: {ignored_sources}")
-
-    # already up-to-date data
-    no_download = [key for key in prev_metadata if key in current_metadata and
-                   prev_metadata[key] == current_metadata[key]]
     
     if "opentargets" not in ignored_sources:
-        if "opentargets" not in no_download:
+        if "opentargets" not in no_download_meta:
             _download_opentargets()
         else:
             logger.debug("opentargets is already up-to-date")
     if "ncg" not in ignored_sources:
-        if "ncg" not in no_download:
+        if "ncg" not in no_download_meta:
             _download_ncg()
         else:
             logger.debug("ncg is already up-to-date")
     if "intogen" not in ignored_sources:
-        if "intogen" not in no_download:
+        if "intogen" not in no_download_meta:
             _download_intogen()
         else:
             logger.debug("intogen is already up-to-date")
     if "orphanet" not in ignored_sources:
-        if "orphanet" not in no_download:
+        if "orphanet" not in no_download_meta:
             _download_orphanet()
         else:
             logger.debug("orphanet is already up-to-date")
     if "chembl" not in ignored_sources:
-        if "chembl" not in no_download:
+        if "chembl" not in no_download_meta:
             _download_chembl()
         else:
             logger.debug("chembl is already up-to-date")
     if "biogrid" not in ignored_sources:
-        if "biogrid" not in no_download:
+        if "biogrid" not in no_download_meta:
             _download_biogrid()
         else:
             logger.debug("biogrid is already up-to-date")
@@ -139,7 +134,7 @@ def download_all(force=False, ignored_sources=set(), prev_metadata={}, current_m
             continue
 
         # only download if necessary (by checking previous metadata)
-        if source not in no_download:
+        if source not in no_download_meta:
             (download_dir / source).mkdir(exist_ok=True)
 
             data = sources[source]
@@ -224,8 +219,11 @@ def update_versions(ignored_sources=set(), default_version=None):
             version = meta["version"] if "version" in meta.keys() else f"{date}"
             metadata["source_databases"][source] = {"date": f"{date}", "version": version}
 
+    try:
+        docs = list(MongoInstance.DB["metadata"].find())
+    except:
+        docs = []
 
-    docs = list(MongoInstance.DB["metadata"].find())
     if len(docs) == 1:
         version = docs[0]["version"]
     elif len(docs) == 0:
@@ -239,15 +237,10 @@ def update_versions(ignored_sources=set(), default_version=None):
         if "default_version" in sources.keys():
             version = sources["default_version"]
 
-
     v = Version(version)
     v.increment("patch")
 
     metadata["version"] = f"{v}"
-
-    MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
-
-
     return metadata
 
     # metadata debugging file. Use to check metadata if DB does not work as intended.
@@ -305,22 +298,10 @@ def get_versions(no_download):
         v.increment("patch")
         metadata["version"] = f"{v}"
 
-    metadata_keys= {k for k in metadata["source_databases"].keys()}
+    metadata_keys = {k for k in metadata["source_databases"].keys()}
     for source in metadata_keys:
         if source not in _config["sources"]:
             del metadata["source_databases"][source]
 
+    return metadata
 
-    max_retries = 5
-    retry_delay = 1  # seconds
-
-    for attempt in range(1, max_retries + 1):
-        try:
-            MongoInstance.DB["metadata"].replace_one({}, metadata, upsert=True)
-            break  # Success, exit the loop
-        except PyMongoError as e:
-            logger.warning(f"Attempt {attempt} failed: {e}")
-            if attempt == max_retries:
-                logger.error(f"Metadata could not be set!")
-                raise  # Re-raise the exception after final attempt
-            time.sleep(retry_delay)
