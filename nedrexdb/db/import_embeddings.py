@@ -25,7 +25,7 @@ def connect_to_session(session_type):
         except Exception:
             retry -= 1
             if retry == 0:
-                print("Could not connect to Neo4j database at " + NEO4J_URI)
+                logger.debug("Could not connect to Neo4j database at " + NEO4J_URI)
                 return
             time.sleep(5)
     return kg

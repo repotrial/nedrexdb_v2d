@@ -98,7 +98,7 @@ def update(conf, download, version_update, create_embeddings):
                         distinct_values = collection.distinct("dataSources")
                     except Exception as e:
                         logger.info(
-                            f"⚠️ Could not fetch distinct dataSources for collection '{collection_name}': {e}")
+                            f"Could not fetch distinct dataSources for collection '{collection_name}': {e}")
                         continue
                     if distinct_values:
                         distinct_per_collection[collection_name.replace("_", "")] = distinct_values
