@@ -88,6 +88,8 @@ def update(conf, download, version_update, create_embeddings):
     try:
         MongoInstance.connect("live")
         if create_embeddings:
+            if not config["embeddings"]["embedding_dependencies"]:
+                logger.warning("config['embeddings']['embedding_dependencies'] is empty, but create_embeddings is true")
             # find sources used previously to create embeddings
             distinct_per_collection = {}
             for collection_name in MongoInstance.DB.list_collection_names():
