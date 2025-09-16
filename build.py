@@ -250,6 +250,12 @@ def update(conf, download, version_update, create_embeddings):
     if not create_embeddings:
         # remove dev instance and set up live instance
         dev_instance.remove(neo4j_mode="import")
+        dev_instance = NeDRexDevInstance()
+        dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+        # Let neo4j spinn up properly before connecting
+        time.sleep(60)
+        create_constraints()
+        logger.debug("Constraints met without creating embeddings")
 
     if create_embeddings:
         embedding_deps = {}
@@ -361,7 +367,7 @@ def manage_embeddings(dev_instance,
         dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
         # Let neo4j spinn up properly before connecting
         time.sleep(60)
-        create_constraints(tobuild_embeddings)
+        create_constraints()
 
         # upsert previous embeddings, if they are still up-to-date
         upsert_embeddings(embeddings)
