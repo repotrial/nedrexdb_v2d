@@ -38,15 +38,15 @@ NODE_EMBEDDING_CONFIG = {
         "domainIds": {"prefix": "Other used IDs: ", "suffix": "", "type": "list"},
         "dataSources": {"prefix": "Data Sources: ", "suffix": "", "type": "list"},
     },
-    # "GenomicVariant": {
-    #     "domainIds": {"prefix": "Other used IDs: ", "suffix": "", "type": "list"},
-    #     "dataSources": {"prefix": "Data Sources: ", "suffix": "", "type": "list"},
-    #     "referenceSequence": {"prefix": "Reference Sequence: ", "suffix": "", "type": "string"},
-    #     "alternativeSequence": {"prefix": "Alternative Sequence: ", "suffix": "", "type": "string"},
-    #     "chromosome": {"prefix": "Chromosome: ", "suffix": "", "type": "string"},
-    #     "position": {"prefix": "Position: ", "suffix": "", "type": "string"},
-    #     "variantType": {"prefix": "Variant Type: ", "suffix": "", "type": "string"},
-    # },
+    "GenomicVariant": {
+        "domainIds": {"prefix": "Other used IDs: ", "suffix": "", "type": "list"},
+        "dataSources": {"prefix": "Data Sources: ", "suffix": "", "type": "list"},
+        "referenceSequence": {"prefix": "Reference Sequence: ", "suffix": "", "type": "string"},
+        "alternativeSequence": {"prefix": "Alternative Sequence: ", "suffix": "", "type": "string"},
+        "chromosome": {"prefix": "Chromosome: ", "suffix": "", "type": "string"},
+        "position": {"prefix": "Position: ", "suffix": "", "type": "string"},
+        "variantType": {"prefix": "Variant Type: ", "suffix": "", "type": "string"},
+    },
     "Pathway": {
         "displayName": {"prefix": "DisplayName: ", "suffix": "", "type": "string"},
         "domainIds": {"prefix": "Other used IDs: ", "suffix": "", "type": "list"},
@@ -139,14 +139,14 @@ EDGE_EMBEDDING_CONFIG = {
         #     "minimum_frequency": {"prefix": "Minimum Frequency: ", "suffix": "", "type": "string"}
         # }
     },
-    # "GOIsSubtypeOfGO": {
-    #     "source": "GO",
-    #     "link_term": "is subtype of",
-    #     "target": "GO",
-    #     "attributes": {
-    #         "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-    #     }
-    # },
+    "GOIsSubtypeOfGO": {
+        "source": "GO",
+        "link_term": "is subtype of",
+        "target": "GO",
+        "attributes": {
+            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+        }
+    },
     "GeneExpressedInTissue": {
         "source": "Gene",
         "link_term": "is expressed in",
@@ -166,15 +166,15 @@ EDGE_EMBEDDING_CONFIG = {
             "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
         }
     },
-    # "ProteinExpressedInTissue": {
-    #     "source": "Protein",
-    #     "link_term": "is expressed by",
-    #     "target": "Tissue",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-            # "level": {"prefix": "Expression level: ", "suffix": "", "type": "string"},
-        # }
-    # },
+    "ProteinExpressedInTissue": {
+        "source": "Protein",
+        "link_term": "is expressed by",
+        "target": "Tissue",
+        "attributes": {
+            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+            "level": {"prefix": "Expression level: ", "suffix": "", "type": "string"},
+        }
+    },
     "ProteinHasGoAnnotation": {
         "source": "Protein",
         "link_term": "has GO annotation",
@@ -184,34 +184,34 @@ EDGE_EMBEDDING_CONFIG = {
         #     "qualifiers": {"prefix": "Qualifiers: ", "suffix": "", "type": "list"},
         # }
     },
-    # "ProteinHasSignature": {
-    #     "source": "Protein",
-    #     "link_term": "has signature",
-    #     "target": "Signature",
-    #     "attributes": {
-    #         "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-    #     }
-    # },
-    # "ProteinInPathway": {
-    #     "source": "Protein",
-    #     "link_term": "is in the pathway",
-    #     "target": "Pathway",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        # }
-    # },
-    # "ProteinInteractsWithProtein": {
-    #     "source": "Protein",
-    #     "link_term": "interacts with",
-    #     "target": "Protein",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-        #     "evidenceTypes": {"prefix": "Evidence Type: ", "suffix": "", "type": "list"},
-        #     "methods": {"prefix": "Method/Approach: ", "suffix": "", "type": "list"},
-        #     "subcellularLocations": {"prefix": "Subcellular Locations: ", "suffix": "", "type": "list"},
-        #     "tissues": {"prefix": "Tissues: ", "suffix": "", "type": "list"},
-        # }
-    # },
+    "ProteinHasSignature": {
+        "source": "Protein",
+        "link_term": "has signature",
+        "target": "Signature",
+        "attributes": {
+            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+        }
+    },
+    "ProteinInPathway": {
+        "source": "Protein",
+        "link_term": "is in the pathway",
+        "target": "Pathway",
+        "attributes": {
+            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+        }
+    },
+    "ProteinInteractsWithProtein": {
+        "source": "Protein",
+        "link_term": "interacts with",
+        "target": "Protein",
+        "attributes": {
+            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+            "evidenceTypes": {"prefix": "Evidence Type: ", "suffix": "", "type": "list"},
+            "methods": {"prefix": "Method/Approach: ", "suffix": "", "type": "list"},
+            "subcellularLocations": {"prefix": "Subcellular Locations: ", "suffix": "", "type": "list"},
+            "tissues": {"prefix": "Tissues: ", "suffix": "", "type": "list"},
+        }
+    },
     "SideEffectSameAsPhenotype": {
         "source": "SideEffect",
         "link_term": "is the same as",
@@ -220,23 +220,23 @@ EDGE_EMBEDDING_CONFIG = {
         #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
         # }
     },
-    # "VariantAffectsGene": {
-    #     "source": "GenomicVariant",
-    #     "link_term": "effects",
-    #     "target": "Gene",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        # }
-    # },
+    "VariantAffectsGene": {
+        "source": "GenomicVariant",
+        "link_term": "effects",
+        "target": "Gene",
+        "attributes": {
+            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+        }
+    },
     "VariantAssociatedWithDisorder": {
         "source": "GenomicVariant",
         "link_term": "is associated with",
         "target": "Disorder",
-        # "attributes": {
-        #     # "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-        #     "effects": {"prefix": "Effects: ", "suffix": "", "type": "list"},
-        #     # "accession": {"prefix": "Accession: ", "suffix": "", "type": "string"},
-        #     "reviewStatus": {"prefix": "Review Status: ", "suffix": "", "type": "string"}
-        # }
+        "attributes": {
+            # "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+            "effects": {"prefix": "Effects: ", "suffix": "", "type": "list"},
+            # "accession": {"prefix": "Accession: ", "suffix": "", "type": "string"},
+            "reviewStatus": {"prefix": "Review Status: ", "suffix": "", "type": "string"}
+        }
     },
 }
