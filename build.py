@@ -215,11 +215,11 @@ def update(conf, download, version_update, create_embeddings):
     if create_embeddings:
 
         # create embeddings
-        try:
-            create_vector_indices()
-        except Exception as e:
-            print(e)
-            logger.warning("Failed to create vector indices")
+        # try:
+        create_vector_indices()
+        # except Exception as e:
+        #     print(e)
+        #     logger.warning("Failed to create vector indices")
 
     dev_instance.remove()
     live_instance = NeDRexLiveInstance()
