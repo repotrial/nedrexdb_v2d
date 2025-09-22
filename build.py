@@ -55,13 +55,15 @@ def cli():
 
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @click.option("--download", is_flag=True, default=False)
+@click.option("--rebuild", is_flag=True, default=False)
 @click.option("--version_update", is_flag=False, default="")
 @click.option("--create_embeddings", is_flag=True, default=False)
 @cli.command()
-def update(conf, download, version_update, create_embeddings):
+def update(conf, download, rebuild, version_update, create_embeddings):
     logger.debug(f"Config file: {conf}")
     logger.info(f"Download updates: {download}")
     logger.info(f"Update DB versions: {version_update}")
+    logger.info(f"Force rebuild entire DB: {rebuild}")
     logger.info(f"Create embeddings: {create_embeddings}")
 
     nedrexdb.parse_config(conf)
@@ -87,7 +89,7 @@ def update(conf, download, version_update, create_embeddings):
 
     try:
         MongoInstance.connect("live")
-        if create_embeddings:
+        if create_embeddings and not rebuild:
             # allow missing embedding_dependencies param
             if "embedding_dependencies" not in config["embeddings"].keys():
                 config["embeddings"]["embedding_dependencies"] = []
@@ -109,11 +111,11 @@ def update(conf, download, version_update, create_embeddings):
                     if distinct_values:
                         distinct_per_collection[collection_name.replace("_", "")] = distinct_values
                         logger.debug(f"Found distinct dataSources for collection {collection_name}")
-        if download:
+        if download or rebuild:
             # needed for metadata comparisons
             prev_metadata = list(MongoInstance.DB["metadata"].find())
             prev_metadata = {} if prev_metadata is None else prev_metadata[0]["source_databases"]
-            logger.debug("PREVIOUS METADATA")
+            logger.debug("Gathering previous metadata:")
             for source in prev_metadata:
                 logger.debug(f"{source}:\t{prev_metadata[source]['version']}"
                              f" [{prev_metadata[source]['date']}]")
@@ -127,13 +129,14 @@ def update(conf, download, version_update, create_embeddings):
         embeddings, tobuild_embeddings, no_download, current_metadata = (
             parse_dev(version=version,
                       download=download,
+                      rebuild=rebuild,
                       version_update=version_update,
                       prev_metadata=prev_metadata,
                       distinct_per_collection=distinct_per_collection,
                       dev_instance=dev_instance,
                       create_embeddings=create_embeddings))
     else:
-        if download:
+        if download or rebuild:
             # update metadata
             # fallback version is rarely needed. Do not change that file, only use the config!
             default_version = None
@@ -153,6 +156,9 @@ def update(conf, download, version_update, create_embeddings):
             # already up-to-date data
             no_download = [key for key in prev_metadata if key in current_metadata and
                            prev_metadata[key]['version'] == current_metadata[key]['version']]
+            if rebuild:
+                no_download = []
+                logger.info(f"Skipping download for: {no_download} because of rebuild flag. This can be disabled by setting FORCE_REBUILD=0")
             static_download = [key for key in ["bioontology", "drugbank", "disgenet", "repotrial",
                                                "hippie", "sider", "cosmic", "intogen", "ncg"] if key not in no_download]
 
@@ -167,7 +173,7 @@ def update(conf, download, version_update, create_embeddings):
 
         if create_embeddings:
             embeddings, tobuild_embeddings = manage_embeddings(dev_instance=dev_instance,
-                                                               distinct_per_collection=distinct_per_collection)
+                                                               distinct_per_collection=distinct_per_collection, rebuild=rebuild)
 
         # prepare neo4j for import from mongoDB
         dev_instance.set_up(use_existing_volume=False, neo4j_mode="import")
@@ -250,30 +256,43 @@ def update(conf, download, version_update, create_embeddings):
     if not create_embeddings:
         # remove dev instance and set up live instance
         dev_instance.remove(neo4j_mode="import")
+        dev_instance = NeDRexDevInstance()
+        dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
+        # Let neo4j spinn up properly before connecting
+        time.sleep(60)
+        create_constraints()
+        logger.debug("Constraints met without creating embeddings")
 
     if create_embeddings:
         embedding_deps = {}
+        if rebuild:
+            embeddings = {}
+            tobuild_embeddings = set(config["embeddings"]["embedding_dependencies"])
+            if not tobuild_embeddings:
+                logger.warning("config['embeddings']['embedding_dependencies'] is empty, but rebuild is true")
+                logger.warning("If you do not want to build embeddings, the better way is to set CREATE_EMBEDDINGS=0")
+        else:
         # find sources used now to build mongo
-        for collection_name in MongoInstance.DB.list_collection_names():
-            if collection_name not in ["metadata", '_collections']:
-                collection = MongoInstance.DB[collection_name]
-                # Get distinct values for the field `dataSources`
-                try:
-                    distinct_values = collection.distinct("dataSources")
-                except Exception as e:
-                    logger.info(f"⚠️ Could not fetch new distinct dataSources for collection '{collection_name}': {e}")
-                    continue
-                collection_name = collection_name.replace("_", "")
-                if (collection_name not in distinct_per_collection.keys() or
-                        distinct_per_collection[collection_name] != distinct_values):
-                    embeddings.pop(collection_name, None)
-                    tobuild_embeddings.add(collection_name)
-                    logger.debug("Collection has not identical data sources, rebuilding embedding. Collection name:")
-                    logger.debug(collection_name)
-                if distinct_values:
-                    embedding_deps[collection_name] = distinct_values
+            for collection_name in MongoInstance.DB.list_collection_names():
+                if collection_name not in ["metadata", '_collections']:
+                    collection = MongoInstance.DB[collection_name]
+                    # Get distinct values for the field `dataSources`
+                    try:
+                        distinct_values = collection.distinct("dataSources")
+                    except Exception as e:
+                        logger.info(f"Could not fetch new distinct dataSources for collection '{collection_name}': {e}")
+                        continue
+                    collection_name = collection_name.replace("_", "")
+                    if (collection_name not in distinct_per_collection.keys() or
+                            distinct_per_collection[collection_name] != distinct_values):
+                        embeddings.pop(collection_name, None)
+                        tobuild_embeddings.add(collection_name)
+                        logger.debug("Collection has not identical data sources, rebuilding embedding. Collection name:")
+                        logger.debug(collection_name)
+                    if distinct_values:
+                        embedding_deps[collection_name] = distinct_values
 
-        if download:
+        if download or rebuild:
             for collection_name in embeddings.keys():
                 if collection_name in config["embeddings"]["embedding_dependencies"]:
                     import_embedding = True
@@ -302,6 +321,7 @@ def update(conf, download, version_update, create_embeddings):
         dev_instance.remove(neo4j_mode="import")
         manage_embeddings(dev_instance=dev_instance,
                           read=False,
+                          rebuild=rebuild,
                           embeddings=embeddings,
                           tobuild_embeddings=tobuild_embeddings)
 
@@ -314,11 +334,20 @@ def update(conf, download, version_update, create_embeddings):
 # put all embedding management in here to properly separate it from the essential code
 def manage_embeddings(dev_instance,
                       distinct_per_collection={},
+                      rebuild = False,
                       read=True,
                       embeddings=None,
                       tobuild_embeddings=None):
     # goal: "read" embeddings from previous build to not have to create them again (if metadata is unchanged)
     if read:
+        if rebuild:
+            logger.info("Rebuild flag is set, skipping fetching previous embeddings")
+            embeddings = {}
+            tobuild_embeddings = set(config["embeddings"]["embedding_dependencies"])
+            if not tobuild_embeddings:
+                logger.warning("config['embeddings']['embedding_dependencies'] is empty, but rebuild is true")
+                logger.warning("If you do not want to build embeddings, the better way is to set CREATE_EMBEDDINGS=0")
+            return embeddings, tobuild_embeddings
         toimport_embeddings = set()
         tobuild_embeddings = set()
         # fetch embeddings from previous database
@@ -361,7 +390,7 @@ def manage_embeddings(dev_instance,
         dev_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
         # Let neo4j spinn up properly before connecting
         time.sleep(60)
-        create_constraints(tobuild_embeddings)
+        create_constraints()
 
         # upsert previous embeddings, if they are still up-to-date
         upsert_embeddings(embeddings)
@@ -379,7 +408,7 @@ def manage_embeddings(dev_instance,
         dev_instance.remove()
 
 
-def parse_dev(version, download, version_update, prev_metadata,
+def parse_dev(version, download, rebuild, version_update, prev_metadata,
               distinct_per_collection, dev_instance, create_embeddings):
     # control source downloads
     ignored_sources = {"chembl",
@@ -409,7 +438,7 @@ def parse_dev(version, download, version_update, prev_metadata,
     embeddings = None
     tobuild_embeddings = None
     current_metadata = None
-    if download:
+    if download or rebuild:
         # fallback version is rarely needed. Do not change that file, only use the config!
         default_version = None
         if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
@@ -428,6 +457,9 @@ def parse_dev(version, download, version_update, prev_metadata,
         # already up-to-date data
         no_download = [key for key in prev_metadata if key in current_metadata and
                        prev_metadata[key]['version'] == current_metadata[key]['version']]
+        if rebuild:
+            no_download = []
+            logger.info(f"Skipping download for: {no_download} because of rebuild flag. This can be disabled by setting FORCE_REBUILD=0")
         static_download = [key for key in ["bioontology", "drugbank", "disgenet", "repotrial",
                                            "hippie", "sider", "cosmic", "intogen", "ncg"] if key not in no_download]
 
@@ -442,7 +474,7 @@ def parse_dev(version, download, version_update, prev_metadata,
 
     if create_embeddings:
         embeddings, tobuild_embeddings = manage_embeddings(dev_instance=dev_instance,
-                                                           distinct_per_collection=distinct_per_collection)
+                                                           distinct_per_collection=distinct_per_collection, rebuild=rebuild)
 
     # prepare neo4j for import from mongoDB
     dev_instance.set_up(use_existing_volume=False, neo4j_mode="import")

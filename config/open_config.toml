@@ -83,6 +83,7 @@ embedding_dependencies = [
 [chat]
 server_base="None"  
 model="None"
+
 [db]
 version = "open"
 neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:dev"

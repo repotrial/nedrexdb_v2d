@@ -43,16 +43,14 @@ def create_unique_node_constraint(con, node_type, attribute):
     query = f"CREATE CONSTRAINT {node_type.lower()}_{attribute.lower()}_unique FOR (n:{node_type}) REQUIRE n.{attribute} IS UNIQUE"
     con.query(query)
 
-def create_constraints(tobuild=set()):
-    dev_nodes = []
-
-    for embedding in tobuild:
-        if embedding in node_keys:
-            dev_nodes.append(node_keys[embedding])
+def create_constraints():
+    dev_nodes = None
 
     logger.info("Creating unique constraints for IDs")
     kg = get_kg_connection()
-    node_list = NODE_EMBEDDING_CONFIG.keys() if dev_nodes is None else dev_nodes
+    results = kg.query("CALL db.labels()")
+    node_types = [r["label"] for r in results]
+    node_list = node_types if dev_nodes is None else dev_nodes
     for node in node_list:
         create_unique_node_constraint(kg, node, "primaryDomainId")
     close_kg_connection()

@@ -11,10 +11,11 @@ services:
       dockerfile: Dockerfile
     environment:
       - DOWNLOAD_ON_STARTUP=0
+      - FORCE_REBUILD=1
       - LOG_LEVEL=DEBUG
       - SKIP_UPDATE=0
-      - SKIP_OPEN=1
-      - SKIP_LICENSED=0
+      - SKIP_OPEN=0
+      - SKIP_LICENSED=1
       - SKIP_CLEAN=0
       - TEST_MINIMUM=1
       - CREATE_EMBEDDINGS=1
