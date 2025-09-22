@@ -300,7 +300,8 @@ def update(conf, download, rebuild, version_update, create_embeddings):
                         # check if dependency is up-to-date to decide whether embedding can be imported or has to be built
                         if dependency not in no_download:
                             import_embedding = False
-
+                        if rebuild:
+                            import_embedding = False
                         # check which embeddings can be build based on current metadata
                         if dependency not in current_metadata.keys():
                             import_embedding = None
@@ -313,10 +314,8 @@ def update(conf, download, rebuild, version_update, create_embeddings):
                 if import_embedding is False:
                     tobuild_embeddings.add(collection_name)
 
-        logger.debug("Will upsert following embeddings:")
-        logger.debug(embeddings.keys())
-        logger.debug("Will build following embeddings:")
-        logger.debug(tobuild_embeddings)
+        logger.info(f"Will upsert following embeddings: {embeddings.keys()}")
+        logger.info(f"Will build following embeddings: {tobuild_embeddings}")
 
         dev_instance.remove(neo4j_mode="import")
         manage_embeddings(dev_instance=dev_instance,

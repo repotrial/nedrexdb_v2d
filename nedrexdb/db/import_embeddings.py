@@ -35,6 +35,7 @@ def fetch_embeddings(toimport_embeddings):
     session = connect_to_session(session_type="live")
     result = {}
     for name in toimport_embeddings:
+        logger.info(f"Import embeddings for {name}")
         if name in node_keys.keys():
             query = f"""
             MATCH (n:{node_keys[name]}) 
