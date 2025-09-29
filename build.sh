@@ -42,7 +42,7 @@ setup_db() {
 
     # Clean volumes if not skipped
     if [[ "$SKIP_CLEAN" != "1" ]]; then
-        if [[ "$LOG_LEVEL" == "INFO" || "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | INFO | build.sh -Cleaning unused nedrex volumes"; fi
+        if [[ "$LOG_LEVEL" == "INFO" || "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | INFO | build.sh - Cleaning unused nedrex volumes"; fi
         ./clean_volumes.sh "$db_type"
     else
         if [[ "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | DEBUG | build.sh - Skipping clean"; fi

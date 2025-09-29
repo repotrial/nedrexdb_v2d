@@ -85,164 +85,164 @@ NODE_EMBEDDING_CONFIG = {
 }
 
 EDGE_EMBEDDING_CONFIG = {
-    "GeneAssociatedWithDisorder": {
-        "source": "Gene",
-        "link_term": "is associated with",
-        "target": "Disorder",
-        "attributes": {
-            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        }
-    },
-    "DrugHasIndication": {
-        "source": "Drug",
-        "link_term": "has an indication for",
-        "target": "Disorder",
-        "attributes": {
-            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        }
-    },
-    "DrugHasTarget": {
-        "source": "Drug",
-        "link_term": "has the known target",
-        "target": "Protein",
-        "attributes": {
-            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        }
-    },
-    "DisorderHasPhenotype": {
-        "source": "Disorder",
-        "link_term": "exhibits the known phenotype",
-        "target": "Phenotype",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        # }
-    },
-    "DisorderIsSubtypeOfDisorder": {
-        "source": "Disorder",
-        "link_term": "is subtype of",
-        "target": "Disorder",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        # }
-    },
-    "DrugHasContraindication": {
-        "source": "Drug",
-        "link_term": "is contraindicated in",
-        "target": "Disorder",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        # }
-    },
-    "DrugHasSideEffect": {
-        "source": "Drug",
-        "link_term": "has the known side effect",
-        "target": "SideEffect",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-        #     "maximum_frequency": {"prefix": "Maximum Frequency: ", "suffix": "", "type": "string"},
-        #     "minimum_frequency": {"prefix": "Minimum Frequency: ", "suffix": "", "type": "string"}
-        # }
-    },
-    # "GOIsSubtypeOfGO": {
-    #     "source": "GO",
-    #     "link_term": "is subtype of",
-    #     "target": "GO",
+    # "GeneAssociatedWithDisorder": {
+    #     "source": "Gene",
+    #     "link_term": "is associated with",
+    #     "target": "Disorder",
     #     "attributes": {
     #         "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
     #     }
     # },
-    "GeneExpressedInTissue": {
-        "source": "Gene",
-        "link_term": "is expressed in",
-        "target": "Tissue",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-        # "TPM": {"prefix": "TPM: ", "suffix": "", "type": "string"},
-        # "nTPM": {"prefix": "nTPM: ", "suffix": "", "type": "string"},
-        # "pTPM": {"prefix": "pTPM: ", "suffix": "", "type": "string"},
-        # }
-    },
-    "ProteinEncodedByGene": {
-        "source": "Protein",
-        "link_term": "is encoded by",
-        "target": "Gene",
-        "attributes": {
-            "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        }
-    },
-    # "ProteinExpressedInTissue": {
-    #     "source": "Protein",
-    #     "link_term": "is expressed by",
-    #     "target": "Tissue",
-    # "attributes": {
-    #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-    # "level": {"prefix": "Expression level: ", "suffix": "", "type": "string"},
-    # }
-    # },
-    "ProteinHasGoAnnotation": {
-        "source": "Protein",
-        "link_term": "has GO annotation",
-        "target": "GO",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-        #     "qualifiers": {"prefix": "Qualifiers: ", "suffix": "", "type": "list"},
-        # }
-    },
-    # "ProteinHasSignature": {
-    #     "source": "Protein",
-    #     "link_term": "has signature",
-    #     "target": "Signature",
+    # "DrugHasIndication": {
+    #     "source": "Drug",
+    #     "link_term": "has an indication for",
+    #     "target": "Disorder",
     #     "attributes": {
     #         "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
     #     }
     # },
-    # "ProteinInPathway": {
-    #     "source": "Protein",
-    #     "link_term": "is in the pathway",
-    #     "target": "Pathway",
-    # "attributes": {
-    #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-    # }
-    # },
-    # "ProteinInteractsWithProtein": {
-    #     "source": "Protein",
-    #     "link_term": "interacts with",
+    # "DrugHasTarget": {
+    #     "source": "Drug",
+    #     "link_term": "has the known target",
     #     "target": "Protein",
-    # "attributes": {
-    #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-    #     "evidenceTypes": {"prefix": "Evidence Type: ", "suffix": "", "type": "list"},
-    #     "methods": {"prefix": "Method/Approach: ", "suffix": "", "type": "list"},
-    #     "subcellularLocations": {"prefix": "Subcellular Locations: ", "suffix": "", "type": "list"},
-    #     "tissues": {"prefix": "Tissues: ", "suffix": "", "type": "list"},
-    # }
+    #     "attributes": {
+    #         "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    #     }
     # },
-    "SideEffectSameAsPhenotype": {
-        "source": "SideEffect",
-        "link_term": "is the same as",
-        "target": "Phenotype",
-        # "attributes": {
-        #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-        # }
-    },
-    # "VariantAffectsGene": {
-    #     "source": "GenomicVariant",
-    #     "link_term": "effects",
+    # "DisorderHasPhenotype": {
+    #     "source": "Disorder",
+    #     "link_term": "exhibits the known phenotype",
+    #     "target": "Phenotype",
+    #     # "attributes": {
+    #     #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    #     # }
+    # },
+    # "DisorderIsSubtypeOfDisorder": {
+    #     "source": "Disorder",
+    #     "link_term": "is subtype of",
+    #     "target": "Disorder",
+    #     # "attributes": {
+    #     #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    #     # }
+    # },
+    # "DrugHasContraindication": {
+    #     "source": "Drug",
+    #     "link_term": "is contraindicated in",
+    #     "target": "Disorder",
+    #     # "attributes": {
+    #     #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    #     # }
+    # },
+    # "DrugHasSideEffect": {
+    #     "source": "Drug",
+    #     "link_term": "has the known side effect",
+    #     "target": "SideEffect",
+    #     # "attributes": {
+    #     #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+    #     #     "maximum_frequency": {"prefix": "Maximum Frequency: ", "suffix": "", "type": "string"},
+    #     #     "minimum_frequency": {"prefix": "Minimum Frequency: ", "suffix": "", "type": "string"}
+    #     # }
+    # },
+    # # "GOIsSubtypeOfGO": {
+    # #     "source": "GO",
+    # #     "link_term": "is subtype of",
+    # #     "target": "GO",
+    # #     "attributes": {
+    # #         "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    # #     }
+    # # },
+    # "GeneExpressedInTissue": {
+    #     "source": "Gene",
+    #     "link_term": "is expressed in",
+    #     "target": "Tissue",
+    #     # "attributes": {
+    #     #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+    #     # "TPM": {"prefix": "TPM: ", "suffix": "", "type": "string"},
+    #     # "nTPM": {"prefix": "nTPM: ", "suffix": "", "type": "string"},
+    #     # "pTPM": {"prefix": "pTPM: ", "suffix": "", "type": "string"},
+    #     # }
+    # },
+    # "ProteinEncodedByGene": {
+    #     "source": "Protein",
+    #     "link_term": "is encoded by",
     #     "target": "Gene",
-    # "attributes": {
-    #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
-    # }
+    #     "attributes": {
+    #         "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    #     }
     # },
-    "VariantAssociatedWithDisorder": {
-        "source": "GenomicVariant",
-        "link_term": "is associated with",
-        "target": "Disorder",
-        # "attributes": {
-        #     # "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
-        #     "effects": {"prefix": "Effects: ", "suffix": "", "type": "list"},
-        #     # "accession": {"prefix": "Accession: ", "suffix": "", "type": "string"},
-        #     "reviewStatus": {"prefix": "Review Status: ", "suffix": "", "type": "string"}
-        # }
-    },
+    # # "ProteinExpressedInTissue": {
+    # #     "source": "Protein",
+    # #     "link_term": "is expressed by",
+    # #     "target": "Tissue",
+    # # "attributes": {
+    # #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+    # # "level": {"prefix": "Expression level: ", "suffix": "", "type": "string"},
+    # # }
+    # # },
+    # "ProteinHasGoAnnotation": {
+    #     "source": "Protein",
+    #     "link_term": "has GO annotation",
+    #     "target": "GO",
+    #     # "attributes": {
+    #     #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+    #     #     "qualifiers": {"prefix": "Qualifiers: ", "suffix": "", "type": "list"},
+    #     # }
+    # },
+    # # "ProteinHasSignature": {
+    # #     "source": "Protein",
+    # #     "link_term": "has signature",
+    # #     "target": "Signature",
+    # #     "attributes": {
+    # #         "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    # #     }
+    # # },
+    # # "ProteinInPathway": {
+    # #     "source": "Protein",
+    # #     "link_term": "is in the pathway",
+    # #     "target": "Pathway",
+    # # "attributes": {
+    # #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    # # }
+    # # },
+    # # "ProteinInteractsWithProtein": {
+    # #     "source": "Protein",
+    # #     "link_term": "interacts with",
+    # #     "target": "Protein",
+    # # "attributes": {
+    # #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+    # #     "evidenceTypes": {"prefix": "Evidence Type: ", "suffix": "", "type": "list"},
+    # #     "methods": {"prefix": "Method/Approach: ", "suffix": "", "type": "list"},
+    # #     "subcellularLocations": {"prefix": "Subcellular Locations: ", "suffix": "", "type": "list"},
+    # #     "tissues": {"prefix": "Tissues: ", "suffix": "", "type": "list"},
+    # # }
+    # # },
+    # "SideEffectSameAsPhenotype": {
+    #     "source": "SideEffect",
+    #     "link_term": "is the same as",
+    #     "target": "Phenotype",
+    #     # "attributes": {
+    #     #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    #     # }
+    # },
+    # # "VariantAffectsGene": {
+    # #     "source": "GenomicVariant",
+    # #     "link_term": "effects",
+    # #     "target": "Gene",
+    # # "attributes": {
+    # #     "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"}
+    # # }
+    # # },
+    # "VariantAssociatedWithDisorder": {
+    #     "source": "GenomicVariant",
+    #     "link_term": "is associated with",
+    #     "target": "Disorder",
+    #     # "attributes": {
+    #     #     # "dataSources": {"prefix": "Data Source: ", "suffix": "", "type": "list"},
+    #     #     "effects": {"prefix": "Effects: ", "suffix": "", "type": "list"},
+    #     #     # "accession": {"prefix": "Accession: ", "suffix": "", "type": "string"},
+    #     #     "reviewStatus": {"prefix": "Review Status: ", "suffix": "", "type": "string"}
+    #     # }
+    # },
 }
 
 # only building embeddings for dev nodes and edges, except they are None.
