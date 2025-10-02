@@ -47,7 +47,7 @@ def profile_collections(db):
             )
             logger.info(f"Successfully profiled {coll}: {doc_count} documents")
             _time.sleep(60)
-            logger.debug("Giving Neo4j some time to finish internal processes.")
+            logger.debug("Giving MongoDB some time to finish internal processes.")
         except Exception as e:
             logger.error(f"Error profiling {coll}: {str(e)}")
             raise
