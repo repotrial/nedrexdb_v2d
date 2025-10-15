@@ -12,7 +12,7 @@ setup_db() {
     else
         local build_args=(update --conf "$config_file")
 
-        if [[ "$DOWNLOAD_ON_STARTUP" == "1" || "$FORCE_REBUILD" == "1" ]]; then
+        if [[ "$FORCE_REBUILD" == "1" ]]; then
           build_args+=(--rebuild)
         fi
 
