@@ -178,8 +178,8 @@ class _NeDRexBaseInstance(_NeDRexInstance):
                 "NEO4J_PLUGINS": '["apoc"]',
                 "NEO4J_ACCEPT_LICENSE_AGREEMENT": "yes",
                 "NEO4J_server_config_strict__validation_enabled": "false",
-                "NEO4J_server_memory_heap_initial__size": "8g",
-                "NEO4J_server_memory_heap_max__size": "32g",
+                "NEO4J_server_memory_heap_initial__size": "16g",
+                "NEO4J_server_memory_heap_max__size": "64g",
 
             },
             "network": self.network_name,
