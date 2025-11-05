@@ -1,4 +1,5 @@
 from langchain_neo4j import Neo4jGraph
+from neo4j.exceptions import Neo4jError
 from nedrexdb import config as _config
 from nedrexdb.post_integration.neo4j_db_adjustments import create_vector_index
 from nedrexdb.post_integration.embedding_config import NODE_EMBEDDING_CONFIG, EDGE_EMBEDDING_CONFIG
@@ -36,31 +37,38 @@ def fetch_embeddings(toimport_embeddings):
     result = {}
     for name in toimport_embeddings:
         logger.info(f"Import embeddings for {name}")
-        if name in node_keys.keys():
-            query = f"""
-            MATCH (n:{node_keys[name]}) 
-            WHERE n.embedding IS NOT NULL
-            RETURN n.primaryDomainId AS id, n.embedding AS embedding
-            """
-            query_result = session.query(query)
-            result[name] = [(record["id"], record["embedding"]) for record in query_result]
-        elif name in edge_keys.keys():
-            query = f"""
-                MATCH (src)-[r:{edge_keys[name]}]->(dst)
-                WHERE r.embedding IS NOT NULL
-                RETURN 
-                    src.primaryDomainId AS src_id,
-                    dst.primaryDomainId AS dst_id,
-                    r.embedding AS embedding
+        try:
+            if name in node_keys.keys():
+                query = f"""
+                MATCH (n:{node_keys[name]}) 
+                WHERE n.embedding IS NOT NULL
+                RETURN n.primaryDomainId AS id, n.embedding AS embedding
                 """
-            query_result = session.query(query)
-            result[name] = [
-                ((record["src_id"], record["dst_id"]), record["embedding"])
-                for record in query_result
-            ]
-        else:
-            logger.debug(f"Embedding {name} is not defined.")
+                query_result = session.query(query)
+                result[name] = [(record["id"], record["embedding"]) for record in query_result]
+            elif name in edge_keys.keys():
+                query = f"""
+                    MATCH (src)-[r:{edge_keys[name]}]->(dst)
+                    WHERE r.embedding IS NOT NULL
+                    RETURN 
+                        src.primaryDomainId AS src_id,
+                        dst.primaryDomainId AS dst_id,
+                        r.embedding AS embedding
+                    """
+                query_result = session.query(query)
+                result[name] = [
+                    ((record["src_id"], record["dst_id"]), record["embedding"])
+                    for record in query_result
+                ]
+            else:
+                logger.debug(f"Embedding {name} is not defined.")
 
+        except Neo4jError as e:  # catch Neo4j warnings
+            msg = str(e)
+            if "UnknownPropertyKeyWarning" in msg or "not in the database" in msg:
+                logger.info(f"[{name}] No embeddings found (property missing) — skipped silently.")
+            else:
+                logger.warning(f"Neo4j error for '{name}': {e}")
     return result
 
 
