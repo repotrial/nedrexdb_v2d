@@ -412,29 +412,29 @@ def manage_embeddings(dev_instance,
 def parse_dev(version, download, rebuild, version_update, prev_metadata,
               distinct_per_collection, dev_instance, create_embeddings):
     # control source downloads
-    ignored_sources = {"chembl",
-                       "biogrid",
-                       "go",
-                       "uberon",
-                       "clinvar",
-                       "hpo",
-                       "hpa",
-                       "uniprot",
-                       "reactome",
-                       "bioontology",
-                       "drug_central",
-                       "unichem",
-                       "repotrial",
-                       "iid",
-                       "intact",
+    ignored_sources = {#"chembl",
+                       #"biogrid",
+                       #"go",
+                       #"uberon",
+                       #"clinvar",
+                       #"hpo",
+                       #"hpa",
+                       #"uniprot",
+                       #"reactome",
+                       #"bioontology",
+                       #"drug_central",
+                       #"unichem",
+                       #"repotrial",
+                       #"iid",
+                       #"intact",
                        # "omim",
-                       "ncg",
-                       "intogen",
+                       #"ncg",
+                       #"intogen",
                        "opentargets",
-                       "orphanet",
-                       "ncbi",
+                       #"orphanet",
+                       #"ncbi",
                        # "drugbank", #temp
-                       "ctd"
+                       #"ctd"
                        }
     nedrex_versions = None
     no_download = None
@@ -492,28 +492,84 @@ def parse_dev(version, download, rebuild, version_update, prev_metadata,
 
     MongoInstance.DB["metadata"].replace_one({}, nedrex_versions, upsert=True)
 
+    if "go" not in ignored_sources:
+        go.parse_go()
     if "mondo" not in ignored_sources:
-        mondo.parse_mondo_json()
-    if "hpo" not in ignored_sources:
-        hpo.parse()
-    if "bioontology" not in ignored_sources:
-        bioontology.parse()
+        mondo.parse_mondo_json()  # disorder nodes
     if "ncbi" not in ignored_sources:
         ncbi.parse_gene_info()
+    if "uberon" not in ignored_sources:
+        uberon.parse()
+    if "uniprot" not in ignored_sources:
+        uniprot.parse_proteins()
+
+    if "cosmic" not in ignored_sources:
+        cosmic.parse_gene_disease_associations()
+    if "clinvar" not in ignored_sources:
+        clinvar.parse()
     if "drugbank" not in ignored_sources:
         if version == "licensed":
             drugbank._parse_drugbank()
         elif version == "open":
             drugbank.parse_drugbank()
+    if "chembl" not in ignored_sources:
+        chembl.parse_chembl()
+    if uniprot not in ignored_sources:
+        uniprot_signatures.parse()  # requires proteins to be parsed first
+    if "hpo" not in ignored_sources:
+        hpo.parse() # requires disorders to be parsed first
+    if "reactome" not in ignored_sources:
+        reactome.parse()  # requires protein to be parsed first
+    if "bioontology" not in ignored_sources:
+        bioontology.parse()  # requires phenotype to be parsed
+
     if "drug_central" not in ignored_sources:
         drug_central.parse_drug_central()
+    if "unichem" not in ignored_sources:
+        unichem.parse()
+    if "repotrial" not in ignored_sources:
+        repotrial.parse()
+
+    if "hippie" not in ignored_sources:
+        hippie_method_scores = hippie.parse_perplexity_techinque_scores()
+
     if "ctd" not in ignored_sources:
         ctd.parse()
     if "disgenet" not in ignored_sources:
         disgenet.parse_gene_disease_associations()
+    if "intogen" not in ignored_sources:
+        intogen.parse_gene_disease_associations()
+    if "orphanet" not in ignored_sources:
+        orphanet.parse_gene_disease_associations()
+    if "opentargets" not in ignored_sources:
+        opentargets.parse_gene_disease_associations()
+    if "ncg" not in ignored_sources:
+        ncg.parse_gene_disease_associations()
+    if "go" not in ignored_sources:
+        go.parse_goa()
+    if "hpa" not in ignored_sources:
+        hpa.parse_hpa()
+    if "biogrid" not in ignored_sources and "hippie" not in ignored_sources:
+        biogrid.parse_ppis(hippie_method_scores)
+    if "iid" not in ignored_sources and "hippie" not in ignored_sources:
+        iid.parse_ppis(hippie_method_scores)
+    if "intact" not in ignored_sources and "hippie" not in ignored_sources:
+        intact.parse(hippie_method_scores)
+
     if version == "licensed":
         if "omim" not in ignored_sources:
             omim.parse_gene_disease_associations()
+    if "sider" not in ignored_sources:
+        sider.parse()
+    if "uniprot" not in ignored_sources:
+        uniprot.parse_idmap()
+
+    if "repotrial" not in ignored_sources:
+        from nedrexdb.analyses import molecule_similarity
+        molecule_similarity.run()
+
+    if "uberon" not in ignored_sources:
+        trim_uberon.trim_uberon()
 
     return embeddings, tobuild_embeddings, no_download, current_metadata
 

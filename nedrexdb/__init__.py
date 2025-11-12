@@ -24,7 +24,8 @@ class _Config:
             if "version_type" in self.data.keys():
                 logger.info("Pulling configuration from defaults if necessary...")
                 vt = self.data["version_type"]
-                defaults_dict = {'api': {'mode': f'{vt}',
+                defaults_dict = {'api': {'network': 'nedrexdb_default',
+                                         'mode': f'{vt}',
                                          'status': 'live',
                                          'base': f'/{vt}',
                                          'rate_limiting_enabled': False,
