@@ -139,16 +139,9 @@ def update(conf, download, rebuild, version_update, create_embeddings):
         if download or rebuild:
             # update metadata
             # fallback version is rarely needed. Do not change that file, only use the config!
-            default_version = None
-            if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
-                with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
-                    default_version = fallback_file.readline().rstrip()
+            default_version = get_fallback_version()
             nedrex_versions = update_versions(version_update_skip, default_version=default_version)
-            try:
-                with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
-                    fallback_file.write(f"{nedrex_versions['version']}")
-            except:
-                logger.info("No fallback version file found. Initial setup?")
+            save_fallback_version(f"{nedrex_versions['version']}")
 
             # do the download
             logger.debug("Download: ON")
@@ -186,62 +179,11 @@ def update(conf, download, rebuild, version_update, create_embeddings):
 
         MongoInstance.DB["metadata"].replace_one({}, nedrex_versions, upsert=True)
 
-        # Parse sources contributing only nodes (and edges amongst those nodes)
-        go.parse_go()
-        mondo.parse_mondo_json()  # disorder nodes
-        ncbi.parse_gene_info()
-        uberon.parse()
-        uniprot.parse_proteins()
-
-        # Sources that add node type but require existing nodes, too
-        cosmic.parse_gene_disease_associations()
-        clinvar.parse()
-
-        if version == "licensed":
-            drugbank._parse_drugbank()  # requires proteins to be parsed first
-        elif version == "open":
-            drugbank.parse_drugbank()
-        chembl.parse_chembl()
-        uniprot_signatures.parse()  # requires proteins to be parsed first
-        hpo.parse()  # requires disorders to be parsed first
-        reactome.parse()  # requires protein to be parsed first
-        bioontology.parse()  # requires phenotype to be parsed
-
-        # Sources that add data to existing nodes
-        drug_central.parse_drug_central()
-        unichem.parse()
-        repotrial.parse()
-
-        # Loading annotation information
-        hippie_method_scores = hippie.parse_perplexity_techinque_scores()
-
-        # Sources adding edges.
-        ctd.parse()
-        disgenet.parse_gene_disease_associations()
-        intogen.parse_gene_disease_associations()
-        orphanet.parse_gene_disease_associations()
-        opentargets.parse_gene_disease_associations()
-        ncg.parse_gene_disease_associations()
-
-        go.parse_goa()
-        hpa.parse_hpa()
-
-        biogrid.parse_ppis(hippie_method_scores)
-        iid.parse_ppis(hippie_method_scores)
-        intact.parse(hippie_method_scores)
-
-        if version == "licensed":
-            omim.parse_gene_disease_associations()
-            version_update_skip.add("omim")
-
-        sider.parse()
-        uniprot.parse_idmap()
-
-        from nedrexdb.analyses import molecule_similarity
-        molecule_similarity.run()
-
-        # Post-processing
-        trim_uberon.trim_uberon()
+        # Run parser pipeline (full pipeline rarely ignores sources)
+        run_parsers(
+            version=version,
+            ignored_sources=set()  # nothing is ignored here
+        )
 
     # clean up for export
     drop_empty_collections.drop_empty_collections()
@@ -408,33 +350,149 @@ def manage_embeddings(dev_instance,
             logger.debug("Failed to create vector indices")
         dev_instance.remove()
 
+def run_parsers(version, ignored_sources, hippie_method_scores=None):
+    """
+    Unified parser pipeline used by both the full update() path and parse_dev().
+    Ordering does matter due to dependencies in the parsing process.
+    Custom db build is possible with conditional execution based on ignored_sources.
+    """
+
+    # --- PRIMARY NODE SOURCES (must run first) ---
+    if "go" not in ignored_sources:
+        go.parse_go()
+    if "mondo" not in ignored_sources:
+        mondo.parse_mondo_json()  # disorder nodes
+    if "ncbi" not in ignored_sources:
+        ncbi.parse_gene_info()
+    if "uberon" not in ignored_sources:
+        uberon.parse()
+    if "uniprot" not in ignored_sources:
+        uniprot.parse_proteins()
+
+    # --- NODE SOURCES THAT REQUIRE EXISTING NODES ---
+    if "cosmic" not in ignored_sources:
+        cosmic.parse_gene_disease_associations()
+    if "clinvar" not in ignored_sources:
+        clinvar.parse()
+    if "drugbank" not in ignored_sources:
+        if version == "licensed":
+            drugbank._parse_drugbank()  # requires proteins
+        else:
+            drugbank.parse_drugbank()
+    if "chembl" not in ignored_sources:
+        chembl.parse_chembl()
+    if "uniprot" not in ignored_sources:
+        uniprot_signatures.parse()  # requires proteins
+    if "hpo" not in ignored_sources:
+        hpo.parse()  # requires disorders
+    if "reactome" not in ignored_sources:
+        reactome.parse()  # requires proteins
+    if "bioontology" not in ignored_sources:
+        bioontology.parse()  # requires phenotype
+
+    # --- SOURCES ADDING DATA TO EXISTING NODES ---
+    if "drug_central" not in ignored_sources:
+        drug_central.parse_drug_central()
+    if "unichem" not in ignored_sources:
+        unichem.parse()
+    if "repotrial" not in ignored_sources:
+        repotrial.parse()
+
+    # --- SCORE-RELATED EXTRACTION (hippie) ---
+    if "hippie" not in ignored_sources:
+        if hippie_method_scores is None:
+            hippie_method_scores = hippie.parse_perplexity_techinque_scores()
+
+    # --- EDGE SOURCES ---
+    if "ctd" not in ignored_sources:
+        ctd.parse()
+    if "disgenet" not in ignored_sources:
+        disgenet.parse_gene_disease_associations()
+    if "intogen" not in ignored_sources:
+        intogen.parse_gene_disease_associations()
+    if "orphanet" not in ignored_sources:
+        orphanet.parse_gene_disease_associations()
+    if "opentargets" not in ignored_sources:
+        opentargets.parse_gene_disease_associations()
+    if "ncg" not in ignored_sources:
+        ncg.parse_gene_disease_associations()
+
+    # GO annotations
+    if "go" not in ignored_sources:
+        go.parse_goa()
+
+    # Edges requiring hippie scores
+    if "hpa" not in ignored_sources:
+        hpa.parse_hpa()
+    if "biogrid" not in ignored_sources and "hippie" not in ignored_sources:
+        biogrid.parse_ppis(hippie_method_scores)
+    if "iid" not in ignored_sources and "hippie" not in ignored_sources:
+        iid.parse_ppis(hippie_method_scores)
+    if "intact" not in ignored_sources and "hippie" not in ignored_sources:
+        intact.parse(hippie_method_scores)
+
+    # omim is licensed-only
+    if version == "licensed" and "omim" not in ignored_sources:
+        omim.parse_gene_disease_associations()
+
+    if "sider" not in ignored_sources:
+        sider.parse()
+
+    if "uniprot" not in ignored_sources:
+        uniprot.parse_idmap()
+
+    if "repotrial" not in ignored_sources:
+        from nedrexdb.analyses import molecule_similarity
+        molecule_similarity.run()
+
+    if "uberon" not in ignored_sources:
+        trim_uberon.trim_uberon()
+
+def get_fallback_version(fallback_path="/data/nedrex_files/nedrex_data/fallback_version"):
+    default_version = None
+    if os.path.exists(fallback_path):
+        with open(fallback_path) as f:
+            default_version = f.readline().rstrip()
+    return default_version
+
+def save_fallback_version(version, fallback_path="/data/nedrex_files/nedrex_data/fallback_version"):
+    try:
+        with open(fallback_path, "w") as f:
+            f.write(str(version))
+    except:
+        logger.info("No fallback version file found. Initial setup?")
+
 
 def parse_dev(version, download, rebuild, version_update, prev_metadata,
               distinct_per_collection, dev_instance, create_embeddings):
     # control source downloads
-    ignored_sources = {#"chembl",
-                       #"biogrid",
-                       #"go",
-                       #"uberon",
-                       #"clinvar",
-                       #"hpo",
-                       #"hpa",
-                       #"uniprot",
-                       #"reactome",
-                       #"bioontology",
-                       #"drug_central",
-                       #"unichem",
-                       #"repotrial",
-                       #"iid",
-                       #"intact",
-                       # "omim",
-                       #"ncg",
-                       #"intogen",
+    ignored_sources = {"chembl",
+                       "biogrid",
+                       "go",
+                       "uberon",
+                       "clinvar",
+                       "hpo",
+                       "hpa",
+                       "uniprot",
+                       "reactome",
+                       "bioontology",
+                       "drug_central",
+                       "unichem",
+                       "repotrial",
+                       "iid",
+                       "intact",
+                       "omim",
+                       "ncg",
+                       "intogen",
                        "opentargets",
-                       #"orphanet",
+                       "orphanet",
                        #"ncbi",
-                       # "drugbank", #temp
-                       #"ctd"
+                       "drugbank", #temp
+                       "ctd",
+                       "disgenet",
+                       "hippie",
+                       "sider",
+                       "cosmic",
                        }
     nedrex_versions = None
     no_download = None
@@ -443,16 +501,9 @@ def parse_dev(version, download, rebuild, version_update, prev_metadata,
     current_metadata = None
     if download or rebuild:
         # fallback version is rarely needed. Do not change that file, only use the config!
-        default_version = None
-        if os.path.exists("/data/nedrex_files/nedrex_data/fallback_version"):
-            with open("/data/nedrex_files/nedrex_data/fallback_version") as fallback_file:
-                default_version = fallback_file.readline().rstrip()
+        default_version = get_fallback_version()
         nedrex_versions = update_versions(ignored_sources=ignored_sources, default_version=default_version)
-        try:
-            with open("/data/nedrex_files/nedrex_data/fallback_version", "w") as fallback_file:
-                fallback_file.write(f"{nedrex_versions['version']}")
-        except:
-            logger.info("No fallback version file found. Initial setup?")
+        save_fallback_version(f"{nedrex_versions['version']}")
 
         # do the download
         logger.debug("Download: ON")
@@ -492,84 +543,11 @@ def parse_dev(version, download, rebuild, version_update, prev_metadata,
 
     MongoInstance.DB["metadata"].replace_one({}, nedrex_versions, upsert=True)
 
-    if "go" not in ignored_sources:
-        go.parse_go()
-    if "mondo" not in ignored_sources:
-        mondo.parse_mondo_json()  # disorder nodes
-    if "ncbi" not in ignored_sources:
-        ncbi.parse_gene_info()
-    if "uberon" not in ignored_sources:
-        uberon.parse()
-    if "uniprot" not in ignored_sources:
-        uniprot.parse_proteins()
-
-    if "cosmic" not in ignored_sources:
-        cosmic.parse_gene_disease_associations()
-    if "clinvar" not in ignored_sources:
-        clinvar.parse()
-    if "drugbank" not in ignored_sources:
-        if version == "licensed":
-            drugbank._parse_drugbank()
-        elif version == "open":
-            drugbank.parse_drugbank()
-    if "chembl" not in ignored_sources:
-        chembl.parse_chembl()
-    if uniprot not in ignored_sources:
-        uniprot_signatures.parse()  # requires proteins to be parsed first
-    if "hpo" not in ignored_sources:
-        hpo.parse() # requires disorders to be parsed first
-    if "reactome" not in ignored_sources:
-        reactome.parse()  # requires protein to be parsed first
-    if "bioontology" not in ignored_sources:
-        bioontology.parse()  # requires phenotype to be parsed
-
-    if "drug_central" not in ignored_sources:
-        drug_central.parse_drug_central()
-    if "unichem" not in ignored_sources:
-        unichem.parse()
-    if "repotrial" not in ignored_sources:
-        repotrial.parse()
-
-    if "hippie" not in ignored_sources:
-        hippie_method_scores = hippie.parse_perplexity_techinque_scores()
-
-    if "ctd" not in ignored_sources:
-        ctd.parse()
-    if "disgenet" not in ignored_sources:
-        disgenet.parse_gene_disease_associations()
-    if "intogen" not in ignored_sources:
-        intogen.parse_gene_disease_associations()
-    if "orphanet" not in ignored_sources:
-        orphanet.parse_gene_disease_associations()
-    if "opentargets" not in ignored_sources:
-        opentargets.parse_gene_disease_associations()
-    if "ncg" not in ignored_sources:
-        ncg.parse_gene_disease_associations()
-    if "go" not in ignored_sources:
-        go.parse_goa()
-    if "hpa" not in ignored_sources:
-        hpa.parse_hpa()
-    if "biogrid" not in ignored_sources and "hippie" not in ignored_sources:
-        biogrid.parse_ppis(hippie_method_scores)
-    if "iid" not in ignored_sources and "hippie" not in ignored_sources:
-        iid.parse_ppis(hippie_method_scores)
-    if "intact" not in ignored_sources and "hippie" not in ignored_sources:
-        intact.parse(hippie_method_scores)
-
-    if version == "licensed":
-        if "omim" not in ignored_sources:
-            omim.parse_gene_disease_associations()
-    if "sider" not in ignored_sources:
-        sider.parse()
-    if "uniprot" not in ignored_sources:
-        uniprot.parse_idmap()
-
-    if "repotrial" not in ignored_sources:
-        from nedrexdb.analyses import molecule_similarity
-        molecule_similarity.run()
-
-    if "uberon" not in ignored_sources:
-        trim_uberon.trim_uberon()
+    # Run parser pipeline
+    run_parsers(
+        version=version,
+        ignored_sources=ignored_sources
+    )
 
     return embeddings, tobuild_embeddings, no_download, current_metadata
 
