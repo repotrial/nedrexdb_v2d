@@ -38,6 +38,7 @@ aiohttp = "^3.12.14"
 openpyxl = "^3.1.2"
 pyspark = "^3.5.6"
 openai = "^1.102.0"
+langchain-core = "^0.3.80"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
