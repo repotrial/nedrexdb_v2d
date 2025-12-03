@@ -79,7 +79,7 @@ class OpenTargetsParser:
             .config("spark.driver.memory", "12g")
             .getOrCreate()
         )
-        spark.sparkContext.setLogLevel(logLevel=os.environ.get("LOG_LEVEL"))
+        spark.sparkContext.setLogLevel(logLevel="ERROR")
 
         # read evidence dataset
         df = spark.read.parquet(str(self.f))
