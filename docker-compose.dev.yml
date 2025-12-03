@@ -11,14 +11,14 @@ services:
       dockerfile: Dockerfile
     environment:
       - DOWNLOAD_ON_STARTUP=0
-      - FORCE_REBUILD=1
+      - FORCE_REBUILD=0
       - LOG_LEVEL=DEBUG
       - SKIP_UPDATE=0
       - SKIP_OPEN=0
       - SKIP_LICENSED=1
       - SKIP_CLEAN=0
       - TEST_MINIMUM=1
-      - CREATE_EMBEDDINGS=1
+      - CREATE_EMBEDDINGS=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/nedrexdb_v2:/tmp

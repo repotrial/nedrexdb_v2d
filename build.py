@@ -464,7 +464,7 @@ def parse_dev(version, download, rebuild, version_update, prev_metadata,
             no_download = []
             logger.info(
                 f"Skipping download for: {no_download} because of rebuild flag. This can be disabled by setting FORCE_REBUILD=0")
-        
+
         static_download = [key for key in ["bioontology", "drugbank", "disgenet", "repotrial",
                                            "hippie", "sider", "cosmic", "intogen", "ncg"] if key not in no_download and
                            key not in ignored_sources]
