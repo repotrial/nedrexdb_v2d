@@ -48,11 +48,26 @@ def create_constraints():
 
     logger.info("Creating unique constraints for IDs")
     kg = get_kg_connection()
+
+    # fetch existing constraints once
+    existing = kg.query("""
+        SHOW CONSTRAINTS YIELD labelsOrTypes, properties
+        RETURN labelsOrTypes AS labels, properties
+    """)
+    existing_set = {(tuple(e["labels"]), tuple(e["properties"])) for e in existing}
+    logger.debug(f"Found existing constraints (next line): \n{existing_set}")
+
     results = kg.query("CALL db.labels()")
     node_types = [r["label"] for r in results]
     node_list = node_types if dev_nodes is None else dev_nodes
+
     for node in node_list:
+        # skip if constraint already exists
+        if ((node,), ("primaryDomainId",)) in existing_set:
+            continue
+
         create_unique_node_constraint(kg, node, "primaryDomainId")
+
     close_kg_connection()
 
 

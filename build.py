@@ -486,7 +486,7 @@ def parse_dev(version, download, rebuild, version_update, prev_metadata,
                        "intogen",
                        "opentargets",
                        "orphanet",
-                       #"ncbi",
+                       "ncbi",
                        "drugbank", #temp
                        "ctd",
                        "disgenet",
