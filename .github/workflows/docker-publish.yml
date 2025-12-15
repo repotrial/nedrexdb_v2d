@@ -16,23 +16,6 @@ on:
   pull_request:
 #    branches: [ "repo4eu_main", "repo4eu_dev" ]
     branches: [ "master", "dev"]
-  workflow_dispatch:
-    inputs:
-      build_base:
-        description: 'Build Base Image'
-        required: true
-        default: false
-        type: boolean
-      build_neo4j:
-        description: 'Build Neo4j Image'
-        required: true
-        default: false
-        type: boolean
-      build_main:
-        description: 'Build Main Image'
-        required: true
-        default: true
-        type: boolean
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -46,7 +29,6 @@ env:
 
 jobs:
   build-base:
-    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_base == true)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -97,7 +79,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-main:
-    if: (github.event_name != 'schedule' && github.event_name != 'workflow_dispatch') || (github.event_name == 'workflow_dispatch' && inputs.build_main == true)
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -155,7 +137,7 @@ jobs:
           cache-to: type=gha, mode=max
 
   build-neo4j:
-    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_neo4j == true)
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
