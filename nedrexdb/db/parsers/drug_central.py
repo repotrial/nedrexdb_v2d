@@ -50,11 +50,13 @@ class DrugCentralContainer:
         self._port: _Optional[int] = None
         self._container: _Optional[_docker.models.container.Container] = None
         self._engine = None
+        self._connection = None
 
     @property
     def engine(self):
         if not self._engine:
             self._engine = _create_engine(self._address)
+            self._connection = self.engine().connect()
         return self._engine
 
     @property
@@ -128,7 +130,7 @@ class DrugCentralContainer:
         self._engine = None
 
     def _get_drug_central_to_drugbank_map(self) -> dict[str, list[str]]:
-        df = _pd.read_sql_query('select * from "identifier"', con=self.engine)
+        df = _pd.read_sql_query('select * from "identifier"', con=self.connection)
 
         d = _defaultdict(list)
         for _, row in df.iterrows():
@@ -141,7 +143,7 @@ class DrugCentralContainer:
         return d
 
     def iter_targets(self, dc_to_db_map, nedrex_proteins):
-        df = _pd.read_sql_query("select * from act_table_full", con=self.engine)
+        df = _pd.read_sql_query("select * from act_table_full", con=self.connection)
         df = df[~_pd.isnull(df.struct_id)]
         df = df[~_pd.isnull(df.accession)]
 
@@ -164,7 +166,7 @@ class DrugCentralContainer:
                 yield DrugHasTarget(sourceDomainId=drug, targetDomainId=prot, dataSources=["drugcentral"], tags=tags)
 
     def iter_indications(self, dc_to_db_map, snomed_to_nedrex_map, nedrex_drugs):
-        df = _pd.read_sql_query('select * from "omop_relationship"', con=self.engine)
+        df = _pd.read_sql_query('select * from "omop_relationship"', con=self.connection)
         df = df[~_pd.isnull(df.snomed_conceptid)]
         df = df[~_pd.isnull(df.struct_id)]
 
@@ -188,7 +190,7 @@ class DrugCentralContainer:
                 yield dhi
 
     def iter_contraindications(self, dc_to_db_map, snomed_to_nedrex_map, nedrex_drugs):
-        df = _pd.read_sql_query('select * from "omop_relationship"', con=self.engine)
+        df = _pd.read_sql_query('select * from "omop_relationship"', con=self.connection)
         df = df[~_pd.isnull(df.snomed_conceptid)]
         df = df[~_pd.isnull(df.struct_id)]
 
