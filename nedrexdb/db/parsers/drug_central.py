@@ -56,8 +56,13 @@ class DrugCentralContainer:
     def engine(self):
         if not self._engine:
             self._engine = _create_engine(self._address)
-            self._connection = self.engine().connect()
         return self._engine
+
+    @property
+    def connector(self):
+        if not self._connection:
+            self._connection = self.engine().connect()
+        return self._connection
 
     @property
     def _address(self) -> str:
