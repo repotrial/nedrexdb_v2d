@@ -31,7 +31,7 @@ RUN "${CONDA_DIR}/etc/profile.d/mamba.sh"
 RUN conda init bash
 
 RUN mamba update -n base -c defaults mamba conda
-RUN mamba install -y python=3.10
+RUN mamba install -y python=3.11
 RUN mamba update -y --all
 RUN pip install pip==23
 RUN pip install --upgrade pip requests cryptography pyopenssl

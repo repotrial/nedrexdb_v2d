@@ -26,6 +26,7 @@ env:
   NEO4J_IMAGE_NAME: ${{ github.repository }}-neo4j
 
 
+
 jobs:
   build-base:
     if: github.event_name == 'schedule'
@@ -79,6 +80,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-main:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
