@@ -549,6 +549,12 @@ def parse_dev(version, download, rebuild, version_update, prev_metadata,
         ignored_sources=ignored_sources
     )
 
+    for src in ignored_sources:
+        col = src.replace("-", "_")
+        if col in MongoInstance.DB.list_collection_names():
+            logger.info(f"Minimal Build: Dropping collection for ignored source: {col}")
+            MongoInstance.DB[col].drop()
+
     return embeddings, tobuild_embeddings, no_download, current_metadata
 
 
