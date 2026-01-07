@@ -135,17 +135,29 @@ class DrugCentralContainer:
         self._engine = None
 
     def _get_drug_central_to_drugbank_map(self) -> dict[str, list[str]]:
-        df = _pd.read_sql_query('select * from "identifier"', con=self.connection)
+       # df = _pd.read_sql_query('select * from "identifier"', con=self.connection)
+       cursor = self.connection.cursor()
 
-        d = _defaultdict(list)
-        for _, row in df.iterrows():
-            if row["id_type"] != "DRUGBANK_ID":
-                continue
-            drug_central_id = row["struct_id"]
-            drugbank_id = row["identifier"]
-            d[drug_central_id].append(drugbank_id)
+       query = "SELECT struct_id, identifier FROM identifier WHERE id_type = 'DRUGBANK_ID'"
+       cursor.execute(query)
 
-        return d
+       rows = cursor.fetchall()
+       cursor.close()
+
+       d = _defaultdict(list)
+       for struct_id, identifier in rows:
+           d[struct_id].append(identifier)
+
+       return d
+        # d = _defaultdict(list)
+        # for _, row in df.iterrows():
+        #     if row["id_type"] != "DRUGBANK_ID":
+        #         continue
+        #     drug_central_id = row["struct_id"]
+        #     drugbank_id = row["identifier"]
+        #     d[drug_central_id].append(drugbank_id)
+        #
+        # return d
 
     def iter_targets(self, dc_to_db_map, nedrex_proteins):
         df = _pd.read_sql_query("select * from act_table_full", con=self.connection)
