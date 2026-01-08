@@ -157,7 +157,14 @@ class DrugCentralContainer:
         # return d
 
     def iter_targets(self, dc_to_db_map, nedrex_proteins):
-        df = _pd.read_sql_query("select * from act_table_full", con=self.connection)
+        # df = _pd.read_sql_query("select * from act_table_full", con=self.connection)
+        # df = df[~_pd.isnull(df.struct_id)]
+        # df = df[~_pd.isnull(df.accession)]
+        query = _text("select * from act_table_full")
+        result = self.connection.execute(query)
+        df = _pd.DataFrame(result.fetchall(), columns=result.keys())
+
+        # Original filtering logic
         df = df[~_pd.isnull(df.struct_id)]
         df = df[~_pd.isnull(df.accession)]
 
@@ -180,7 +187,13 @@ class DrugCentralContainer:
                 yield DrugHasTarget(sourceDomainId=drug, targetDomainId=prot, dataSources=["drugcentral"], tags=tags)
 
     def iter_indications(self, dc_to_db_map, snomed_to_nedrex_map, nedrex_drugs):
-        df = _pd.read_sql_query('select * from "omop_relationship"', con=self.connection)
+        # df = _pd.read_sql_query('select * from "omop_relationship"', con=self.connection)
+        # df = df[~_pd.isnull(df.snomed_conceptid)]
+        # df = df[~_pd.isnull(df.struct_id)]
+        query = _text('select * from "omop_relationship"')
+        result = self.connection.execute(query)
+        df = _pd.DataFrame(result.fetchall(), columns=result.keys())
+
         df = df[~_pd.isnull(df.snomed_conceptid)]
         df = df[~_pd.isnull(df.struct_id)]
 
@@ -204,7 +217,10 @@ class DrugCentralContainer:
                 yield dhi
 
     def iter_contraindications(self, dc_to_db_map, snomed_to_nedrex_map, nedrex_drugs):
-        df = _pd.read_sql_query('select * from "omop_relationship"', con=self.connection)
+        # df = _pd.read_sql_query('select * from "omop_relationship"', con=self.connection)
+        query = _text('select * from "omop_relationship"')
+        result = self.connection.execute(query)
+        df = _pd.DataFrame(result.fetchall(), columns=result.keys())
         df = df[~_pd.isnull(df.snomed_conceptid)]
         df = df[~_pd.isnull(df.struct_id)]
 
