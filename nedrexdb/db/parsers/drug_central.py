@@ -136,7 +136,7 @@ class DrugCentralContainer:
 
     def _get_drug_central_to_drugbank_map(self) -> dict[str, list[str]]:
        # df = _pd.read_sql_query('select * from "identifier"', con=self.connection)
-       cursor = self.connection.cursor()
+       # cursor = self.connection.cursor()
 
        query = _text("SELECT struct_id, identifier FROM identifier WHERE id_type = 'DRUGBANK_ID'")
        result = self.connection.execute(query)
