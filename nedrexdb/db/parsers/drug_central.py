@@ -61,7 +61,7 @@ class DrugCentralContainer:
     @property
     def connection(self):
         if not self._connection:
-            self._connection = self.engine().connect()
+            self._connection = self.engine.connect()
         return self._connection
 
     @property
