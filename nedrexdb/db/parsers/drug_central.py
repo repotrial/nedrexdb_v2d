@@ -14,7 +14,7 @@ import docker as _docker
 import pandas as _pd
 from more_itertools import chunked as _chunked
 from pymongo import UpdateOne as _UpdateOne
-from sqlalchemy import create_engine as _create_engine
+from sqlalchemy import create_engine as _create_engine, text as _text
 from tqdm import tqdm as _tqdm
 
 from nedrexdb.db import MongoInstance
@@ -59,7 +59,7 @@ class DrugCentralContainer:
         return self._engine
 
     @property
-    def connector(self):
+    def connection(self):
         if not self._connection:
             self._connection = self.engine().connect()
         return self._connection
@@ -138,14 +138,11 @@ class DrugCentralContainer:
        # df = _pd.read_sql_query('select * from "identifier"', con=self.connection)
        cursor = self.connection.cursor()
 
-       query = "SELECT struct_id, identifier FROM identifier WHERE id_type = 'DRUGBANK_ID'"
-       cursor.execute(query)
-
-       rows = cursor.fetchall()
-       cursor.close()
+       query = _text("SELECT struct_id, identifier FROM identifier WHERE id_type = 'DRUGBANK_ID'")
+       result = self.connection.execute(query)
 
        d = _defaultdict(list)
-       for struct_id, identifier in rows:
+       for struct_id, identifier in result:
            d[struct_id].append(identifier)
 
        return d
