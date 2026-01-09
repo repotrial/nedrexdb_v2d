@@ -128,6 +128,13 @@ class DrugCentralContainer:
     def stop(self) -> None:
         if self._container is None:
             raise Exception(".stop() called on non-started DrugCentralContainer")
+        if self._connection:
+            self._connection.close()
+            self._connection = None
+
+        if self._engine:
+            self._engine.dispose()
+            self._engine = None
         self._container.stop()
         self._container = None
         self._port = None
