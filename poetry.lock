@@ -1156,23 +1156,20 @@ uuid-utils = ">=0.12.0,<1.0"
 
 [[package]]
 name = "langchain-neo4j"
-version = "0.7.0"
+version = "0.6.0"
 description = "An integration package connecting Neo4j and LangChain"
 optional = false
-python-versions = "<3.15,>=3.10"
+python-versions = "<3.14,>=3.10"
 files = [
-    {file = "langchain_neo4j-0.7.0-py3-none-any.whl", hash = "sha256:8a4775cd85976e0b74120c9bab3a6f9a89db1003dbbf224969e17399c865233c"},
-    {file = "langchain_neo4j-0.7.0.tar.gz", hash = "sha256:1b2ef0fcc5b82f4a076d2bf788504d9e70f4779b07cd5a074fe18836001c4a0b"},
+    {file = "langchain_neo4j-0.6.0-py3-none-any.whl", hash = "sha256:86c242df10c3fb1cbf3f8dfe52698da47a1055a578967618d4d0203d5453aa9c"},
+    {file = "langchain_neo4j-0.6.0.tar.gz", hash = "sha256:bccf58b16ba84f300ce57e267902dd7578b7d1313a8d767559fcad00645de8a6"},
 ]
 
 [package.dependencies]
 langchain-classic = ">=1.0.0,<2.0.0"
 langchain-core = ">=1.0.0,<2.0.0"
-neo4j = ">=5.25.0,<7.0.0"
-neo4j-graphrag = ">=1.12.0,<2.0.0"
-
-[package.extras]
-mmr = ["numpy (>=2.1.0,<3.0.0)"]
+neo4j = ">=5.25.0,<6.0.0"
+neo4j-graphrag = ">=1.9.0,<2.0.0"
 
 [[package]]
 name = "langchain-text-splitters"
@@ -3608,4 +3605,4 @@ cffi = ["cffi (>=1.17,<2.0)", "cffi (>=2.0.0b)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.14"
-content-hash = "f71d1218221bfec8c96e7676897924e1e8cd1f4d86043cc38774f1ca7cf0cc6d"
+content-hash = "1dad556bab1ebd8851aab0d3c84789164d3585ee2f6e4291196a5fde71d8ed83"
