@@ -1,10 +1,11 @@
-FROM neo4j:2025.06.2
+FROM neo4j:2025.12.1
 
 # Return to the original working directory
 RUN mkdir /app
 WORKDIR /app
 
-ENV APOC_VERSION=2025.06.0
+ENV APOC_VERSION=2025.12.1
+ENV APOC_PROC_VERSION=2025.12.0
 ENV NEO4J_USERNAME=neo4j
 ENV NEO4J_PASSWORD=password
 ENV NEO4J_AUTH=$NEO4J_USERNAME/$NEO4J_PASSWORD
@@ -34,7 +35,7 @@ RUN apt-get update && apt-get install -y --fix-missing \
 
 # Installiere APOC Plugin
 RUN wget -O /var/lib/neo4j/plugins/apoc-${APOC_VERSION}-core.jar https://github.com/neo4j/apoc/releases/download/${APOC_VERSION}/apoc-${APOC_VERSION}-core.jar
-RUN wget -O /var/lib/neo4j/plugins/apoc-${APOC_VERSION}-extended.jar https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/${APOC_VERSION}/apoc-${APOC_VERSION}-extended.jar
+RUN wget -O /var/lib/neo4j/plugins/apoc-${APOC_PROC_VERSION}-extended.jar https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/${APOC_PROC_VERSION}/apoc-${APOC_PROC_VERSION}-extended.jar
 
 ENV NEO4JLABS_PLUGINS='["apoc"]'
 ENV NEO4J_dbms_security_procedures_unrestricted=apoc.* \

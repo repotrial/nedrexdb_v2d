@@ -14,7 +14,7 @@ import docker as _docker
 import pandas as _pd
 from more_itertools import chunked as _chunked
 from pymongo import UpdateOne as _UpdateOne
-from sqlalchemy import create_engine as _create_engine
+from sqlalchemy import create_engine as _create_engine, text as _text
 from tqdm import tqdm as _tqdm
 
 from nedrexdb.db import MongoInstance
@@ -59,9 +59,9 @@ class DrugCentralContainer:
         return self._engine
 
     @property
-    def connector(self):
+    def connection(self):
         if not self._connection:
-            self._connection = self.engine().connect()
+            self._connection = self.engine.connect()
         return self._connection
 
     @property
@@ -128,6 +128,13 @@ class DrugCentralContainer:
     def stop(self) -> None:
         if self._container is None:
             raise Exception(".stop() called on non-started DrugCentralContainer")
+        if self._connection:
+            self._connection.close()
+            self._connection = None
+
+        if self._engine:
+            self._engine.dispose()
+            self._engine = None
         self._container.stop()
         self._container = None
         self._port = None
@@ -135,20 +142,36 @@ class DrugCentralContainer:
         self._engine = None
 
     def _get_drug_central_to_drugbank_map(self) -> dict[str, list[str]]:
-        df = _pd.read_sql_query('select * from "identifier"', con=self.connection)
+       # df = _pd.read_sql_query('select * from "identifier"', con=self.connection)
+       # cursor = self.connection.cursor()
 
-        d = _defaultdict(list)
-        for _, row in df.iterrows():
-            if row["id_type"] != "DRUGBANK_ID":
-                continue
-            drug_central_id = row["struct_id"]
-            drugbank_id = row["identifier"]
-            d[drug_central_id].append(drugbank_id)
+       query = _text("SELECT struct_id, identifier FROM identifier WHERE id_type = 'DRUGBANK_ID'")
+       result = self.connection.execute(query)
 
-        return d
+       d = _defaultdict(list)
+       for struct_id, identifier in result:
+           d[struct_id].append(identifier)
+
+       return d
+        # d = _defaultdict(list)
+        # for _, row in df.iterrows():
+        #     if row["id_type"] != "DRUGBANK_ID":
+        #         continue
+        #     drug_central_id = row["struct_id"]
+        #     drugbank_id = row["identifier"]
+        #     d[drug_central_id].append(drugbank_id)
+        #
+        # return d
 
     def iter_targets(self, dc_to_db_map, nedrex_proteins):
-        df = _pd.read_sql_query("select * from act_table_full", con=self.connection)
+        # df = _pd.read_sql_query("select * from act_table_full", con=self.connection)
+        # df = df[~_pd.isnull(df.struct_id)]
+        # df = df[~_pd.isnull(df.accession)]
+        query = _text("select * from act_table_full")
+        result = self.connection.execute(query)
+        df = _pd.DataFrame(result.fetchall(), columns=result.keys())
+
+        # Original filtering logic
         df = df[~_pd.isnull(df.struct_id)]
         df = df[~_pd.isnull(df.accession)]
 
@@ -171,7 +194,13 @@ class DrugCentralContainer:
                 yield DrugHasTarget(sourceDomainId=drug, targetDomainId=prot, dataSources=["drugcentral"], tags=tags)
 
     def iter_indications(self, dc_to_db_map, snomed_to_nedrex_map, nedrex_drugs):
-        df = _pd.read_sql_query('select * from "omop_relationship"', con=self.connection)
+        # df = _pd.read_sql_query('select * from "omop_relationship"', con=self.connection)
+        # df = df[~_pd.isnull(df.snomed_conceptid)]
+        # df = df[~_pd.isnull(df.struct_id)]
+        query = _text('select * from "omop_relationship"')
+        result = self.connection.execute(query)
+        df = _pd.DataFrame(result.fetchall(), columns=result.keys())
+
         df = df[~_pd.isnull(df.snomed_conceptid)]
         df = df[~_pd.isnull(df.struct_id)]
 
@@ -195,7 +224,10 @@ class DrugCentralContainer:
                 yield dhi
 
     def iter_contraindications(self, dc_to_db_map, snomed_to_nedrex_map, nedrex_drugs):
-        df = _pd.read_sql_query('select * from "omop_relationship"', con=self.connection)
+        # df = _pd.read_sql_query('select * from "omop_relationship"', con=self.connection)
+        query = _text('select * from "omop_relationship"')
+        result = self.connection.execute(query)
+        df = _pd.DataFrame(result.fetchall(), columns=result.keys())
         df = df[~_pd.isnull(df.snomed_conceptid)]
         df = df[~_pd.isnull(df.struct_id)]
 
