@@ -6,7 +6,7 @@ authors = ["james-skelton <james.skelton@newcastle.ac.uk>","andreas-maier <andre
 
 [tool.poetry.dependencies]
 python =  ">=3.11,<3.14"
-pymongo = "^4.14.1,<5.0.0"
+pymongo = "^4.6.3"
 mongoengine = "^0.28.2"
 docker = "^7.1"
 more-itertools = "^8.8.0"
@@ -23,7 +23,7 @@ pandas = "^2.3"
 obonet = "^1.1.1"
 lxml = "^4.6.3"
 rdflib = "^6.0.2"
-black = "^24.3.0"
+black = "^26.3.1"
 mypy = "^0.910"
 flake8 = "^4.0.1"
 py = "^1.11.0"
