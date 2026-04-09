@@ -117,6 +117,9 @@ def mongo_to_neo(nedrex_instance, db):
         cols.append(":TYPE")
         df.to_csv(f"{workdir}/{edge}.csv", columns=cols, index=False)
 
+    #logger.debug(
+    #    f"calling 'docker exec {nedrex_instance.neo4j_container_name} chown -R neo4j:neo4j /data /import /logs "
+    #    f"/var/lib/neo4j/plugins /app'")
     _subprocess.call([
         "docker", "exec", nedrex_instance.neo4j_container_name,
         "chown", "-R", "neo4j:neo4j", "/data", "/import", "/logs", "/var/lib/neo4j/plugins", "/app"
