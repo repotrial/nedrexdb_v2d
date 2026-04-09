@@ -61,6 +61,12 @@ class DrugCentralContainer:
     @property
     def connection(self):
         if not self._connection:
+            timeout = 300  # seconds
+            start = _time.time()
+            while not self.is_ready:
+                if _time.time() - start > timeout:
+                    raise RuntimeError("Timed out waiting for Drug Central postgres to be ready")
+                _time.sleep(1)
             self._connection = self.engine.connect()
         return self._connection
 
