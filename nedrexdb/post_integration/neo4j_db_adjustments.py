@@ -44,6 +44,12 @@ def create_unique_node_constraint(con, node_type, attribute):
     con.query(query)
 
 def create_constraints():
+    try:
+        if not _config.get("db.set_unique_constraints"):
+            return
+    except:
+        return
+
     dev_nodes = None
 
     logger.info("Creating unique constraints for IDs")

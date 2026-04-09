@@ -1,14 +1,14 @@
 services:
   db:
-#    image: nedrexdb_v2d:dev
-    image: ghcr.io/repotrial/nedrexdb_v2d:dev
+    image: nedrexdb_v2d:dev
+#    image: ghcr.io/repotrial/nedrexdb_v2d:dev
     container_name: nedrexdb_v2
     build:
       context: .
 #      dockerfile: Dockerfile.full
       dockerfile: Dockerfile
     environment:
-      - DOWNLOAD_ON_STARTUP=1
+      - DOWNLOAD_ON_STARTUP=0
       - FORCE_REBUILD=0
       - LOG_LEVEL=DEBUG
       - SKIP_UPDATE=0
