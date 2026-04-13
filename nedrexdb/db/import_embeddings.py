@@ -5,9 +5,43 @@ from nedrexdb.post_integration.neo4j_db_adjustments import create_vector_index
 from nedrexdb.post_integration.embedding_config import NODE_EMBEDDING_CONFIG, EDGE_EMBEDDING_CONFIG
 from nedrexdb.logger import logger
 import time
+import logging
+import re
 
 node_keys = {key.lower(): key for key in NODE_EMBEDDING_CONFIG.keys()}
 edge_keys = {key.lower(): key for key in EDGE_EMBEDDING_CONFIG.keys()}
+
+class Neo4jNotificationFilter(logging.Filter):
+    """Catch Neo4j UnknownPropertyKey-Warnings"""
+
+    UNKNOWN_PROPERTY_PATTERN = re.compile(
+        r"UnknownPropertyKeyWarning.*missing property name is: (\w+).*for query:.*?(?:MATCH \([^)]*\)-\[r:(\w+)\]|MATCH \(n:(\w+)\))",
+        re.DOTALL
+    )
+
+    def filter(self, record):
+        msg = record.getMessage()
+        if "UnknownPropertyKeyWarning" not in msg:
+            return True  # accept all other logging
+
+        # extract property name and node/edge type
+        match = self.UNKNOWN_PROPERTY_PATTERN.search(msg)
+        if match:
+            prop = match.group(1)
+            entity = match.group(2) or match.group(3) or "Unknown"
+            logger.info(
+                f"Property '{prop}' for '{entity}' not available in previous version. "
+                f"Will be recreated with new data."
+            )
+        else:
+            logger.info("One or more properties not available in previous version. Will be recreated with new data. ")
+
+        return False  # suppress original neo4j warning
+
+
+# use filter on neo4j driver logger
+neo4j_logger = logging.getLogger("neo4j")
+neo4j_logger.addFilter(Neo4jNotificationFilter())
 
 def connect_to_session(session_type):
     # Connection details
