@@ -116,3 +116,26 @@ def parse_gene_info():
             leave=False,
         ):
             MongoInstance.DB[Gene.collection_name].bulk_write(chunk)
+
+
+def parse_gene_summary():
+    filename = get_file_location("gene_summary")
+    comment_char = "#"
+    delimiter = "\t"
+    columns = ("tax_id", "GeneID", "Source", "Summary")
+
+    with _gzip.open(filename, "rt") as f:
+        filtered_f = filter(lambda row: row[0] != comment_char, f)
+        reader = _DictReader(filtered_f, delimiter=delimiter, fieldnames=columns)
+        updates = (
+            Gene(primaryDomainId=f"entrez.{row['GeneID']}", summary=row["Summary"]).generate_summary_update()
+            for row in reader
+            if row["tax_id"] == "9606"
+        )
+
+        for chunk in _tqdm(
+            _chunked(updates, 1_000),
+            desc="Parsing NCBI gene summaries",
+            leave=False,
+        ):
+            MongoInstance.DB[Gene.collection_name].bulk_write(chunk)

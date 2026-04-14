@@ -2,7 +2,8 @@ import re as _re
 from pathlib import Path as _Path
 from urllib.request import urlretrieve as _urlretrieve
 
-import requests  # type: ignore
+import requests
+import time
 
 from nedrexdb import config as _config
 from nedrexdb.common import change_directory as _cd
@@ -45,7 +46,18 @@ def download_chembl():
 
     chembl_dir.mkdir(exist_ok=True, parents=True)
 
+    def download_with_retry(url, fname, retries=3):
+        for attempt in range(retries):
+            try:
+                _urlretrieve(url, fname)
+                return
+            except Exception as e:
+                logger.warning(f"Chembl Download failed for {url} (attempt {attempt+1}/{retries}): {e}")
+                if attempt < retries - 1:
+                    time.sleep(5 * (attempt + 1))
+        raise RuntimeError(f"Chembl Download failed after {retries} retries: {url}")
+
     with _cd(chembl_dir):
-        _urlretrieve(url, zip_fname)
-        _urlretrieve(unichem_url, unichem_name)
+        download_with_retry(url, zip_fname)
+        download_with_retry(unichem_url, unichem_name)
     return version

@@ -1,6 +1,8 @@
 import csv
 import gzip
+import time
 
+from more_itertools import chunked
 from pymongo import UpdateMany
 from tqdm import tqdm
 
@@ -40,4 +42,7 @@ def parse():
             updates.append(update)
 
     coll = MongoInstance.DB["drug"]
-    coll.bulk_write(updates)
+    # previously n:500
+    for chunk in tqdm(chunked(updates, 10000), leave=False):
+        coll.bulk_write(chunk)
+        time.sleep(0.1)

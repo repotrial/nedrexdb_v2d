@@ -16,20 +16,24 @@ def connect_to_session(session_type):
 
     NEO4J_URI = f'bolt://{neo4j_container}:{bolt_port}'
 
-    retry = 5
+    retry = 10
     while retry > 0:
         try:
-            kg = Neo4jGraph(
-                url=NEO4J_URI, username="", password="", database='neo4j'
-            )
-            break
-        except Exception:
+            kg = Neo4jGraph(url=NEO4J_URI, username="", password="", database='neo4j')
+            # test if neo4j ready
+            kg.query("RETURN 1")
+            logger.info(f"Connected to Neo4j at {NEO4J_URI}")
+            return kg
+        except (DatabaseUnavailable, ServiceUnavailable, TransientError) as e:
             retry -= 1
-            if retry == 0:
-                logger.debug("Could not connect to Neo4j database at " + NEO4J_URI)
-                return
-            time.sleep(5)
-    return kg
+            logger.warning(f"Neo4j not ready ({e}), retrying... ({retry} left)")
+            time.sleep(15)
+        except Exception as e:
+            retry -= 1
+            logger.warning(f"Could not connect to Neo4j at {NEO4J_URI}: {e}, retrying... ({retry} left)")
+            time.sleep(10)
+
+    raise RuntimeError(f"Could not connect to Neo4j at {NEO4J_URI} after {retry} retries")
 
 
 def fetch_embeddings(toimport_embeddings):

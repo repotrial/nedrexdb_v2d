@@ -32,6 +32,7 @@ class Gene(_BaseModel, GeneBase):
     approvedSymbol: _Optional[_StrictStr] = None
     symbols: list[str] = _Field(default_factory=list)
     description: _StrictStr = ""
+    summary: _StrictStr = ""
 
     chromosome: _StrictStr = ""
     mapLocation: _StrictStr = ""
@@ -54,6 +55,7 @@ class Gene(_BaseModel, GeneBase):
                 "displayName": self.displayName,
                 "approvedSymbol": self.approvedSymbol,
                 "description": self.description,
+                "summary": self.summary,
                 "chromosome": self.chromosome,
                 "mapLocation": self.mapLocation,
                 "geneType": self.geneType,
@@ -64,3 +66,10 @@ class Gene(_BaseModel, GeneBase):
         }
 
         return _UpdateOne(query, update, upsert=True)
+
+    def generate_summary_update(self):
+        return _UpdateOne(
+            {"primaryDomainId": self.primaryDomainId},
+            {"$set": {"summary": self.summary}},
+            upsert=False,
+        )
