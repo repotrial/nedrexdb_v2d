@@ -79,10 +79,10 @@ def mock_nedrex_config(monkeypatch):
 @patch("build.collection_stats.profile_collections")
 @patch("build.collection_stats.verify_collections_after_profiling")
 @patch("build.create_constraints")
-@patch("build.manage_embeddings")
+@patch("build.EmbeddingController")
 @patch("subprocess.run")
 def test_update_full_flow(
-    mock_subproc, mock_manage_embed, mock_constraints, 
+    mock_subproc, mock_embed_controller, mock_constraints, 
     mock_verify, mock_profile, mock_drop, mock_m2n, 
     mock_parsers, mock_download, mock_upd_vers, 
     mock_upd_img, mock_live_inst, mock_dev_inst, mock_mongo,
@@ -131,10 +131,10 @@ def test_update_full_flow(
 @patch("build.collection_stats.profile_collections")
 @patch("build.collection_stats.verify_collections_after_profiling")
 @patch("build.create_constraints")
-@patch("build.manage_embeddings")
+@patch("build.EmbeddingController")
 @patch("subprocess.run")
 def test_update_minimal_flow(
-    mock_subproc, mock_manage_embed, mock_constraints, 
+    mock_subproc, mock_embed_controller, mock_constraints, 
     mock_verify, mock_profile, mock_drop, mock_m2n, 
     mock_parsers, mock_download, mock_upd_vers, 
     mock_upd_img, mock_live_inst, mock_dev_inst, mock_mongo,
@@ -188,10 +188,10 @@ def test_update_minimal_flow(
 @patch("build.collection_stats.profile_collections")
 @patch("build.collection_stats.verify_collections_after_profiling")
 @patch("build.create_constraints")
-@patch("build.manage_embeddings")
+@patch("build.EmbeddingController")
 @patch("subprocess.run")
 def test_update_rebuild_flow(
-    mock_subproc, mock_manage_embed, mock_constraints, 
+    mock_subproc, mock_embed_controller, mock_constraints, 
     mock_verify, mock_profile, mock_drop, mock_m2n, 
     mock_parsers, mock_download, mock_upd_vers, 
     mock_upd_img, mock_live_inst, mock_dev_inst, mock_mongo,
@@ -233,10 +233,10 @@ def test_update_rebuild_flow(
 @patch("build.collection_stats.profile_collections")
 @patch("build.collection_stats.verify_collections_after_profiling")
 @patch("build.create_constraints")
-@patch("build.manage_embeddings")
+@patch("build.EmbeddingController")
 @patch("subprocess.run")
 def test_update_create_embeddings_flow(
-    mock_subproc, mock_manage_embed, mock_constraints, 
+    mock_subproc, mock_embed_controller, mock_constraints, 
     mock_verify, mock_profile, mock_drop, mock_m2n, 
     mock_parsers, mock_download, mock_upd_vers, 
     mock_upd_img, mock_live_inst, mock_dev_inst, mock_mongo,
@@ -245,7 +245,7 @@ def test_update_create_embeddings_flow(
     conf_file = tmp_path / "test_config.toml"
     conf_file.write_text("version_type='open'")
     
-    mock_manage_embed.return_value = ({}, set())
+    # mock_embed_controller.return_value = ({}, set()) # No longer returns this directly
     mock_mongo.DB = MagicMock()
     mock_mongo.DB.list_collection_names.return_value = ["metadata", "drug"]
     mock_mongo.DB["drug"].distinct.return_value = ["DrugBank"]
@@ -254,14 +254,17 @@ def test_update_create_embeddings_flow(
         result = runner.invoke(update, ["--conf", str(conf_file), "--create_embeddings"])
         
     assert result.exit_code == 0
-    # manage_embeddings should be called twice: once at the beginning (read=True) and once at the end (read=False)
-    # Actually build.py calls manage_embeddings at the beginning and then again if create_embeddings is True at the end.
-    assert mock_manage_embed.call_count == 2
-    # First call is from the beginning of update
-    # Second call is from the end of update
-    mock_manage_embed.assert_any_call(dev_instance=mock_dev_inst.return_value, 
-                                      distinct_per_collection={"drug": ["DrugBank"]}, 
-                                      rebuild=False)
+    # Check if controller was initialized correctly
+    mock_embed_controller.assert_called_once_with(
+        dev_instance=mock_dev_inst.return_value,
+        create_embeddings=True,
+        rebuild=False
+    )
+    # Check if key stages were called on the controller
+    controller_instance = mock_embed_controller.return_value
+    controller_instance.gather_live_state.assert_called_once()
+    controller_instance.prepare_reusable_embeddings.assert_called_once()
+    controller_instance.validate_and_finalize.assert_called_once()
 
 @patch("build.NeDRexLiveInstance")
 @patch("build.nedrexdb.parse_config")
