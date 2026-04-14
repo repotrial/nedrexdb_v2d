@@ -364,6 +364,7 @@ def run_parsers(version, ignored_sources, hippie_method_scores=None):
         mondo.parse_mondo_json()  # disorder nodes
     if "ncbi" not in ignored_sources:
         ncbi.parse_gene_info()
+        ncbi.parse_gene_summary()
     if "uberon" not in ignored_sources:
         uberon.parse()
     if "uniprot" not in ignored_sources:
@@ -466,27 +467,27 @@ def save_fallback_version(version, fallback_path="/data/nedrex_files/nedrex_data
 def parse_dev(version, download, rebuild, version_update, prev_metadata,
               distinct_per_collection, dev_instance, create_embeddings):
     # control source downloads
-    ignored_sources = {#"chembl",
-                       #"biogrid",
+    ignored_sources = {"chembl",
+                       "biogrid",
                        "go",
                        "uberon",
                        "clinvar",
                        "hpo",
                        "hpa",
-                       #"uniprot",
+                       "uniprot",
                        "reactome",
                        "bioontology",
-                       #"drug_central",
+                       "drug_central",
                        "unichem",
-                       #"repotrial",
-                       #"iid",
+                       "repotrial",
+                       "iid",
                        "intact",
-                       # "omim",
+                        "omim",
                        "ncg",
                        "intogen",
                        "opentargets",
                        "orphanet",
-                       "ncbi",
+                       #"ncbi",
                        "drugbank", #temp
                        "ctd",
                        "disgenet",
