@@ -189,7 +189,7 @@ def update(conf, download, rebuild, version_update, create_embeddings):
     if os.environ.get("TEST_MINIMUM", 0) == '1':
         ignored_sources = {
             "go", "uberon", "clinvar", "hpo", "hpa", "reactome",
-            "bioontology", "unichem", "intact", "ncg", "intogen", "uniprot"
+            "bioontology", "unichem", "intact", "ncg", "intogen", "uniprot",
             "opentargets", "orphanet", "ncbi", "ctd",
             "disgenet", "hippie", "sider", "cosmic"
         }
