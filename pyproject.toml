@@ -38,8 +38,10 @@ aiohttp = "^3.12.14"
 openpyxl = "^3.1.2"
 pyspark = "^3.5.6"
 openai = "^1.102.0"
-pypdf = "^6.8.0"
+pypdf = "^6.10.2"
 langgraph = "^1.0.10"
+langsmith = "^0.7.31"
+langchain-text-splitters = "^1.1.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^9.0.3"
