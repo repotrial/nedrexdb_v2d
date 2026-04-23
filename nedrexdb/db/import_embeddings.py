@@ -1,5 +1,5 @@
 from langchain_neo4j import Neo4jGraph
-from neo4j.exceptions import Neo4jError
+from neo4j.exceptions import Neo4jError, DatabaseUnavailable, ServiceUnavailable, TransientError
 from nedrexdb import config as _config
 from nedrexdb.post_integration.neo4j_db_adjustments import create_vector_index
 from nedrexdb.post_integration.embedding_config import NODE_EMBEDDING_CONFIG, EDGE_EMBEDDING_CONFIG
