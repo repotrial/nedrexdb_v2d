@@ -28,7 +28,7 @@ env:
 jobs:
   build-base:
     # Runs on weekly schedules OR whenever files inside the docker_base directory change
-    if: github.event_name == 'schedule' || (github.event_name == 'push' && contains(github.event.commits.*.modified, 'docker/docker_base'))
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
