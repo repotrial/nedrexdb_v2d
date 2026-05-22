@@ -33,7 +33,13 @@ jobs:
             BRANCH="${{ github.ref_name }}"
           fi
           
-          echo "tag=$BRANCH" >> $GITHUB_OUTPUT
+          if [ "$BRANCH" = "master" ]; then
+            TAG="latest"
+          else
+            TAG="$BRANCH"
+          fi
+          
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v2.1.0

@@ -1,4 +1,4 @@
-ARG BASE_TAG=master
+ARG BASE_TAG=latest
 FROM ghcr.io/repotrial/nedrexdb_v2d-base:${BASE_TAG}
 RUN apt-get update && apt-get upgrade -y && apt-get autoclean -y && apt-get autoremove -y && apt-get clean -y
 RUN mamba install -c conda-forge openjdk=17 -y
