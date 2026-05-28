@@ -10,9 +10,6 @@ on:
     - cron: '0 8 * * 4'
   push:
     branches: [ "master", "dev"]
-    # Triggers base build immediately if the base configuration changes
-    paths:
-      - 'docker/docker_base/**'
     tags: [ 'v*.*.*' ]
   pull_request:
     branches: [ "master", "dev"]
