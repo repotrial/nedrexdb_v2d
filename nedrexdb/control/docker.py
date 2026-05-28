@@ -160,6 +160,69 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         except _docker.errors.NotFound:
             _client.networks.create(self.network_name)
 
+    # def _set_up_neo4j(self, neo4j_mode, use_existing_volume):
+    #     if self.neo4j_container:
+    #         return
+    #
+    #     if use_existing_volume:
+    #         volumes = get_neo4j_volumes()
+    #         if not volumes:
+    #             raise ValueError("use_existing_volume set to True but no volume already exists")
+    #         volume = volumes[0].name
+    #     else:
+    #         volume = generate_neo4j_volume_name()
+    #
+    #     max_mem = _config[f"db.{self.version}.neo4j_memory_max"]
+    #     pagecache_mem = _config[f"db.{self.version}.neo4j_pagecache_max"]
+    #     max_mem = max_mem if max_mem is not None else "16G"
+    #     pagecache_mem = pagecache_mem if pagecache_mem is not None else "4G"
+    #
+    #     kwargs = {
+    #         "image": get_neo4j_image(),
+    #         "detach": True,
+    #         "name": self.neo4j_container_name,
+    #         "volumes": {volume: {"bind": "/data", "mode": "rw"}},
+    #         "ports": {7474: ("127.0.0.1", self.neo4j_http_port), 7687: ("127.0.0.1", self.neo4j_bolt_port)},
+    #         "environment": {
+    #             "NEO4J_AUTH": "none",
+    #             "NEO4J_PLUGINS": '["apoc"]',
+    #             "NEO4J_ACCEPT_LICENSE_AGREEMENT": "yes",
+    #             "NEO4J_server_config_strict__validation_enabled": "false",
+    #             "NEO4J_server_memory_heap_initial__size": max_mem,
+    #             "NEO4J_server_memory_heap_max__size": max_mem,
+    #             "NEO4J_server_memory_pagecache_size": pagecache_mem,
+    #         },
+    #         "network": self.network_name,
+    #         "remove": False,
+    #         "restart_policy": {"Name": "always"}
+    #     }
+    #
+    #     if self.db_mode == "open":
+    #         kwargs["ports"][7474] = self.neo4j_http_port
+    #         kwargs["ports"][7687] = self.neo4j_bolt_port
+    #
+    #     if neo4j_mode == "import":
+    #         kwargs["volumes"].update({"/tmp/nedrexdb_v2": {"bind": "/import", "mode": "ro"}})
+    #         kwargs["environment"]["NEO4J_server_memory_heap_initial__size"] = "4G"
+    #         kwargs["environment"]["NEO4J_server_memory_heap_max__size"] = "4G"
+    #         kwargs["environment"]["NEO4J_server_memory_pagecache_size"] = "4G"
+    #         kwargs["stdin_open"] = True
+    #         kwargs["tty"] = True
+    #         kwargs["entrypoint"] = "/bin/bash"
+    #
+    #     elif neo4j_mode == "db":
+    #         kwargs["environment"]["NEO4J_server_databases_read__only"] = "true"
+    #         kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "true"
+    #         kwargs["environment"]["NEO4J_db_transaction_timeout"] = "60s"
+    #         # kwargs["environment"]["NEO4J_dbms_memory_heap_max__size"] = max_mem.upper()
+    #         # kwargs["environment"]["NEO4J_server_memory_pagecache_size"] = "4G"
+    #     elif neo4j_mode == "db-write":
+    #         kwargs["environment"]["NEO4J_server_databases_read__only"] = "false"
+    #         kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "false"
+    #     else:
+    #         raise Exception(f"neo4j_mode {neo4j_mode!r} is invalid")
+    #     _client.containers.run(**kwargs)
+
     def _set_up_neo4j(self, neo4j_mode, use_existing_volume):
         if self.neo4j_container:
             return
@@ -173,7 +236,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             volume = generate_neo4j_volume_name()
 
         max_mem = _config[f"db.{self.version}.neo4j_memory_max"]
-        max_mem = max_mem if max_mem is not None else "16g"
+        max_mem = max_mem if max_mem is not None else "16G"
+        pagecache_mem = _config[f"db.{self.version}.neo4j_pagecache_max"]
+        pagecache_mem = pagecache_mem if pagecache_mem is not None else "16G"
 
         kwargs = {
             "image": get_neo4j_image(),
@@ -186,8 +251,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
                 "NEO4J_PLUGINS": '["apoc"]',
                 "NEO4J_ACCEPT_LICENSE_AGREEMENT": "yes",
                 "NEO4J_server_config_strict__validation_enabled": "false",
-                "NEO4J_server_memory_heap_initial__size": "4g",
+                "NEO4J_server_memory_heap_initial__size": max_mem,
                 "NEO4J_server_memory_heap_max__size": max_mem,
+                "NEO4J_server_memory_pagecache_size": pagecache_mem,
 
             },
             "network": self.network_name,
@@ -201,8 +267,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
 
         if neo4j_mode == "import":
             kwargs["volumes"].update({"/tmp/nedrexdb_v2": {"bind": "/import", "mode": "ro"}})
-            kwargs["environment"]["NEO4J_dbms_memory_heap_max__size"] = "4G"
-            kwargs["environment"]["NEO4J_dbms_memory_pagecache_size"] = "2G"
+            kwargs["environment"]["NEO4J_server_memory_heap_initial__size"] = "7G"
+            kwargs["environment"]["NEO4J_server_memory_heap_max__size"] = "7G"
+            kwargs["environment"]["NEO4J_server_memory_pagecache_size"] = "8G"
             kwargs["stdin_open"] = True
             kwargs["tty"] = True
             kwargs["entrypoint"] = "/bin/bash"
@@ -210,8 +277,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         elif neo4j_mode == "db":
             kwargs["environment"]["NEO4J_server_databases_read__only"] = "true"
             kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "true"
-            kwargs["environment"]["NEO4J_dbms_memory_heap_max__size"] = max_mem.upper()
-            kwargs["environment"]["NEO4J_dbms_memory_pagecache_size"] = "4G"
+            kwargs["environment"]["NEO4J_db_transaction_timeout"] = "60s"
+            # kwargs["environment"]["NEO4J_dbms_memory_heap_max__size"] = max_mem.upper()
+            # kwargs["environment"]["NEO4J_dbms_memory_pagecache_size"] = "4G"
         elif neo4j_mode == "db-write":
             kwargs["environment"]["NEO4J_server_databases_read__only"] = "false"
             kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "false"
