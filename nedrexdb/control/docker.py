@@ -191,7 +191,6 @@ class _NeDRexBaseInstance(_NeDRexInstance):
                 "NEO4J_server_memory_heap_initial__size": max_mem,
                 "NEO4J_server_memory_heap_max__size": max_mem,
                 "NEO4J_server_memory_pagecache_size": pagecache_mem,
-
             },
             "network": self.network_name,
             "remove": False,
@@ -214,6 +213,7 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         elif neo4j_mode == "db":
             kwargs["environment"]["NEO4J_server_databases_read__only"] = "true"
             kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "true"
+            kwargs["environment"]["NEO4J_db_transaction_timeout"] = "60s"
             # kwargs["environment"]["NEO4J_dbms_memory_heap_max__size"] = max_mem.upper()
             # kwargs["environment"]["NEO4J_server_memory_pagecache_size"] = "4G"
         elif neo4j_mode == "db-write":
