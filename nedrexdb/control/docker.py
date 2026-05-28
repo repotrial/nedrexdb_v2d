@@ -173,7 +173,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             volume = generate_neo4j_volume_name()
 
         max_mem = _config[f"db.{self.version}.neo4j_memory_max"]
-        max_mem = max_mem if max_mem is not None else "16g"
+        pagecache_mem = _config[f"db.{self.version}.neo4j_pagecache_max"]
+        max_mem = max_mem if max_mem is not None else "16G"
+        pagecache_mem = pagecache_mem if pagecache_mem is not None else "4G"
 
         kwargs = {
             "image": get_neo4j_image(),
@@ -186,8 +188,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
                 "NEO4J_PLUGINS": '["apoc"]',
                 "NEO4J_ACCEPT_LICENSE_AGREEMENT": "yes",
                 "NEO4J_server_config_strict__validation_enabled": "false",
-                "NEO4J_server_memory_heap_initial__size": "4g",
+                "NEO4J_server_memory_heap_initial__size": max_mem,
                 "NEO4J_server_memory_heap_max__size": max_mem,
+                "NEO4J_server_memory_pagecache_size": pagecache_mem,
 
             },
             "network": self.network_name,
@@ -201,8 +204,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
 
         if neo4j_mode == "import":
             kwargs["volumes"].update({"/tmp/nedrexdb_v2": {"bind": "/import", "mode": "ro"}})
-            kwargs["environment"]["NEO4J_dbms_memory_heap_max__size"] = "4G"
-            kwargs["environment"]["NEO4J_dbms_memory_pagecache_size"] = "2G"
+            kwargs["environment"]["NEO4J_server_memory_heap_initial__size"] = "4G"
+            kwargs["environment"]["NEO4J_server_memory_heap_max__size"] = "4G"
+            kwargs["environment"]["NEO4J_server_memory_pagecache_size"] = "4G"
             kwargs["stdin_open"] = True
             kwargs["tty"] = True
             kwargs["entrypoint"] = "/bin/bash"
@@ -210,8 +214,8 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         elif neo4j_mode == "db":
             kwargs["environment"]["NEO4J_server_databases_read__only"] = "true"
             kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "true"
-            kwargs["environment"]["NEO4J_dbms_memory_heap_max__size"] = max_mem.upper()
-            kwargs["environment"]["NEO4J_dbms_memory_pagecache_size"] = "4G"
+            # kwargs["environment"]["NEO4J_dbms_memory_heap_max__size"] = max_mem.upper()
+            # kwargs["environment"]["NEO4J_server_memory_pagecache_size"] = "4G"
         elif neo4j_mode == "db-write":
             kwargs["environment"]["NEO4J_server_databases_read__only"] = "false"
             kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "false"
