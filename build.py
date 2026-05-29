@@ -148,8 +148,8 @@ def _post_process_data(dev_instance):
     drop_empty_collections.drop_empty_collections()
 
     # prepare neo4j for import from mongoDB
-    dev_instance.remove(neo4j_mode="import")
-    dev_instance.set_up(use_existing_volume=False, neo4j_mode="import")
+    dev_instance._remove_neo4j(remove_db_volume=True, neo4j_mode="import")
+    dev_instance._set_up_neo4j(use_existing_volume=False, neo4j_mode="import")
 
     # export to Neo4j
     mongo_to_neo.mongo_to_neo(dev_instance, MongoInstance.DB)
