@@ -103,6 +103,7 @@ class EmbeddingController:
             self.dev_instance._set_up_neo4j(use_existing_volume=True, neo4j_mode="db-write")
             time.sleep(60)
             create_constraints()
+            self.dev_instance.remove()
             return
 
         # 1. Gather new Dev state

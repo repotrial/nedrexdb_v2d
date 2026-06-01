@@ -88,6 +88,10 @@ class _NeDRexBaseInstance(_NeDRexInstance):
     GRACEFUL_SHUTDOWN_TIMEOUT = 1200
 
     @property
+    def restart_policy(self):
+        return {"Name": "always"}
+
+    @property
     def mongo_container_name(self):
         return _config[f"db.{self.version}.container_name"]
 
@@ -258,8 +262,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
             },
             "network": self.network_name,
             "remove": False,
-            "restart_policy": {"Name": "always"}
         }
+        if self.restart_policy:
+            kwargs["restart_policy"] = self.restart_policy
 
         if self.db_mode == "open":
             kwargs["ports"][7474] = self.neo4j_http_port
@@ -300,31 +305,37 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         else:
             volume = generate_new_mongo_volume()
 
-        _client.containers.run(
-            image=get_mongo_image(),
-            detach=True,
-            name=self.mongo_container_name,
-            volumes={volume: {"mode": "rw", "bind": "/data/db"}},
-            ports={27017: ("127.0.0.1", self.mongo_port)},
-            network=self.network_name,
-            remove=False,
-            restart_policy={"Name": "always"}
-        )
+        mongo_kwargs = {
+            "image": get_mongo_image(),
+            "detach": True,
+            "name": self.mongo_container_name,
+            "volumes": {volume: {"mode": "rw", "bind": "/data/db"}},
+            "ports": {27017: ("127.0.0.1", self.mongo_port)},
+            "network": self.network_name,
+            "remove": False,
+        }
+        if self.restart_policy:
+            mongo_kwargs["restart_policy"] = self.restart_policy
+
+        _client.containers.run(**mongo_kwargs)
 
     def _set_up_express(self):
         if self.express_container:  # if the container already exists, nothing to do
             return
 
-        _client.containers.run(
-            image=get_mongo_express_image(),
-            detach=True,
-            name=self.express_container_name,
-            ports={_config["db.dev.mongo_express_port"]: ("127.0.0.1", self.express_port)},
-            network=self.network_name,
-            environment={"ME_CONFIG_MONGODB_SERVER": self.mongo_container_name},
-            remove=False,
-            restart_policy={"Name": "always"}
-        )
+        express_kwargs = {
+            "image": get_mongo_express_image(),
+            "detach": True,
+            "name": self.express_container_name,
+            "ports": {_config["db.dev.mongo_express_port"]: ("127.0.0.1", self.express_port)},
+            "network": self.network_name,
+            "environment": {"ME_CONFIG_MONGODB_SERVER": self.mongo_container_name},
+            "remove": False,
+        }
+        if self.restart_policy:
+            express_kwargs["restart_policy"] = self.restart_policy
+
+        _client.containers.run(**express_kwargs)
 
 
 
@@ -470,3 +481,7 @@ class NeDRexDevInstance(_NeDRexBaseInstance):
     @property
     def version(self):
         return "dev"
+
+    @property
+    def restart_policy(self):
+        return None
