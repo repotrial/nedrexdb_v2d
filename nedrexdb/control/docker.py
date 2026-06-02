@@ -369,11 +369,26 @@ class _NeDRexBaseInstance(_NeDRexInstance):
                 text=True,
                 timeout=self.GRACEFUL_SHUTDOWN_TIMEOUT
             )
-            result = result.stdout == "Stopping Neo4j............" and result.returncode == 137
-            if result:
-                logger.debug("Neo4j process stopped")
-            time.sleep(5)
-            return result
+            if result.returncode not in [0, 137]:
+                logger.warning(f"neo4j stop command returned non-zero code: {result.returncode}")
+                return False
+
+            logger.debug("Sent stop signal to Neo4j. Waiting for container to stop...")
+            
+            # Poll the container status until it has exited (up to 120 seconds)
+            for _ in range(120):
+                try:
+                    self.neo4j_container.reload()
+                    if self.neo4j_container.status == "exited":
+                        logger.debug("Neo4j container has exited gracefully")
+                        return True
+                except Exception:
+                    # Container might already be removed or missing
+                    return True
+                time.sleep(1)
+
+            logger.warning("Timeout waiting for Neo4j container to exit gracefully")
+            return False
 
         except (CalledProcessError, TimeoutError) as e:
             logger.warning(f"Failed to stop Neo4j process: {str(e)}")

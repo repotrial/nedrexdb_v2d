@@ -150,7 +150,7 @@ def get_node_info_string(node_name, node_embedding_config):
         str: A Cypher string for concatenating node properties.
     """
     config = node_embedding_config.get(node_name, {})
-    parts = ["coalesce(x.type, '') + ' with ID ' + x.primaryDomainId + ':'"]
+    parts = ["coalesce(x.type, '') + ' with ID ' + coalesce(x.primaryDomainId, '') + ':'"]
 
     for attribute, format_config in config.items():
         prefix = format_config.get('prefix', ' ')
@@ -160,7 +160,7 @@ def get_node_info_string(node_name, node_embedding_config):
         if attribute_type == "list":
             part = f"'{prefix}' + coalesce(apoc.text.join(x.{attribute}, ', '), '') + '{suffix};'"
         else:
-            part = f"'{prefix}' + coalesce(x.{attribute}, '') + '{suffix};'"
+            part = f"'{prefix}' + coalesce(toString(x.{attribute}), '') + '{suffix};'"
         parts.append(part)
 
     return " + ".join(parts)
@@ -180,7 +180,7 @@ def get_edge_info_string(edge_name, edge_embedding_config):
     config = edge_embedding_config.get(edge_name, {})
     link_term = config.get("link_term", "is connected to")
 
-    base_info = f"coalesce(entry.s.type, '') + ' ' + coalesce(entry.s.displayName, '') + ' with ID ' + entry.s.primaryDomainId + ' {link_term} ' + coalesce(entry.t.type, '') + ' ' + coalesce(entry.t.displayName, '') + ' with ID ' + entry.t.primaryDomainId"
+    base_info = f"coalesce(entry.s.type, '') + ' ' + coalesce(entry.s.displayName, '') + ' with ID ' + coalesce(entry.s.primaryDomainId, '') + ' {link_term} ' + coalesce(entry.t.type, '') + ' ' + coalesce(entry.t.displayName, '') + ' with ID ' + coalesce(entry.t.primaryDomainId, '')"
     parts = [base_info]
 
     if "attributes" in config:
@@ -193,7 +193,7 @@ def get_edge_info_string(edge_name, edge_embedding_config):
             if attribute_type == "list":
                 part = f"'{prefix}' + coalesce(apoc.text.join(entry.r.{attribute}, ', '), '') + '{suffix};'"
             else:
-                part = f"'{prefix}' + coalesce(entry.r.{attribute}, '') + '{suffix};'"
+                part = f"'{prefix}' + coalesce(toString(entry.r.{attribute}), '') + '{suffix};'"
             parts.append(part)
 
     return " + ".join(parts)
@@ -264,9 +264,11 @@ def create_node_vector_query(node_info_string, name):
      RETURN ids[i..i+100] AS id_batch',
         'UNWIND id_batch AS id
         MATCH (n:{name}) WHERE id(n) = id
-        WITH collect(n) AS batchNodes
-         CALL apoc.ml.openai.embedding(
-             [x IN batchNodes | {escaped_node_info_string}],
+        WITH n, {escaped_node_info_string} AS text
+         WITH n, CASE WHEN text IS NULL OR trim(text) = "" THEN "unknown" ELSE trim(text) END AS final_text
+         WITH collect(n) AS batchNodes, collect(final_text) AS batchTexts
+          CALL apoc.ml.openai.embedding(
+             batchTexts,
              $api_key,
              {{
                  endpoint: $llm_base,
@@ -306,9 +308,12 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name):
            RETURN ids[i..i+100] AS id_batch',
            'UNWIND id_batch AS id
            MATCH (s:{source_name})-[r:{name}]-(t:{target_name}) WHERE id(r) = id
-           WITH collect({{s:s, r:r, t:t}}) AS batchEntries
+           WITH r, {{s: s, r: r, t: t}} AS entry
+           WITH r, {escaped_node_info_string} AS text
+           WITH r, CASE WHEN text IS NULL OR trim(text) = "" THEN "unknown" ELSE trim(text) END AS final_text
+           WITH collect(r) AS batchRelationships, collect(final_text) AS batchTexts
           CALL apoc.ml.openai.embedding(
-              [entry in batchEntries | {escaped_node_info_string}], 
+              batchTexts, 
               $api_key, 
               {{
                   endpoint: $llm_base,
@@ -319,8 +324,8 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name):
                   exponentialBackoff: true
               }}
           ) YIELD index, embedding
-          WITH batchEntries[index] as entry, embedding 
-          CALL db.create.setRelationshipVectorProperty(entry.r, "embedding", embedding)
+          WITH batchRelationships[index] as rel, embedding 
+          CALL db.create.setRelationshipVectorProperty(rel, "embedding", embedding)
           RETURN count(*)',
           {{
             batchSize: 10,
