@@ -257,16 +257,17 @@ def create_node_vector_query(node_info_string, name):
     escaped_node_info_string = node_info_string.replace("'", "\\'")
     query = f"""
     CALL apoc.periodic.iterate(
-    'MATCH (n:{name}) WHERE n.embedding IS NULL
-     WITH id(n) AS id
+    'MATCH (x:{name}) WHERE x.embedding IS NULL
+     WITH id(x) AS id
      WITH collect(id) AS ids
      UNWIND range(0, size(ids) - 1, 100) AS i
      RETURN ids[i..i+100] AS id_batch',
         'UNWIND id_batch AS id
-        MATCH (n:{name}) WHERE id(n) = id
-        WITH n, {escaped_node_info_string} AS text
-         WITH n, CASE WHEN text IS NULL OR trim(text) = "" THEN "unknown" ELSE trim(text) END AS final_text
-         WITH collect(n) AS batchNodes, collect(final_text) AS batchTexts
+         MATCH (x:{name}) WHERE id(x) = id
+         WITH x, {escaped_node_info_string} AS text
+         WITH x, CASE WHEN text IS NULL OR trim(text) = "" THEN "unknown" ELSE trim(text) END AS final_text
+         WITH collect(x) AS batchNodes, collect(final_text) AS batchTexts
+         WHERE size(batchTexts) > 0
           CALL apoc.ml.openai.embedding(
              batchTexts,
              $api_key,
@@ -312,6 +313,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name):
            WITH r, {escaped_node_info_string} AS text
            WITH r, CASE WHEN text IS NULL OR trim(text) = "" THEN "unknown" ELSE trim(text) END AS final_text
            WITH collect(r) AS batchRelationships, collect(final_text) AS batchTexts
+           WHERE size(batchTexts) > 0
           CALL apoc.ml.openai.embedding(
               batchTexts, 
               $api_key, 
