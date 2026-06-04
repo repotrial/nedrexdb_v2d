@@ -202,16 +202,16 @@ def fill_vector_index(con, entityType, name) -> bool:
     retries = 5
     try:
         start = time.time()
-        from nedrexdb.llm import (_LLM_API_KEY, _LLM_BASE, _LLM_path, _LLM_model, _LLM_embedding_length)
+        from nedrexdb.llm import (_LLM_API_KEY, _LLM_BASE, _LLM_path, _LLM_model, _LLM_embedding_length, _LLM_parallel)
         create_vector_index(con, entityType, name,_LLM_embedding_length)
         params = {"api_key": _LLM_API_KEY, "llm_base": _LLM_BASE, "llm_path": _LLM_path, "llm_model": _LLM_model}
         info_string = get_info_string(entityType, name, NODE_EMBEDDING_CONFIG, EDGE_EMBEDDING_CONFIG)
         if entityType == "NODE":
-            query = create_node_vector_query(info_string, name)
+            query = create_node_vector_query(info_string, name, _LLM_parallel)
         else:
             source_name = EDGE_EMBEDDING_CONFIG[name]["source"]
             target_name = EDGE_EMBEDDING_CONFIG[name]["target"]
-            query = create_edge_vector_query(info_string, source_name, name, target_name)
+            query = create_edge_vector_query(info_string, source_name, name, target_name, _LLM_parallel)
         while retries > 0:
             retries -= 1
             try:
@@ -253,7 +253,7 @@ def get_info_string(element_type, name, node_config, edge_config):
     else:
         raise ValueError(f"Unknown element_type: {element_type}. Must be 'NODE' or 'EDGE'.")
 
-def create_node_vector_query(node_info_string, name):
+def create_node_vector_query(node_info_string, name, parallel=False):
     escaped_node_info_string = node_info_string.replace("'", "\\'")
     query = f"""
     CALL apoc.periodic.iterate(
@@ -285,7 +285,7 @@ def create_node_vector_query(node_info_string, name):
          RETURN count(*)',
         {{
             batchSize: 10,
-            parallel: false,
+            parallel: {str(parallel).lower()},
             params: {{
                 api_key: $api_key,
                 llm_base: $llm_base,
@@ -298,7 +298,7 @@ def create_node_vector_query(node_info_string, name):
     return query
 
 
-def create_edge_vector_query(edge_info_string, source_name, name, target_name):
+def create_edge_vector_query(edge_info_string, source_name, name, target_name, parallel=False):
     escaped_node_info_string = edge_info_string.replace("'", "\\'")
     query = f"""
       CALL apoc.periodic.iterate(
@@ -331,7 +331,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name):
           RETURN count(*)',
           {{
             batchSize: 10,
-            parallel: false,
+            parallel: {str(parallel).lower()},
             params: {{
                 api_key: $api_key,
                 llm_base: $llm_base,
