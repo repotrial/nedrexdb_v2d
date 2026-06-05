@@ -254,7 +254,6 @@ def get_info_string(element_type, name, node_config, edge_config):
         raise ValueError(f"Unknown element_type: {element_type}. Must be 'NODE' or 'EDGE'.")
 
 def create_node_vector_query(node_info_string, name, parallel=False):
-    escaped_node_info_string = node_info_string.replace("'", "\\'")
     query = f"""
     MATCH (x:{name}) WHERE x.embedding IS NULL
     WITH id(x) AS id
@@ -265,7 +264,7 @@ def create_node_vector_query(node_info_string, name, parallel=False):
          WITH id_batch
          UNWIND id_batch AS id
          MATCH (x:{name}) WHERE id(x) = id
-         WITH x, {escaped_node_info_string} AS text
+         WITH x, {node_info_string} AS text
          WITH x, CASE WHEN text IS NULL OR trim(text) = "" THEN "unknown" ELSE trim(text) END AS final_text
          WITH collect(x) AS batchNodes, collect(final_text) AS batchTexts
          WHERE size(batchTexts) > 0
@@ -289,7 +288,6 @@ def create_node_vector_query(node_info_string, name, parallel=False):
 
 
 def create_edge_vector_query(edge_info_string, source_name, name, target_name, parallel=False):
-    escaped_node_info_string = edge_info_string.replace("'", "\\'")
     query = f"""
       MATCH (s:{source_name})-[r:{name}]-(t:{target_name}) WHERE r.embedding IS NULL
       WITH id(r) AS id
@@ -301,7 +299,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name, p
            UNWIND id_batch AS id
            MATCH (s:{source_name})-[r:{name}]-(t:{target_name}) WHERE id(r) = id
            WITH r, {{s: s, r: r, t: t}} AS entry
-           WITH r, {escaped_node_info_string} AS text
+           WITH r, {edge_info_string} AS text
            WITH r, CASE WHEN text IS NULL OR trim(text) = "" THEN "unknown" ELSE trim(text) END AS final_text
            WITH collect(r) AS batchRelationships, collect(final_text) AS batchTexts
            WHERE size(batchTexts) > 0
