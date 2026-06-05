@@ -256,44 +256,34 @@ def get_info_string(element_type, name, node_config, edge_config):
 def create_node_vector_query(node_info_string, name, parallel=False):
     escaped_node_info_string = node_info_string.replace("'", "\\'")
     query = f"""
-    CALL apoc.periodic.iterate(
-    'MATCH (x:{name}) WHERE x.embedding IS NULL
-     WITH id(x) AS id
-     WITH collect(id) AS ids
-     UNWIND range(0, size(ids) - 1, 100) AS i
-     RETURN ids[i..i+100] AS id_batch',
-        'UNWIND id_batch AS id
+    MATCH (x:{name}) WHERE x.embedding IS NULL
+    WITH id(x) AS id
+    WITH collect(id) AS ids
+    UNWIND range(0, size(ids) - 1, 100) AS i
+    WITH ids[i..i+100] AS id_batch
+    CALL {{
+         WITH id_batch
+         UNWIND id_batch AS id
          MATCH (x:{name}) WHERE id(x) = id
          WITH x, {escaped_node_info_string} AS text
          WITH x, CASE WHEN text IS NULL OR trim(text) = "" THEN "unknown" ELSE trim(text) END AS final_text
          WITH collect(x) AS batchNodes, collect(final_text) AS batchTexts
          WHERE size(batchTexts) > 0
           CALL apoc.ml.openai.embedding(
-             batchTexts,
-             $api_key,
-             {{
-                 endpoint: $llm_base,
-                 path: $llm_path,
-                 model: $llm_model,
-                 enableBackOffRetries: true,
-                 backOffRetries: 20,
-                 exponentialBackoff: true
-             }}
-         ) YIELD index, embedding
-         WITH batchNodes[index] as node, embedding
-         CALL db.create.setNodeVectorProperty(node, "embedding", embedding) 
-         RETURN count(*)',
-        {{
-            batchSize: 10,
-            parallel: {str(parallel).lower()},
-            params: {{
-                api_key: $api_key,
-                llm_base: $llm_base,
-                llm_path: $llm_path,
-                llm_model: $llm_model
-            }}
-        }}
-    )
+              batchTexts,
+              $api_key,
+              {{
+                  endpoint: $llm_base,
+                  path: $llm_path,
+                  model: $llm_model,
+                  enableBackOffRetries: true,
+                  backOffRetries: 20,
+                  exponentialBackoff: true
+              }}
+          ) YIELD index, embedding
+          WITH batchNodes[index] as node, embedding
+          CALL db.create.setNodeVectorProperty(node, "embedding", embedding)
+    }} IN TRANSACTIONS OF 10 ROWS
     """
     return query
 
@@ -301,13 +291,14 @@ def create_node_vector_query(node_info_string, name, parallel=False):
 def create_edge_vector_query(edge_info_string, source_name, name, target_name, parallel=False):
     escaped_node_info_string = edge_info_string.replace("'", "\\'")
     query = f"""
-      CALL apoc.periodic.iterate(
-          'MATCH (s:{source_name})-[r:{name}]-(t:{target_name}) WHERE r.embedding IS NULL
-           WITH id(r) AS id
-           WITH collect(id) AS ids
-           UNWIND range(0, size(ids) - 1, 100) AS i
-           RETURN ids[i..i+100] AS id_batch',
-           'UNWIND id_batch AS id
+      MATCH (s:{source_name})-[r:{name}]-(t:{target_name}) WHERE r.embedding IS NULL
+      WITH id(r) AS id
+      WITH collect(id) AS ids
+      UNWIND range(0, size(ids) - 1, 100) AS i
+      WITH ids[i..i+100] AS id_batch
+      CALL {{
+           WITH id_batch
+           UNWIND id_batch AS id
            MATCH (s:{source_name})-[r:{name}]-(t:{target_name}) WHERE id(r) = id
            WITH r, {{s: s, r: r, t: t}} AS entry
            WITH r, {escaped_node_info_string} AS text
@@ -328,18 +319,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name, p
           ) YIELD index, embedding
           WITH batchRelationships[index] as rel, embedding 
           CALL db.create.setRelationshipVectorProperty(rel, "embedding", embedding)
-          RETURN count(*)',
-          {{
-            batchSize: 10,
-            parallel: {str(parallel).lower()},
-            params: {{
-                api_key: $api_key,
-                llm_base: $llm_base,
-                llm_path: $llm_path,
-                llm_model: $llm_model
-            }}
-          }}
-      )
+      }} IN TRANSACTIONS OF 10 ROWS
     """
     return query
 
