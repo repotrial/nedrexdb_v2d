@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save environment variables for cron jobs
+declare -x > /app/nedrexdb/container_env.sh
+
 setup_db() {
     local db_type=$1
     local config_file=".$db_type"_config.toml

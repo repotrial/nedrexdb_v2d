@@ -289,7 +289,7 @@ def create_node_vector_query(node_info_string, name, parallel=False):
 
 def create_edge_vector_query(edge_info_string, source_name, name, target_name, parallel=False):
     query = f"""
-      MATCH (s:{source_name})-[r:{name}]-(t:{target_name}) WHERE r.embedding IS NULL
+      MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL
       WITH id(r) AS id
       WITH collect(id) AS ids
       UNWIND range(0, size(ids) - 1, 100) AS i
@@ -297,7 +297,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name, p
       CALL {{
            WITH id_batch
            UNWIND id_batch AS id
-           MATCH (s:{source_name})-[r:{name}]-(t:{target_name}) WHERE id(r) = id
+           MATCH (s:{source_name})-[r:{name}]->(t:{target_name}) WHERE id(r) = id
            WITH r, {{s: s, r: r, t: t}} AS entry
            WITH r, {edge_info_string} AS text
            WITH r, CASE WHEN text IS NULL OR trim(text) = "" THEN "unknown" ELSE trim(text) END AS final_text
