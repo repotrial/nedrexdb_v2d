@@ -60,7 +60,13 @@ def create_constraints():
         SHOW CONSTRAINTS YIELD labelsOrTypes, properties
         RETURN labelsOrTypes AS labels, properties
     """)
-    existing_set = {(tuple(e["labels"]), tuple(e["properties"])) for e in existing}
+    existing_set = {
+        (
+            tuple(e["labels"]) if e["labels"] is not None else (),
+            tuple(e["properties"]) if e["properties"] is not None else ()
+        )
+        for e in existing
+    }
     logger.debug(f"Found existing constraints (next line): \n{existing_set}")
 
     results = kg.query("CALL db.labels()")
