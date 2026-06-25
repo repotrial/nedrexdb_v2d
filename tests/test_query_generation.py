@@ -39,6 +39,7 @@ def test_create_node_vector_query():
     info_str = "x.displayName"
     query = create_node_vector_query(info_str, "Gene")
     assert "MATCH (x:Gene) WHERE x.embedding IS NULL" in query
+    assert "LIMIT 50000" in query
     assert "MATCH (x:Gene) WHERE id(x) = id" in query
     assert "db.create.setNodeVectorProperty(node, \"embedding\", embedding)" in query
 
@@ -47,6 +48,7 @@ def test_create_edge_vector_query():
     query = create_edge_vector_query(info_str, "Gene", "GeneAssociatedWithDisorder", "Disorder")
     # Outer query should match directed, label-free relationships of the type
     assert "MATCH ()-[r:GeneAssociatedWithDisorder]->() WHERE r.embedding IS NULL" in query
+    assert "LIMIT 50000" in query
     # Inner CALL block match should also be directed
     assert "MATCH (s:Gene)-[r:GeneAssociatedWithDisorder]->(t:Disorder) WHERE id(r) = id" in query
     assert "db.create.setRelationshipVectorProperty(rel, \"embedding\", embedding)" in query

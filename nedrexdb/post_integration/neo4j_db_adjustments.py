@@ -205,7 +205,6 @@ def get_edge_info_string(edge_name, edge_embedding_config):
     return " + ".join(parts)
 
 def fill_vector_index(con, entityType, name) -> bool:
-    retries = 5
     try:
         start = time.time()
         from nedrexdb.llm import (_LLM_API_KEY, _LLM_BASE, _LLM_path, _LLM_model, _LLM_embedding_length, _LLM_parallel)
@@ -218,17 +217,32 @@ def fill_vector_index(con, entityType, name) -> bool:
             source_name = EDGE_EMBEDDING_CONFIG[name]["source"]
             target_name = EDGE_EMBEDDING_CONFIG[name]["target"]
             query = create_edge_vector_query(info_string, source_name, name, target_name, _LLM_parallel)
-        while retries > 0:
-            retries -= 1
-            try:
-                con.query(query, params=params)
+        
+        while True:
+            if entityType == "NODE":
+                count_query = f"MATCH (x:{name}) WHERE x.embedding IS NULL RETURN count(x) AS count"
+            else:
+                count_query = f"MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL RETURN count(r) AS count"
+            
+            res = con.query(count_query)
+            remaining = res[0]["count"] if res else 0
+            if remaining == 0:
                 break
-            except Exception as e:
-                print(e)
-                logger.error(f"Encountered an issue! Retry {6 - retries} retrying in 60s...")
-                if retries == 0:
-                    raise e
-                time.sleep(60)
+                
+            logger.info(f"Remaining {name} elements to embed: {remaining}")
+            
+            retries = 5
+            while retries > 0:
+                retries -= 1
+                try:
+                    con.query(query, params=params)
+                    break
+                except Exception as e:
+                    print(e)
+                    logger.error(f"Encountered an issue! Retry {6 - retries} retrying in 60s...")
+                    if retries == 0:
+                        raise e
+                    time.sleep(60)
         duration = time.time() - start
         logger.info(f"Building {name} embedding indexes finished after {duration} seconds")
         return True
@@ -262,6 +276,7 @@ def get_info_string(element_type, name, node_config, edge_config):
 def create_node_vector_query(node_info_string, name, parallel=False):
     query = f"""
     MATCH (x:{name}) WHERE x.embedding IS NULL
+    WITH x LIMIT 50000
     WITH id(x) AS id
     WITH collect(id) AS ids
     UNWIND range(0, size(ids) - 1, 100) AS i
@@ -296,6 +311,7 @@ def create_node_vector_query(node_info_string, name, parallel=False):
 def create_edge_vector_query(edge_info_string, source_name, name, target_name, parallel=False):
     query = f"""
       MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL
+      WITH r LIMIT 50000
       WITH id(r) AS id
       WITH collect(id) AS ids
       UNWIND range(0, size(ids) - 1, 100) AS i
