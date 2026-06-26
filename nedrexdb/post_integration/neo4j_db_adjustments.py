@@ -28,6 +28,15 @@ def get_kg_connection() -> Neo4jGraph:
             retry -= 1
             if retry == 0:
                 logger.error(f"Failed to connect to Neo4j at {NEO4J_URI} after {10} retries!")
+                try:
+                    import docker as _docker
+                    client = _docker.from_env()
+                    container = client.containers.get(_config["db.dev.neo4j_name"])
+                    logger.error(f"Neo4j container status: {container.status}")
+                    logger.error("Last 20 lines of container logs:")
+                    logger.error(container.logs(tail=20).decode('utf-8'))
+                except Exception as docker_err:
+                    logger.error(f"Could not retrieve container status/logs: {docker_err}")
                 return None
         time.sleep(30)
 
@@ -54,6 +63,8 @@ def create_constraints():
 
     logger.info("Creating unique constraints for IDs")
     kg = get_kg_connection()
+    if kg is None:
+        raise RuntimeError(f"Could not connect to Neo4j at bolt://{_config['db.dev.neo4j_name']}:7687 to create unique constraints.")
 
     # fetch existing constraints once
     existing = kg.query("""
@@ -100,6 +111,8 @@ def create_vector_indices(tobuild=set()):
     logger.info("Starting indexing")
 
     kg = get_kg_connection()
+    if kg is None:
+        raise RuntimeError(f"Could not connect to Neo4j at bolt://{_config['db.dev.neo4j_name']}:7687 to create vector indices.")
 
     index_names = []
 
