@@ -231,19 +231,34 @@ def fill_vector_index(con, entityType, name) -> bool:
             target_name = EDGE_EMBEDDING_CONFIG[name]["target"]
             query = create_edge_vector_query(info_string, source_name, name, target_name, _LLM_parallel)
         
+        MAX_STALL_ATTEMPTS = 3
+        prev_remaining = None
+        stall_count = 0
+
         while True:
             if entityType == "NODE":
                 count_query = f"MATCH (x:{name}) WHERE x.embedding IS NULL RETURN count(x) AS count"
             else:
                 count_query = f"MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL RETURN count(r) AS count"
-            
+
             res = con.query(count_query)
             remaining = res[0]["count"] if res else 0
             if remaining == 0:
                 break
-                
+
             logger.info(f"Remaining {name} elements to embed: {remaining}")
-            
+
+            if remaining == prev_remaining:
+                stall_count += 1
+                if stall_count >= MAX_STALL_ATTEMPTS:
+                    raise RuntimeError(
+                        f"Embedding stalled: {name} count stuck at {remaining} after "
+                        f"{stall_count} consecutive no-progress iterations"
+                    )
+            else:
+                stall_count = 0
+            prev_remaining = remaining
+
             retries = 5
             while retries > 0:
                 retries -= 1

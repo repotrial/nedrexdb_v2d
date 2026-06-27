@@ -6,6 +6,14 @@ declare -x > /app/nedrexdb/container_env.sh
 setup_db() {
     local db_type=$1
     local config_file=".$db_type"_config.toml
+    local lock_file="/tmp/nedrexdb_build_${db_type}.lock"
+
+    if [ -f "$lock_file" ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') | WARNING |  build.sh - ${db_type} build already in progress (lock file exists), skipping."
+        return 1
+    fi
+    touch "$lock_file"
+    trap "rm -f $lock_file" EXIT
 
     if [[ "$LOG_LEVEL" == "INFO" || "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | INFO |  build.sh - Starting setup of $db_type DB"; fi
 
