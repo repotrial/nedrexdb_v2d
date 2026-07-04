@@ -347,7 +347,7 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name, p
       CALL {{
            WITH id_batch
            UNWIND id_batch AS id
-           MATCH (s:{source_name})-[r:{name}]->(t:{target_name}) WHERE id(r) = id
+           MATCH (s)-[r:{name}]->(t) WHERE id(r) = id
            WITH r, {{s: s, r: r, t: t}} AS entry
            WITH r, {edge_info_string} AS text
            WITH r, CASE WHEN text IS NULL OR trim(text) = "" THEN "unknown" ELSE trim(text) END AS final_text

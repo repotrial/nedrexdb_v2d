@@ -60,6 +60,9 @@ setup_db() {
         if [[ "$CREATE_EMBEDDINGS" == "1" ]]; then
           build_args+=(--create_embeddings)
         fi
+        if [[ "$KEEP_DEV" == "1" ]]; then
+          build_args+=(--keep-dev)
+        fi
         if [[ "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | DEBUG |  build.sh - Running build with command: ./build.py ${build_args[@]}"; fi
         ./build.py "${build_args[@]}"
     fi

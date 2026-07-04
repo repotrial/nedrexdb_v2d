@@ -172,13 +172,16 @@ def _finalize_build(embedding_controller, no_download, current_metadata):
 @click.option("--rebuild", is_flag=True, default=False)
 @click.option("--version_update", is_flag=False, default="")
 @click.option("--create_embeddings", is_flag=True, default=False)
+@click.option("--keep-dev", "keep_dev", is_flag=True, default=False,
+              help="Keep dev Neo4j running after build for debugging. Skips live promotion.")
 @cli.command()
-def update(conf, download, rebuild, version_update, create_embeddings):
+def update(conf, download, rebuild, version_update, create_embeddings, keep_dev):
     logger.debug(f"Config file: {conf}")
     logger.info(f"Download updates: {download}")
     logger.info(f"Update DB versions: {version_update}")
     logger.info(f"Force rebuild entire DB: {rebuild}")
     logger.info(f"Create embeddings: {create_embeddings}")
+    logger.info(f"Keep dev instance: {keep_dev}")
 
     nedrexdb.parse_config(conf)
 
@@ -202,9 +205,10 @@ def update(conf, download, rebuild, version_update, create_embeddings):
     # Initialize Embedding Controller
     dev_instance = NeDRexDevInstance()
     embedding_controller = EmbeddingController(
-        dev_instance=dev_instance, 
-        create_embeddings=create_embeddings, 
-        rebuild=rebuild
+        dev_instance=dev_instance,
+        create_embeddings=create_embeddings,
+        rebuild=rebuild,
+        keep_dev=keep_dev,
     )
 
     # Stage 1: Gather metadata from live DB
@@ -227,9 +231,11 @@ def update(conf, download, rebuild, version_update, create_embeddings):
     _post_process_data(dev_instance)
 
     # Stage 6: Finalize Build (Promote to Live, generate embeddings)
-    _finalize_build(
-        embedding_controller, no_download, current_metadata
-    )
+    if keep_dev:
+        embedding_controller.validate_and_finalize(MongoInstance.DB, no_download, current_metadata)
+        logger.info("[DEBUG] keep-dev mode: skipping live promotion. Run 'build.py restart-live --conf <config>' when done.")
+    else:
+        _finalize_build(embedding_controller, no_download, current_metadata)
 
 
 # Unified parser pipeline used by both the full update() path and parse_dev().

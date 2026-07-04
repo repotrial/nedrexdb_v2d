@@ -11,7 +11,7 @@ class EmbeddingController:
     Unifies the logic for invalidation, siphoning, and regeneration.
     """
     
-    def __init__(self, dev_instance, create_embeddings=False, rebuild=False):
+    def __init__(self, dev_instance, create_embeddings=False, rebuild=False, keep_dev=False):
         self.dev_instance = dev_instance
         self.create_embeddings = create_embeddings
         self.rebuild = rebuild
@@ -25,6 +25,7 @@ class EmbeddingController:
         # Mapping from Neo4j Label/Type to Mongo Collection Name (and vice versa)
         # Note: In build.py, it was ad-hoc .replace("_", "")
         # We can formalize it here if needed, but for now, we'll maintain parity.
+        self.keep_dev = keep_dev
         self.embedding_deps_config = config.get("embeddings.embedding_dependencies") or []
 
     def _get_mongo_col_name(self, embedding_key):
@@ -103,7 +104,8 @@ class EmbeddingController:
             self.dev_instance._set_up_neo4j(use_existing_volume=True, neo4j_mode="db-write")
             time.sleep(60)
             create_constraints()
-            self.dev_instance.remove()
+            if not self.keep_dev:
+                self.dev_instance.remove()
             return
 
         # 1. Gather new Dev state
@@ -177,5 +179,14 @@ class EmbeddingController:
                 logger.info("No new embeddings need to be generated.")
         except Exception as e:
             logger.error(f"Failed to generate embeddings: {e}")
-        
-        self.dev_instance.remove()
+
+        if self.keep_dev:
+            logger.info(
+                f"[DEBUG] Dev Neo4j kept running for inspection. "
+                f"Container: {self.dev_instance.neo4j_container_name}, "
+                f"Bolt: bolt://localhost:{self.dev_instance.neo4j_bolt_port}, "
+                f"HTTP: http://localhost:{self.dev_instance.neo4j_http_port}. "
+                f"Run 'build.py restart-live --conf <config>' to promote to live when done."
+            )
+        else:
+            self.dev_instance.remove()
