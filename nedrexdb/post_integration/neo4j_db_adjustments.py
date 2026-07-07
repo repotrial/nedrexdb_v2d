@@ -127,6 +127,15 @@ def create_vector_indices(tobuild=set()):
                 retry_list.append(node)
             else:
                 index_names.append(f"{node.lower()}Embeddings")
+        if retry_list:
+            if len(retry_list) == len(list(node_list)):
+                logger.warning(f"All {len(retry_list)} nodes failed, waiting 5min before retry...")
+                time.sleep(300)
+            close_kg_connection()
+            kg = get_kg_connection()
+            if kg is None:
+                logger.error("Cannot reconnect to Neo4j for node retry")
+                break
         node_list = [node for node in retry_list]
         retry_list = []
         num_retries -= 1
@@ -143,6 +152,15 @@ def create_vector_indices(tobuild=set()):
                 retry_list.append(edge)
             else:
                 index_names.append(f"{edge.lower()}Embeddings")
+        if retry_list:
+            if len(retry_list) == len(list(edge_list)):
+                logger.warning(f"All {len(retry_list)} edges failed, waiting 5min before retry...")
+                time.sleep(300)
+            close_kg_connection()
+            kg = get_kg_connection()
+            if kg is None:
+                logger.error("Cannot reconnect to Neo4j for edge retry")
+                break
         edge_list = [edge for edge in retry_list]
         retry_list = []
         num_retries -= 1
@@ -235,14 +253,24 @@ def fill_vector_index(con, entityType, name) -> bool:
         prev_remaining = None
         stall_count = 0
 
-        while True:
-            if entityType == "NODE":
-                count_query = f"MATCH (x:{name}) WHERE x.embedding IS NULL RETURN count(x) AS count"
-            else:
-                count_query = f"MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL RETURN count(r) AS count"
+        if entityType == "NODE":
+            count_query = f"MATCH (x:{name}) WHERE x.embedding IS NULL RETURN count(x) AS count"
+        else:
+            count_query = f"MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL RETURN count(r) AS count"
 
-            res = con.query(count_query)
-            remaining = res[0]["count"] if res else 0
+        while True:
+            try:
+                res = con.query(count_query)
+                remaining = res[0]["count"] if res else 0
+            except Exception as count_err:
+                logger.warning(f"Count query failed for {name}: {count_err}. Reconnecting...")
+                close_kg_connection()
+                time.sleep(60)
+                con = get_kg_connection()
+                if con is None:
+                    raise RuntimeError(f"Neo4j unreachable during count for {name}")
+                continue
+
             if remaining == 0:
                 break
 
@@ -270,7 +298,11 @@ def fill_vector_index(con, entityType, name) -> bool:
                     logger.error(f"Encountered an issue! Retry {6 - retries} retrying in 60s...")
                     if retries == 0:
                         raise e
+                    close_kg_connection()
                     time.sleep(60)
+                    con = get_kg_connection()
+                    if con is None:
+                        raise RuntimeError(f"Neo4j unreachable during retry for {name}")
         duration = time.time() - start
         logger.info(f"Building {name} embedding indexes finished after {duration} seconds")
         return True
@@ -304,7 +336,7 @@ def get_info_string(element_type, name, node_config, edge_config):
 def create_node_vector_query(node_info_string, name, parallel=False):
     query = f"""
     MATCH (x:{name}) WHERE x.embedding IS NULL
-    WITH x LIMIT 50000
+    WITH x LIMIT 5000
     WITH id(x) AS id
     WITH collect(id) AS ids
     UNWIND range(0, size(ids) - 1, 100) AS i
@@ -339,7 +371,7 @@ def create_node_vector_query(node_info_string, name, parallel=False):
 def create_edge_vector_query(edge_info_string, source_name, name, target_name, parallel=False):
     query = f"""
       MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL
-      WITH r LIMIT 50000
+      WITH r LIMIT 5000
       WITH id(r) AS id
       WITH collect(id) AS ids
       UNWIND range(0, size(ids) - 1, 100) AS i

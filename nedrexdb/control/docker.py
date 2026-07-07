@@ -288,6 +288,9 @@ class _NeDRexBaseInstance(_NeDRexInstance):
         elif neo4j_mode == "db-write":
             kwargs["environment"]["NEO4J_server_databases_read__only"] = "false"
             kwargs["environment"]["NEO4J_server_databases_default__to__read__only"] = "false"
+            # Disable query log — APOC embedding calls generate GB of logs over a full build run,
+            # which fills the /logs Docker volume and causes TransactionCommitFailed.
+            kwargs["environment"]["NEO4J_db_logs_query_enabled"] = "OFF"
 
         else:
             raise Exception(f"neo4j_mode {neo4j_mode!r} is invalid")
