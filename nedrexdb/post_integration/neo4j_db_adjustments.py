@@ -336,7 +336,7 @@ def get_info_string(element_type, name, node_config, edge_config):
 def create_node_vector_query(node_info_string, name, parallel=False):
     query = f"""
     MATCH (x:{name}) WHERE x.embedding IS NULL
-    WITH x LIMIT 5000
+    WITH x LIMIT 50000
     WITH id(x) AS id
     WITH collect(id) AS ids
     UNWIND range(0, size(ids) - 1, 100) AS i
@@ -371,7 +371,7 @@ def create_node_vector_query(node_info_string, name, parallel=False):
 def create_edge_vector_query(edge_info_string, source_name, name, target_name, parallel=False):
     query = f"""
       MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL
-      WITH r LIMIT 5000
+      WITH r LIMIT 50000
       WITH id(r) AS id
       WITH collect(id) AS ids
       UNWIND range(0, size(ids) - 1, 100) AS i
