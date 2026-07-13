@@ -233,7 +233,7 @@ def update(conf, download, rebuild, version_update, create_embeddings, keep_dev)
     # Stage 6: Finalize Build (Promote to Live, generate embeddings)
     if keep_dev:
         embedding_controller.validate_and_finalize(MongoInstance.DB, no_download, current_metadata)
-        logger.info("[DEBUG] keep-dev mode: skipping live promotion. Run 'build.py restart-live --conf <config>' when done.")
+        logger.info("[DEBUG] keep-dev mode: embeddings complete, live promoted, dev container kept for inspection.")
     else:
         _finalize_build(embedding_controller, no_download, current_metadata)
 

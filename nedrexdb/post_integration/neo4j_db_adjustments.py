@@ -1,6 +1,8 @@
 from langchain_neo4j import Neo4jGraph
 from nedrexdb import config as _config
 import time
+import urllib.request
+import urllib.error
 from nedrexdb.logger import logger
 from nedrexdb.post_integration.embedding_config import NODE_EMBEDDING_CONFIG, EDGE_EMBEDDING_CONFIG
 
@@ -94,9 +96,27 @@ def create_constraints():
     close_kg_connection()
 
 
+def _check_embedding_server_reachable(base_url: str, timeout: int = 10) -> bool:
+    """Returns True if the embedding server responds to an HTTP request, False otherwise."""
+    try:
+        urllib.request.urlopen(urllib.request.Request(base_url, method="GET"), timeout=timeout)
+        return True
+    except urllib.error.HTTPError:
+        return True  # non-200 still means the server is up
+    except Exception:
+        return False
+
+
 def create_vector_indices(tobuild=set()):
     if not tobuild:
         return
+
+    from nedrexdb.llm import _LLM_BASE
+    if not _check_embedding_server_reachable(_LLM_BASE):
+        raise RuntimeError(
+            f"Embedding server at {_LLM_BASE!r} is unreachable. "
+            "Aborting embedding phase to prevent data loss from a failed build."
+        )
 
     # only building embeddings for dev nodes and edges, except they are None.
     dev_nodes = []

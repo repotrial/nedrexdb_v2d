@@ -3,6 +3,7 @@ from nedrexdb import config
 from nedrexdb.logger import logger
 from nedrexdb.db.import_embeddings import fetch_embeddings, upsert_embeddings
 from nedrexdb.post_integration.neo4j_db_adjustments import create_constraints, create_vector_indices
+from nedrexdb.control.docker import NeDRexLiveInstance
 import time
 
 class EmbeddingController:
@@ -93,6 +94,44 @@ class EmbeddingController:
                 self.tobuild_embeddings.add(key)
                 self.reusable_embeddings.pop(key)
 
+    def _promote_and_keep_dev(self):
+        """
+        Used when --keep-dev is set: gracefully stop the dev write container, promote
+        to live, then attempt to restart dev in read-only mode for inspection.
+        Both containers share the same Neo4j volume (Neo4j 5 allows multiple readers).
+        If the dev read-only start fails due to a store lock conflict, the live instance
+        is still running and the data is safe.
+        """
+        # Gracefully stop dev write container so Neo4j flushes WAL and releases store lock.
+        logger.info("Stopping dev write container before live promotion...")
+        self.dev_instance._remove_neo4j(remove_db_volume=False)
+
+        # Promote to live (read-only) on the same volume.
+        live_instance = NeDRexLiveInstance()
+        live_instance.remove()
+        live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
+        logger.info(
+            f"Live Neo4j started. "
+            f"Bolt: bolt://localhost:{live_instance.neo4j_bolt_port}, "
+            f"HTTP: http://localhost:{live_instance.neo4j_http_port}"
+        )
+
+        # Attempt to restart dev in read-only mode on the same volume for inspection.
+        try:
+            self.dev_instance._set_up_neo4j(use_existing_volume=True, neo4j_mode="db")
+            logger.info(
+                f"[DEBUG] Dev Neo4j also running in read-only mode for inspection. "
+                f"Container: {self.dev_instance.neo4j_container_name}, "
+                f"Bolt: bolt://localhost:{self.dev_instance.neo4j_bolt_port}, "
+                f"HTTP: http://localhost:{self.dev_instance.neo4j_http_port}"
+            )
+        except Exception as e:
+            logger.warning(
+                f"[DEBUG] Dev container could not be started for inspection "
+                f"(Neo4j store lock held by live instance?): {e}. "
+                f"Data is accessible via the live instance."
+            )
+
     def validate_and_finalize(self, mongo_dev_db, no_download, current_metadata):
         """
         Final check after ingestion. Compares new Dev state with old Live state.
@@ -104,7 +143,9 @@ class EmbeddingController:
             self.dev_instance._set_up_neo4j(use_existing_volume=True, neo4j_mode="db-write")
             time.sleep(60)
             create_constraints()
-            if not self.keep_dev:
+            if self.keep_dev:
+                self._promote_and_keep_dev()
+            else:
                 self.dev_instance.remove()
             return
 
@@ -181,12 +222,6 @@ class EmbeddingController:
             logger.error(f"Failed to generate embeddings: {e}")
 
         if self.keep_dev:
-            logger.info(
-                f"[DEBUG] Dev Neo4j kept running for inspection. "
-                f"Container: {self.dev_instance.neo4j_container_name}, "
-                f"Bolt: bolt://localhost:{self.dev_instance.neo4j_bolt_port}, "
-                f"HTTP: http://localhost:{self.dev_instance.neo4j_http_port}. "
-                f"Run 'build.py restart-live --conf <config>' to promote to live when done."
-            )
+            self._promote_and_keep_dev()
         else:
             self.dev_instance.remove()
