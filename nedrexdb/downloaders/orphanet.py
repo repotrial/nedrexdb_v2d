@@ -1,5 +1,6 @@
 import os
 import subprocess as _sp
+import zipfile as _zipfile
 from pathlib import Path as _Path
 import shutil as _shutil
 
@@ -36,7 +37,14 @@ def download_orphanet():
     except _HTTPError as E:
         logger.warning(f"Unable to download Orphanet mapping: {E}")
         return
-    files = list(target_dir.iterdir())
+
+    if not _zipfile.is_zipfile(zip_fname):
+        logger.warning(
+            f"Orphanet mapping download from {url_mapping!r} did not produce a valid zip file "
+            f"(server may have returned an error page or the URL has changed). Skipping."
+        )
+        zip_fname.unlink(missing_ok=True)
+        return
 
     # Unzip the zip
     with change_directory(target_dir):
@@ -44,11 +52,21 @@ def download_orphanet():
         if os.environ["LOG_LEVEL"] != "DEBUG":
             call.append("-q")
         call.append(f"{zip_fname.resolve()}")
-        _sp.call(call)
-        zip_fname.unlink()
+        result = _sp.call(call)
+        zip_fname.unlink(missing_ok=True)
+
+    if result != 0:
+        logger.warning(f"unzip returned exit code {result} for Orphanet mapping. Skipping.")
+        _shutil.rmtree(unzip_fname, ignore_errors=True)
+        return
 
     # Move the target file from the unzipped directory to the desired target directory
     file = unzip_fname / orphanet_mapping["filename"]
+    if not file.exists():
+        logger.warning(f"Expected file {file} not found after unzipping Orphanet mapping. Skipping.")
+        _shutil.rmtree(unzip_fname, ignore_errors=True)
+        return
+
     target_file_path = target_dir / orphanet_mapping["filename"]
     file.rename(target_file_path)
 

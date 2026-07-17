@@ -54,6 +54,18 @@ def create_unique_node_constraint(con, node_type, attribute):
     query = f"CREATE CONSTRAINT {node_type.lower()}_{attribute.lower()}_unique FOR (n:{node_type}) REQUIRE n.{attribute} IS UNIQUE"
     con.query(query)
 
+def _add_drug_supertype_label(kg):
+    """
+    BiotechDrug and SmallMoleculeDrug are imported as separate labels, but the API
+    exposes them as a unified 'drug' collection that maps to the 'Drug' Neo4j label.
+    Add Drug as a supertype label so that constraints, embeddings, and API queries
+    targeting :Drug work correctly.
+    """
+    kg.query("MATCH (n:BiotechDrug) WHERE NOT n:Drug SET n:Drug")
+    kg.query("MATCH (n:SmallMoleculeDrug) WHERE NOT n:Drug SET n:Drug")
+    logger.info("Added Drug supertype label to BiotechDrug and SmallMoleculeDrug nodes")
+
+
 def create_constraints():
     try:
         if not _config.get("db.set_unique_constraints"):
@@ -67,6 +79,8 @@ def create_constraints():
     kg = get_kg_connection()
     if kg is None:
         raise RuntimeError(f"Could not connect to Neo4j at bolt://{_config['db.dev.neo4j_name']}:7687 to create unique constraints.")
+
+    _add_drug_supertype_label(kg)
 
     # fetch existing constraints once
     existing = kg.query("""

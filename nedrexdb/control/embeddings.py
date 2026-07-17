@@ -102,11 +102,15 @@ class EmbeddingController:
         If the dev read-only start fails due to a store lock conflict, the live instance
         is still running and the data is safe.
         """
-        # Gracefully stop dev write container so Neo4j flushes WAL and releases store lock.
-        logger.info("Stopping dev write container before live promotion...")
+        # Gracefully stop dev Neo4j so it flushes WAL and releases store lock.
+        logger.info("Stopping dev Neo4j and MongoDB before live promotion...")
         self.dev_instance._remove_neo4j(remove_db_volume=False)
 
-        # Promote to live (read-only) on the same volume.
+        # Stop dev MongoDB so the live instance can take over the same data volume.
+        # (MongoDB requires exclusive access — two instances cannot share a data directory.)
+        self.dev_instance._remove_mongo(remove_db_volume=False)
+
+        # Promote to live (read-only Neo4j + MongoDB) on the same volumes.
         live_instance = NeDRexLiveInstance()
         live_instance.remove()
         live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
