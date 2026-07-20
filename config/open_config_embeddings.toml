@@ -41,6 +41,49 @@ edge_collections = [
 [tools]
 bicon_python = "/opt/conda/envs/bicon/bin/python"
 
+[embeddings]
+server_base="https:$your-ollama_openwebui-setup/v1"
+model="granite-embedding:latest"
+embedding_length=384
+path="embeddings"
+api_key="sk-****************************"
+embedding_dependencies = [
+    "drug",
+    "disorder",
+    "disorderissubtypeofdisorder",
+    "drughasindication",
+    "gene",
+    #"genomicvariant",
+    "go",
+    "pathway",
+    "protein",
+    "phenotype",
+    "tissue",
+    "sideeffect",
+    "signature",
+    "disorderhasphenotype",
+    "drughascontraindication",
+    "drughastarget",
+    "drughassideeffect",
+    "geneassociatedwithdisorder",
+    #"goissubtypeofgo",
+    "moleculesimilaritymolecule",
+    "proteinencodedbygene",
+    "proteinhasgoannotation",
+    #"proteinhassignature",
+    #"proteininpathway",
+    #"proteininteractswithprotein",
+    #"proteinexpressedintissue",
+    "geneexpressedintissue",
+    "sideeffectsameasphenotype",
+    #"variantaffectsgene",
+    "variantassociatedwithdisorder"
+]
+
+[chat]
+server_base="None"
+model="None"
+
 [db]
 version = "open"
 neo4j_image = "ghcr.io/repotrial/nedrexdb_v2d-neo4j:dev"
@@ -49,7 +92,6 @@ mongo_express_image = "mongo-express:0.54.0"
 mongo_db = "nedrex"
 root_directory = "/data/nedrex_files/nedrex_data"
 volume_root = "open_nedrex"
-set_unique_constraints = true
 
 [db.dev]
 mongo_port = 26017
@@ -60,12 +102,11 @@ neo4j_http_port = 6478
 neo4j_http_port_internal = 7474
 neo4j_bolt_port = 6688
 neo4j_bolt_port_internal = 7687
+neo4j_memory_max = "8g"
 neo4j_name = "open_nedrex_dev_neo4j"
 network = "nedrexdb_default"
 container_name = "open_nedrex_dev"
 express_container_name = "open_nedrex_dev_express"
-neo4j_memory_max = "4G"
-neo4j_pagecache_max = "4G"
 
 [db.live]
 mongo_port = 26018
@@ -77,15 +118,14 @@ neo4j_http_port_internal = 7474
 neo4j_bolt_port = 6689
 neo4j_bolt_port_internal = 7687
 neo4j_name = "open_nedrex_live_neo4j"
+neo4j_memory_max = "8g"
 network = "nedrexdb_default"
 container_name = "open_nedrex_live"
 express_container_name = "open_nedrex_live_express"
-neo4j_memory_max = "4G" #for full deployment including embeddings needs 31G here
-neo4j_pagecache_max = "4G" #for full deployment including embeddings needs 32G here
 
 [sources]
 directory = "downloads"
-default_version = "2.2.0"
+default_version = "2.3.0"
 
 [sources.biogrid]
 [sources.biogrid.human_data]
@@ -227,8 +267,6 @@ version_pattern = '''>Homo_sapiens\.gene_info\.gz</a>      [\d-]+'''
 [sources.ncbi.gene_info]
 url = "https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz"
 
-[sources.ncbi.gene_summary]
-url = "https://ftp.ncbi.nlm.nih.gov/gene/DATA/gene_summary.gz"
 
 [sources.ncg]
 [sources.ncg.annotation]
@@ -264,8 +302,7 @@ filename = "ORPHAnomenclature_MasterFile_en_2024.xlsx"
 version = "4.1"
 
 [sources.sider.frequency_data]
-url = "http://sideeffects.embl.de/media/download/meddra_freq.tsv.gz"
-
+filename = "meddra_freq.tsv.gz"
 
 [sources.repotrial]
 version = "1.0.0"
