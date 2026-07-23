@@ -35,12 +35,50 @@ class EmbeddingController:
         # We'll use the key as provided in the config.
         return embedding_key
 
+    def _check_embedding_config_changed(self, mongo_live_db):
+        """
+        Reads the embedding config (model + length) stored in the live MongoDB metadata
+        and compares it with the current config. If either changed, forces a full rebuild
+        so stale embeddings from a different model or dimension are never reused.
+        """
+        from nedrexdb.llm import _LLM_model, _LLM_embedding_length
+        try:
+            meta = mongo_live_db["metadata"].find_one({}) or {}
+            stored = meta.get("embedding_config", {})
+        except Exception as e:
+            logger.warning(f"Could not read live embedding metadata: {e}. Assuming config unchanged.")
+            return
+
+        if not stored:
+            logger.info("No embedding config found in live metadata (first run or legacy build). Proceeding with normal reuse logic.")
+            return
+
+        stored_model = stored.get("model")
+        stored_length = stored.get("length")
+
+        if stored_model != _LLM_model or stored_length != _LLM_embedding_length:
+            logger.warning(
+                f"Embedding config changed since last build: "
+                f"model {stored_model!r} -> {_LLM_model!r}, "
+                f"length {stored_length} -> {_LLM_embedding_length}. "
+                f"Forcing full re-embedding — existing embeddings are incompatible."
+            )
+            self.rebuild = True
+        else:
+            logger.debug(f"Embedding config unchanged (model={_LLM_model!r}, length={_LLM_embedding_length}). Reuse eligible.")
+
     def gather_live_state(self, mongo_live_db):
         """
         Scans the Live MongoDB to see what sources were used for each collection.
         This is Stage 1 of the decision process.
         """
         if not self.create_embeddings or self.rebuild:
+            return
+
+        # Check if the embedding model or vector length changed since the last build.
+        # If so, existing embeddings are from a different vector space and must not be reused.
+        self._check_embedding_config_changed(mongo_live_db)
+        if self.rebuild:
             return
 
         for collection_name in mongo_live_db.list_collection_names():
@@ -224,6 +262,18 @@ class EmbeddingController:
                 logger.info("No new embeddings need to be generated.")
         except Exception as e:
             logger.error(f"Failed to generate embeddings: {e}")
+
+        # Persist the embedding config used for this build so the next build can detect changes.
+        try:
+            from nedrexdb.llm import _LLM_model, _LLM_embedding_length
+            mongo_dev_db["metadata"].update_one(
+                {},
+                {"$set": {"embedding_config": {"model": _LLM_model, "length": _LLM_embedding_length}}},
+                upsert=True,
+            )
+            logger.info(f"Persisted embedding config to metadata (model={_LLM_model!r}, length={_LLM_embedding_length}).")
+        except Exception as e:
+            logger.warning(f"Could not persist embedding config to metadata: {e}")
 
         if self.keep_dev:
             self._promote_and_keep_dev()
