@@ -269,30 +269,53 @@ def get_edge_info_string(edge_name, edge_embedding_config):
 
     return " + ".join(parts)
 
-def fill_vector_index(con, entityType, name) -> bool:
-    try:
-        start = time.time()
-        from nedrexdb.llm import (_LLM_API_KEY, _LLM_BASE, _LLM_path, _LLM_model, _LLM_embedding_length, _LLM_parallel)
-        create_vector_index(con, entityType, name,_LLM_embedding_length)
-        params = {"api_key": _LLM_API_KEY, "llm_base": _LLM_BASE, "llm_path": _LLM_path, "llm_model": _LLM_model}
-        info_string = get_info_string(entityType, name, NODE_EMBEDDING_CONFIG, EDGE_EMBEDDING_CONFIG)
-        if entityType == "NODE":
-            query = create_node_vector_query(info_string, name, _LLM_parallel)
-        else:
-            source_name = EDGE_EMBEDDING_CONFIG[name]["source"]
-            target_name = EDGE_EMBEDDING_CONFIG[name]["target"]
-            query = create_edge_vector_query(info_string, source_name, name, target_name, _LLM_parallel)
-        
-        MAX_STALL_ATTEMPTS = 3
-        prev_remaining = None
-        stall_count = 0
+def _fill_vector_index_openwebui(con, entityType, name, info_string):
+    """
+    Python-side embedding loop for OpenWebUI (OpenAI-compatible API with Bearer auth).
+    Fetches text batches from Neo4j, calls the embedding API via the openai client,
+    and writes vectors back. Used when embeddings.openwebui=true in config.
+    """
+    import openai as _openai
+    from nedrexdb.llm import _LLM_BASE, _LLM_API_KEY, _LLM_model
 
-        if entityType == "NODE":
-            count_query = f"MATCH (x:{name}) WHERE x.embedding IS NULL RETURN count(x) AS count"
-        else:
-            count_query = f"MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL RETURN count(r) AS count"
+    client = _openai.OpenAI(base_url=_LLM_BASE, api_key=_LLM_API_KEY)
 
-        while True:
+    if entityType == "NODE":
+        fetch_query = f"""
+            MATCH (x:{name}) WHERE x.embedding IS NULL
+            WITH x LIMIT 32
+            WITH id(x) AS id, {info_string} AS raw_text
+            RETURN id, CASE WHEN raw_text IS NULL OR trim(raw_text) = "" THEN "unknown" ELSE trim(raw_text) END AS text
+        """
+        write_query = f"""
+            UNWIND $batch AS item
+            MATCH (x:{name}) WHERE id(x) = item.id
+            CALL db.create.setNodeVectorProperty(x, 'embedding', item.embedding)
+        """
+        count_query = f"MATCH (x:{name}) WHERE x.embedding IS NULL RETURN count(x) AS count"
+    else:
+        fetch_query = f"""
+            MATCH (s)-[r:{name}]->(t) WHERE r.embedding IS NULL
+            WITH r, {{s: s, r: r, t: t}} AS entry
+            WITH id(r) AS id, {info_string} AS raw_text
+            LIMIT 32
+            RETURN id, CASE WHEN raw_text IS NULL OR trim(raw_text) = "" THEN "unknown" ELSE trim(raw_text) END AS text
+        """
+        write_query = f"""
+            UNWIND $batch AS item
+            MATCH (s)-[r:{name}]->(t) WHERE id(r) = item.id
+            CALL db.create.setRelationshipVectorProperty(r, 'embedding', item.embedding)
+        """
+        count_query = f"MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL RETURN count(r) AS count"
+
+    MAX_STALL_ATTEMPTS = 3
+    RECOUNT_EVERY = 500  # check remaining count every 500 batches (~16k items)
+    prev_remaining = None
+    stall_count = 0
+    batch_iter = 0
+
+    while True:
+        if batch_iter % RECOUNT_EVERY == 0:
             try:
                 res = con.query(count_query)
                 remaining = res[0]["count"] if res else 0
@@ -315,28 +338,112 @@ def fill_vector_index(con, entityType, name) -> bool:
                 if stall_count >= MAX_STALL_ATTEMPTS:
                     raise RuntimeError(
                         f"Embedding stalled: {name} count stuck at {remaining} after "
-                        f"{stall_count} consecutive no-progress iterations"
+                        f"{stall_count} consecutive no-progress count checks"
                     )
             else:
                 stall_count = 0
             prev_remaining = remaining
 
-            retries = 5
-            while retries > 0:
-                retries -= 1
+        retries = 5
+        while retries > 0:
+            retries -= 1
+            try:
+                rows = con.query(fetch_query)
+                if not rows:
+                    return  # no items left
+                texts = [r["text"] for r in rows]
+                ids = [r["id"] for r in rows]
+                response = client.embeddings.create(input=texts, model=_LLM_model)
+                embeddings = [e.embedding for e in response.data]
+                batch = [{"id": ids[i], "embedding": embeddings[i]} for i in range(len(ids))]
+                con.query(write_query, params={"batch": batch})
+                break
+            except Exception as e:
+                logger.error(f"Encountered an issue! Retry {6 - retries} retrying in 60s...")
+                if retries == 0:
+                    raise e
+                close_kg_connection()
+                time.sleep(60)
+                con = get_kg_connection()
+                if con is None:
+                    raise RuntimeError(f"Neo4j unreachable during retry for {name}")
+
+        batch_iter += 1
+
+
+def fill_vector_index(con, entityType, name) -> bool:
+    try:
+        start = time.time()
+        from nedrexdb.llm import (_LLM_API_KEY, _LLM_BASE, _LLM_path, _LLM_model, _LLM_embedding_length, _LLM_parallel, _LLM_openwebui)
+        create_vector_index(con, entityType, name, _LLM_embedding_length)
+        info_string = get_info_string(entityType, name, NODE_EMBEDDING_CONFIG, EDGE_EMBEDDING_CONFIG)
+
+        if _LLM_openwebui:
+            _fill_vector_index_openwebui(con, entityType, name, info_string)
+        else:
+            params = {"api_key": _LLM_API_KEY, "llm_base": _LLM_BASE, "llm_path": _LLM_path, "llm_model": _LLM_model}
+            if entityType == "NODE":
+                query = create_node_vector_query(info_string, name, _LLM_parallel)
+            else:
+                source_name = EDGE_EMBEDDING_CONFIG[name]["source"]
+                target_name = EDGE_EMBEDDING_CONFIG[name]["target"]
+                query = create_edge_vector_query(info_string, source_name, name, target_name, _LLM_parallel)
+
+            MAX_STALL_ATTEMPTS = 3
+            prev_remaining = None
+            stall_count = 0
+
+            if entityType == "NODE":
+                count_query = f"MATCH (x:{name}) WHERE x.embedding IS NULL RETURN count(x) AS count"
+            else:
+                count_query = f"MATCH ()-[r:{name}]->() WHERE r.embedding IS NULL RETURN count(r) AS count"
+
+            while True:
                 try:
-                    con.query(query, params=params)
-                    break
-                except Exception as e:
-                    print(e)
-                    logger.error(f"Encountered an issue! Retry {6 - retries} retrying in 60s...")
-                    if retries == 0:
-                        raise e
+                    res = con.query(count_query)
+                    remaining = res[0]["count"] if res else 0
+                except Exception as count_err:
+                    logger.warning(f"Count query failed for {name}: {count_err}. Reconnecting...")
                     close_kg_connection()
                     time.sleep(60)
                     con = get_kg_connection()
                     if con is None:
-                        raise RuntimeError(f"Neo4j unreachable during retry for {name}")
+                        raise RuntimeError(f"Neo4j unreachable during count for {name}")
+                    continue
+
+                if remaining == 0:
+                    break
+
+                logger.info(f"Remaining {name} elements to embed: {remaining}")
+
+                if remaining == prev_remaining:
+                    stall_count += 1
+                    if stall_count >= MAX_STALL_ATTEMPTS:
+                        raise RuntimeError(
+                            f"Embedding stalled: {name} count stuck at {remaining} after "
+                            f"{stall_count} consecutive no-progress iterations"
+                        )
+                else:
+                    stall_count = 0
+                prev_remaining = remaining
+
+                retries = 5
+                while retries > 0:
+                    retries -= 1
+                    try:
+                        con.query(query, params=params)
+                        break
+                    except Exception as e:
+                        print(e)
+                        logger.error(f"Encountered an issue! Retry {6 - retries} retrying in 60s...")
+                        if retries == 0:
+                            raise e
+                        close_kg_connection()
+                        time.sleep(60)
+                        con = get_kg_connection()
+                        if con is None:
+                            raise RuntimeError(f"Neo4j unreachable during retry for {name}")
+
         duration = time.time() - start
         logger.info(f"Building {name} embedding indexes finished after {duration} seconds")
         return True

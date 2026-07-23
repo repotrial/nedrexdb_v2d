@@ -81,6 +81,7 @@ class _Config:
                                                 'model': "snowflake-arctic-embed2:latest",
                                                 'path': "embeddings",
                                                 'api_key': None,
+                                                'openwebui': False,
                                                 'embedding_dependencies': []},
                                  'db': {'version': f'{vt}',
                                         'neo4j_image': "ghcr.io/repotrial/nedrexdb_v2d-neo4j:prod",

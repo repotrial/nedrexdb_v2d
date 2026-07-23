@@ -47,6 +47,7 @@ model="granite-embedding:latest"
 embedding_length=384
 path="embeddings"
 api_key="sk-****************************"
+openwebui=false
 embedding_dependencies = [
     "drug",
     "disorder",
