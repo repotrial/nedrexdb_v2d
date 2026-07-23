@@ -373,8 +373,8 @@ def create_node_vector_query(node_info_string, name, parallel=False):
     WITH x LIMIT 50000
     WITH id(x) AS id
     WITH collect(id) AS ids
-    UNWIND range(0, size(ids) - 1, 100) AS i
-    WITH ids[i..i+100] AS id_batch
+    UNWIND range(0, size(ids) - 1, 32) AS i
+    WITH ids[i..i+32] AS id_batch
     CALL {{
          WITH id_batch
          UNWIND id_batch AS id
@@ -408,8 +408,8 @@ def create_edge_vector_query(edge_info_string, source_name, name, target_name, p
       WITH r LIMIT 50000
       WITH id(r) AS id
       WITH collect(id) AS ids
-      UNWIND range(0, size(ids) - 1, 100) AS i
-      WITH ids[i..i+100] AS id_batch
+      UNWIND range(0, size(ids) - 1, 32) AS i
+      WITH ids[i..i+32] AS id_batch
       CALL {{
            WITH id_batch
            UNWIND id_batch AS id
