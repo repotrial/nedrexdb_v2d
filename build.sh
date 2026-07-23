@@ -11,7 +11,12 @@ setup_db() {
     if [ -f "$lock_file" ]; then
         local existing_pid
         existing_pid=$(cat "$lock_file" 2>/dev/null)
-        if [[ -n "$existing_pid" ]] && kill -0 "$existing_pid" 2>/dev/null; then
+        # A PID from a previous container run may coincidentally be reused by an unrelated
+        # process (e.g. cron, init). Verify the process is actually a build script before
+        # treating the lock as live.
+        local cmdline
+        cmdline=$(tr '\0' ' ' < "/proc/${existing_pid}/cmdline" 2>/dev/null || true)
+        if [[ -n "$existing_pid" ]] && kill -0 "$existing_pid" 2>/dev/null && [[ "$cmdline" == *"build"* ]]; then
             echo "$(date '+%Y-%m-%d %H:%M:%S') | WARNING |  build.sh - ${db_type} build already in progress (PID $existing_pid), skipping."
             return 1
         fi
