@@ -133,3 +133,4 @@ dmypy.json
 .idea
 nedrex_files
 config/licensed_config.toml
+scripts/test_embeddings.py
