@@ -118,11 +118,17 @@ class EmbeddingController:
 
         if to_fetch:
             logger.info(f"Siphoning reusable embeddings from Live DB: {to_fetch}")
-            # The fetch_embeddings function expects a set of names
-            # and connects to 'live' session type internally.
-            # Requirement: Live Neo4j must be accessible.
             self.dev_instance.set_up(use_existing_volume=True, neo4j_mode="db")
-            self.reusable_embeddings = fetch_embeddings(to_fetch)
+            try:
+                self.reusable_embeddings = fetch_embeddings(to_fetch)
+            except Exception as e:
+                logger.warning(
+                    f"Could not siphon embeddings from live Neo4j: {e}. "
+                    "Marking all as needing rebuild — normal on a first build or after a failed build."
+                )
+                self.tobuild_embeddings.update(to_fetch)
+                self.dev_instance.remove()
+                return
             self.dev_instance.remove()
         
         # Basic sanity check: if fetch returned empty for a key, we must rebuild it
@@ -252,8 +258,8 @@ class EmbeddingController:
         upsert_embeddings(self.reusable_embeddings)
 
         # Trigger APOC generation for the rest
+        embeddings_ok = True
         try:
-            # We filter the config list down to only what we actually need to build
             build_list = [k for k in self.embedding_deps_config if k in self.tobuild_embeddings]
             if build_list:
                 logger.info(f"Creating vector indices and generating embeddings for: {build_list}")
@@ -262,6 +268,15 @@ class EmbeddingController:
                 logger.info("No new embeddings need to be generated.")
         except Exception as e:
             logger.error(f"Failed to generate embeddings: {e}")
+            embeddings_ok = False
+
+        if not embeddings_ok:
+            logger.error(
+                "Embedding generation failed — aborting promotion to live. "
+                "Dev instance is left running for inspection. "
+                "Fix the issue and re-run with SKIP_UPDATE=1 to retry embeddings only."
+            )
+            return
 
         # Persist the embedding config used for this build so the next build can detect changes.
         try:

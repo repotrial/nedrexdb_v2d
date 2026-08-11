@@ -1,5 +1,5 @@
 from langchain_neo4j import Neo4jGraph
-from neo4j.exceptions import Neo4jError, DatabaseUnavailable, ServiceUnavailable, TransientError
+from neo4j.exceptions import Neo4jError, DatabaseUnavailable, DatabaseNotFound, ServiceUnavailable, TransientError
 from nedrexdb import config as _config
 from nedrexdb.post_integration.neo4j_db_adjustments import create_vector_index
 from nedrexdb.post_integration.embedding_config import NODE_EMBEDDING_CONFIG, EDGE_EMBEDDING_CONFIG
@@ -58,6 +58,11 @@ def connect_to_session(session_type):
             kg.query("RETURN 1")
             logger.info(f"Connected to Neo4j at {NEO4J_URI}")
             return kg
+        except DatabaseNotFound as e:
+            raise RuntimeError(
+                f"Neo4j at {NEO4J_URI} is reachable but the 'neo4j' database was not found: {e}. "
+                "This typically means the instance is in import mode or a previous build failed before the database was created."
+            )
         except (DatabaseUnavailable, ServiceUnavailable, TransientError) as e:
             retry -= 1
             logger.warning(f"Neo4j not ready ({e}), retrying... ({retry} left)")

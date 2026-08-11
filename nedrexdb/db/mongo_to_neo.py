@@ -151,7 +151,12 @@ def mongo_to_neo(nedrex_instance, db):
 
     logger.info("Importing files into Neo4j...")
     logger.debug("Running: "+" ".join(command))
-    _subprocess.call(command)
+    result = _subprocess.call(command)
+    if result != 0:
+        raise RuntimeError(
+            f"neo4j-admin database import failed with exit code {result}. "
+            "The Neo4j store is likely corrupted — check disk space and Neo4j import logs."
+        )
     logger.info("Waiting 60s for Neo4j to run internal processes...")
     _time.sleep(60)
     # clean up
