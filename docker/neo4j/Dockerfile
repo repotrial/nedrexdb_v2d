@@ -1,10 +1,9 @@
-FROM neo4j:2026.04-enterprise-bullseye
-
+FROM neo4j:2026.09-enterprise-trixie
 # Return to the original working directory
 RUN mkdir /app
 WORKDIR /app
 
-ENV APOC_VERSION=2026.04.0
+ENV APOC_VERSION=2026.09.0
 ENV APOC_PROC_VERSION=2026.04.0
 ENV NEO4J_USERNAME=neo4j
 ENV NEO4J_PASSWORD=password
