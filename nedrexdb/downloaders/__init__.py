@@ -23,6 +23,7 @@ from nedrexdb.downloaders.intogen import download_intogen as _download_intogen
 from nedrexdb.downloaders.orphanet import download_orphanet as _download_orphanet
 from nedrexdb.downloaders.opentargets import download_opentargets as _download_opentargets
 from nedrexdb.downloaders.rxnorm import download_rxnorm as _download_rxnorm
+from nedrexdb.downloaders.faers import download_faers as _download_faers
 from nedrexdb.exceptions import (
     ProcessError as _ProcessError,
 )
@@ -116,6 +117,11 @@ def download_all(force=False, ignored_sources=set(), no_download_meta={}):
             _download_rxnorm()
         else:
             logger.debug("rxnorm is already up-to-date")
+    if "faers" not in ignored_sources:
+        if "faers" not in no_download_meta:
+            _download_faers()
+        else:
+            logger.debug("faers is already up-to-date")
 
     for source in filter(lambda i: i not in exclude_keys, sources):
 
@@ -129,7 +135,8 @@ def download_all(force=False, ignored_sources=set(), no_download_meta={}):
             "intogen",
             "hippie",
             "sider",
-            "rxnorm"
+            "rxnorm",
+            "faers"
         }:
             continue
 

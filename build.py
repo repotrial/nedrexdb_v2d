@@ -50,7 +50,6 @@ from nedrexdb.post_integration import (trim_uberon, drop_empty_collections)
 from nedrexdb.post_integration.neo4j_db_adjustments import create_constraints, create_vector_indices
 from nedrexdb.logger import logger
 
-
 @click.group()
 def cli():
     pass
@@ -221,7 +220,7 @@ def update(conf, download, rebuild, version_update, create_embeddings):
                            "hippie",
                            # "sider",
                            "cosmic",
-                           "faers"
+                           #"faers"
                            }
 
     # Initialize Embedding Controller
@@ -351,6 +350,7 @@ def run_parsers(version, ignored_sources, hippie_method_scores=None):
         rxnorm.parse_rxnorm()
 
     if "faers" not in ignored_sources:
+        faers.create_faers_snapshot()
         faers.parse_faers()
 
     if "uniprot" not in ignored_sources:
