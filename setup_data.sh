@@ -20,7 +20,7 @@ wget -nv https://zenodo.org/records/12806709/files/cosmic.zip?download=1 -q -O c
 if [[ "$LOG_LEVEL" == "INFO" || "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | INFO |  setup_data.sh - Downloaded cosmic.zip"; fi
 wget -nv https://zenodo.org/records/12806709/files/intogen.zip?download=1 -q -O intogen.zip
 if [[ "$LOG_LEVEL" == "INFO" || "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | INFO |  setup_data.sh - Downloaded intogen.zip"; fi
-wget -nv https://zenodo.org/records/12806709/files/ncg.zip?download=1 -q -O ncg.zip
+wget -nv https://cloud.uni-hamburg.de/public.php/dav/files/Ao9tonfmAb5sm3x/?accept=zip -q -O ncg.zip
 if [[ "$LOG_LEVEL" == "INFO" || "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | INFO |  setup_data.sh - Downloaded ncg.zip"; fi
 
 for file in *.zip; do
