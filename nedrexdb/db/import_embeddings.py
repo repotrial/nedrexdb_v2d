@@ -116,10 +116,13 @@ def fetch_embeddings(toimport_embeddings):
 
 
 def upsert_embeddings(embeddings):
+    if not embeddings:
+        return
+    from nedrexdb.llm import _LLM_embedding_length
     session = connect_to_session(session_type="dev")
     for name in embeddings:
         if name in node_keys.keys():
-            create_vector_index(session, "NODE", node_keys[name])
+            create_vector_index(session, "NODE", node_keys[name], _LLM_embedding_length)
             query = f"""
             UNWIND $nodes AS node
             MERGE (n:{node_keys[name]} {{ primaryDomainId: node.id }})
@@ -130,7 +133,7 @@ def upsert_embeddings(embeddings):
                 {"nodes": [{"id": id_, "embedding": emb} for id_, emb in embeddings[name]]}
             )
         elif name in edge_keys.keys():
-            create_vector_index(session, "RELATIONSHIP", edge_keys[name])
+            create_vector_index(session, "RELATIONSHIP", edge_keys[name], _LLM_embedding_length)
             source_label = EDGE_EMBEDDING_CONFIG[edge_keys[name]]["source"]
             target_label = EDGE_EMBEDDING_CONFIG[edge_keys[name]]["target"]
             query = f"""

@@ -258,7 +258,8 @@ def test_update_create_embeddings_flow(
     mock_embed_controller.assert_called_once_with(
         dev_instance=mock_dev_inst.return_value,
         create_embeddings=True,
-        rebuild=False
+        rebuild=False,
+        keep_dev=False,
     )
     # Check if key stages were called on the controller
     controller_instance = mock_embed_controller.return_value

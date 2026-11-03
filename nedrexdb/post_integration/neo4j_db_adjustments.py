@@ -67,12 +67,6 @@ def _add_drug_supertype_label(kg):
 
 
 def create_constraints():
-    try:
-        if not _config.get("db.set_unique_constraints"):
-            return
-    except:
-        return
-
     dev_nodes = None
 
     logger.info("Creating unique constraints for IDs")
@@ -81,6 +75,14 @@ def create_constraints():
         raise RuntimeError(f"Could not connect to Neo4j at bolt://{_config['db.dev.neo4j_name']}:7687 to create unique constraints.")
 
     _add_drug_supertype_label(kg)
+
+    try:
+        if not _config.get("db.set_unique_constraints"):
+            close_kg_connection()
+            return
+    except:
+        close_kg_connection()
+        return
 
     # fetch existing constraints once
     existing = kg.query("""
@@ -121,11 +123,13 @@ def _check_embedding_server_reachable(base_url: str, timeout: int = 10) -> bool:
         return False
 
 
-def create_vector_indices(tobuild=set()):
+def create_vector_indices(tobuild=None):
+    if tobuild is None:
+        tobuild = _config.get("embeddings.embedding_dependencies") or []
     if not tobuild:
         return
 
-    from nedrexdb.llm import _LLM_BASE
+    from nedrexdb.llm import _LLM_BASE, _LLM_embedding_length
     if not _check_embedding_server_reachable(_LLM_BASE):
         raise RuntimeError(
             f"Embedding server at {_LLM_BASE!r} is unreachable. "
@@ -150,13 +154,25 @@ def create_vector_indices(tobuild=set()):
 
     index_names = []
 
-    node_list = NODE_EMBEDDING_CONFIG.keys() if dev_nodes is None else dev_nodes
+    node_list = list(NODE_EMBEDDING_CONFIG.keys() if dev_nodes is None else dev_nodes)
+    edge_list = list(EDGE_EMBEDDING_CONFIG.keys() if dev_edges is None else dev_edges)
+
+    # Create all vector indexes upfront so that all configured indexes exist
+    for node in node_list:
+        create_vector_index(kg, "NODE", node, _LLM_embedding_length)
+    for edge in edge_list:
+        create_vector_index(kg, "RELATIONSHIP", edge, _LLM_embedding_length)
 
     # Only building embeddings for specified nodes
     retry_list = []
     num_retries = 5
-    while num_retries > 0:
+    while num_retries > 0 and node_list:
         for node in node_list:
+            kg = get_kg_connection()
+            if kg is None:
+                logger.error("Cannot connect to Neo4j for node embedding")
+                retry_list.append(node)
+                continue
             if not fill_vector_index(kg, "NODE", node):
                 retry_list.append(node)
             else:
@@ -177,11 +193,15 @@ def create_vector_indices(tobuild=set()):
     if len(node_list) > 0:
         logger.warning(f"Could not create embeddings successfully for the following nodes: {node_list}")
 
-    edge_list = EDGE_EMBEDDING_CONFIG.keys() if dev_edges is None else dev_edges
     retry_list = []
     num_retries = 5
-    while num_retries > 0:
+    while num_retries > 0 and edge_list:
         for edge in edge_list:
+            kg = get_kg_connection()
+            if kg is None:
+                logger.error("Cannot connect to Neo4j for edge embedding")
+                retry_list.append(edge)
+                continue
             if not fill_vector_index(kg, "RELATIONSHIP", edge):
                 retry_list.append(edge)
             else:
@@ -202,11 +222,17 @@ def create_vector_indices(tobuild=set()):
     if len(edge_list) > 0:
         logger.warning(f"Could not create embeddings successfully for the following edges: {edge_list}")
 
-    if wait_for_database_ready(kg, index_names):
+    kg = get_kg_connection()
+    if kg is not None and wait_for_database_ready(kg, index_names):
         logger.info("Ready to switch to read-only mode")
     else:
         logger.error("Something went wrong with the index build")
     close_kg_connection()
+
+    if len(node_list) > 0 or len(edge_list) > 0:
+        raise RuntimeError(
+            f"Failed to generate embeddings after retries for nodes={node_list}, edges={edge_list}"
+        )
 
 
 def get_node_info_string(node_name, node_embedding_config):
@@ -450,6 +476,7 @@ def fill_vector_index(con, entityType, name) -> bool:
     except Exception as e:
         print(e)
         logger.error("Could not create vector index for " + name)
+        close_kg_connection()
         return False
 
 def get_info_string(element_type, name, node_config, edge_config):
@@ -580,7 +607,9 @@ def wait_for_database_ready(con, index_names=['bad_default']):
                 logger.debug(f"- Type: {index['type']}")
                 logger.debug(f"- Labels: {index['labelsOrTypes']}")
                 logger.debug(f"- Properties: {index['properties']}")
-                return index['state'] == 'ONLINE'
+                if index['state'] != 'ONLINE':
+                    logger.warning(f"\nIndex {index_name} is in state {index['state']} (expected ONLINE)")
+                    return False
             else:
                 logger.warning(f"\nNo index found with name {index_name}")
                 return False
@@ -588,3 +617,4 @@ def wait_for_database_ready(con, index_names=['bad_default']):
         except Exception as e:
             logger.error(f"\nError checking index: {str(e)}")
             return False
+    return True

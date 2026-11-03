@@ -161,7 +161,8 @@ def _post_process_data(dev_instance):
 
 
 def _finalize_build(embedding_controller, no_download, current_metadata):
-    embedding_controller.validate_and_finalize(MongoInstance.DB, no_download, current_metadata)
+    if embedding_controller.validate_and_finalize(MongoInstance.DB, no_download, current_metadata) is False:
+        return
 
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
@@ -465,7 +466,7 @@ def embed_only(conf):
 
     # create embeddings
     # try:
-    create_vector_indices()
+    create_vector_indices(config.get("embeddings.embedding_dependencies") or [])
     # except Exception as e:
     #     print(e)
     #     logger.warning("Failed to create vector indices")

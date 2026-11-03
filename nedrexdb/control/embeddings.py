@@ -131,12 +131,12 @@ class EmbeddingController:
                 return
             self.dev_instance.remove()
         
-        # Basic sanity check: if fetch returned empty for a key, we must rebuild it
-        for key in list(self.reusable_embeddings.keys()):
-            if not self.reusable_embeddings[key]:
-                logger.debug(f"Fetched embedding for {key} was empty, marking for rebuild.")
+        # Basic sanity check: if fetch returned empty or failed for a key, we must rebuild it
+        for key in to_fetch:
+            if not self.reusable_embeddings.get(key):
+                logger.debug(f"Fetched embedding for {key} was empty or missing, marking for rebuild.")
                 self.tobuild_embeddings.add(key)
-                self.reusable_embeddings.pop(key)
+                self.reusable_embeddings.pop(key, None)
 
     def _promote_and_keep_dev(self):
         """
@@ -242,7 +242,9 @@ class EmbeddingController:
                     self.reusable_embeddings.pop(key)
                     self.tobuild_embeddings.add(key)
                 elif is_valid is None:
+                    logger.info(f"Source metadata for {key} is missing, marking for rebuild.")
                     self.reusable_embeddings.pop(key)
+                    self.tobuild_embeddings.add(key)
 
         logger.info(f"Final Embedding Plan:")
         logger.info(f"  -> Upserting reusable: {list(self.reusable_embeddings.keys())}")
@@ -276,7 +278,7 @@ class EmbeddingController:
                 "Dev instance is left running for inspection. "
                 "Fix the issue and re-run with SKIP_UPDATE=1 to retry embeddings only."
             )
-            return
+            return False
 
         # Persist the embedding config used for this build so the next build can detect changes.
         try:
