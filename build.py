@@ -44,7 +44,7 @@ from nedrexdb.db.parsers import (
     hippie
 )
 from nedrexdb.downloaders import get_versions, update_versions
-from nedrexdb.post_integration import (trim_uberon, drop_empty_collections)
+from nedrexdb.post_integration import (trim_uberon, drop_empty_collections, clean_api_data)
 from nedrexdb.post_integration.neo4j_db_adjustments import create_constraints, create_vector_indices
 from nedrexdb.logger import logger
 
@@ -162,11 +162,12 @@ def _post_process_data(dev_instance):
 
 def _finalize_build(embedding_controller, no_download, current_metadata):
     if embedding_controller.validate_and_finalize(MongoInstance.DB, no_download, current_metadata) is False:
-        return
+        return False
 
     live_instance = NeDRexLiveInstance()
     live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
+    return True
 
 @click.option("--conf", required=True, type=click.Path(exists=True))
 @click.option("--download", is_flag=True, default=False)
@@ -233,10 +234,14 @@ def update(conf, download, rebuild, version_update, create_embeddings, keep_dev)
 
     # Stage 6: Finalize Build (Promote to Live, generate embeddings)
     if keep_dev:
-        embedding_controller.validate_and_finalize(MongoInstance.DB, no_download, current_metadata)
-        logger.info("[DEBUG] keep-dev mode: embeddings complete, live promoted, dev container kept for inspection.")
+        promoted = embedding_controller.validate_and_finalize(MongoInstance.DB, no_download, current_metadata) is not False
+        if promoted:
+            logger.info("[DEBUG] keep-dev mode: embeddings complete, live promoted, dev container kept for inspection.")
     else:
-        _finalize_build(embedding_controller, no_download, current_metadata)
+        promoted = _finalize_build(embedding_controller, no_download, current_metadata)
+
+    if promoted:
+        clean_api_data.clean_after_update()
 
 
 # Unified parser pipeline used by both the full update() path and parse_dev().

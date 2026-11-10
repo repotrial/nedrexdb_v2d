@@ -67,6 +67,7 @@ def mock_nedrex_config(monkeypatch):
     monkeypatch.setattr(nedrexdb, "mconfig", mock_cfg)
     return mock_cfg
 
+@patch("build.clean_api_data.clean_after_update")
 @patch("build.MongoInstance")
 @patch("build.NeDRexDevInstance")
 @patch("build.NeDRexLiveInstance")
@@ -86,6 +87,7 @@ def test_update_full_flow(
     mock_verify, mock_profile, mock_drop, mock_m2n, 
     mock_parsers, mock_download, mock_upd_vers, 
     mock_upd_img, mock_live_inst, mock_dev_inst, mock_mongo,
+    mock_clean_after_update,
     runner, tmp_path
 ):
     # Setup
@@ -118,7 +120,9 @@ def test_update_full_flow(
     mock_download.assert_called_once()
     mock_parsers.assert_called_once()
     mock_m2n.assert_called_once()
+    mock_clean_after_update.assert_called_once()
 
+@patch("build.clean_api_data.clean_after_update")
 @patch("build.MongoInstance")
 @patch("build.NeDRexDevInstance")
 @patch("build.NeDRexLiveInstance")
@@ -138,6 +142,7 @@ def test_update_minimal_flow(
     mock_verify, mock_profile, mock_drop, mock_m2n, 
     mock_parsers, mock_download, mock_upd_vers, 
     mock_upd_img, mock_live_inst, mock_dev_inst, mock_mongo,
+    mock_clean_after_update,
     runner, tmp_path, monkeypatch, mock_nedrex_config
 ):
     conf_file = tmp_path / "test_config.toml"
@@ -170,12 +175,14 @@ def test_update_minimal_flow(
     assert result.exit_code == 0
     mock_upd_img.assert_called_once()
     mock_m2n.assert_called_once()
+    mock_clean_after_update.assert_called_once()
     
     # Verify that run_parsers was called with a non-empty ignored_sources
     args, kwargs = mock_parsers.call_args
     assert len(kwargs['ignored_sources']) > 0
     assert "go" in kwargs['ignored_sources']
 
+@patch("build.clean_api_data.clean_after_update")
 @patch("build.MongoInstance")
 @patch("build.NeDRexDevInstance")
 @patch("build.NeDRexLiveInstance")
@@ -195,6 +202,7 @@ def test_update_rebuild_flow(
     mock_verify, mock_profile, mock_drop, mock_m2n, 
     mock_parsers, mock_download, mock_upd_vers, 
     mock_upd_img, mock_live_inst, mock_dev_inst, mock_mongo,
+    mock_clean_after_update,
     runner, tmp_path
 ):
     conf_file = tmp_path / "test_config.toml"
@@ -220,7 +228,9 @@ def test_update_rebuild_flow(
     # Since they are not in no_download (because rebuild=True), static_download will have them.
     mock_subproc.assert_called_with(["./setup_data.sh", "/data/nedrex_files", "1"])
     mock_download.assert_called_once()
+    mock_clean_after_update.assert_called_once()
 
+@patch("build.clean_api_data.clean_after_update")
 @patch("build.MongoInstance")
 @patch("build.NeDRexDevInstance")
 @patch("build.NeDRexLiveInstance")
@@ -240,6 +250,7 @@ def test_update_create_embeddings_flow(
     mock_verify, mock_profile, mock_drop, mock_m2n, 
     mock_parsers, mock_download, mock_upd_vers, 
     mock_upd_img, mock_live_inst, mock_dev_inst, mock_mongo,
+    mock_clean_after_update,
     runner, tmp_path
 ):
     conf_file = tmp_path / "test_config.toml"
@@ -266,6 +277,217 @@ def test_update_create_embeddings_flow(
     controller_instance.gather_live_state.assert_called_once()
     controller_instance.prepare_reusable_embeddings.assert_called_once()
     controller_instance.validate_and_finalize.assert_called_once()
+    mock_clean_after_update.assert_called_once()
+
+@patch("build.clean_api_data.clean_after_update")
+@patch("build.MongoInstance")
+@patch("build.NeDRexDevInstance")
+@patch("build.NeDRexLiveInstance")
+@patch("build.update_neo4j_image_version")
+@patch("build.update_versions")
+@patch("build.downloaders.download_all")
+@patch("build.run_parsers")
+@patch("build.mongo_to_neo.mongo_to_neo")
+@patch("build.drop_empty_collections.drop_empty_collections")
+@patch("build.collection_stats.profile_collections")
+@patch("build.collection_stats.verify_collections_after_profiling")
+@patch("build.create_constraints")
+@patch("build.EmbeddingController")
+@patch("subprocess.run")
+def test_update_aborts_clean_when_embeddings_fail(
+    mock_subproc, mock_embed_controller, mock_constraints,
+    mock_verify, mock_profile, mock_drop, mock_m2n,
+    mock_parsers, mock_download, mock_upd_vers,
+    mock_upd_img, mock_live_inst, mock_dev_inst, mock_mongo,
+    mock_clean_after_update,
+    runner, tmp_path
+):
+    conf_file = tmp_path / "test_config.toml"
+    conf_file.write_text("version_type='open'")
+
+    mock_mongo.DB = MagicMock()
+    mock_mongo.DB.list_collection_names.return_value = ["metadata"]
+    mock_embed_controller.return_value.validate_and_finalize.return_value = False
+
+    with patch.dict(os.environ, {"TEST_MINIMUM": "0"}):
+        result = runner.invoke(update, ["--conf", str(conf_file), "--create_embeddings"])
+
+    assert result.exit_code == 0
+    mock_live_inst.assert_not_called()
+    mock_clean_after_update.assert_not_called()
+
+
+def test_clean_api_files(tmp_path):
+    from nedrexdb.post_integration import clean_api_data
+
+    data_dir = tmp_path / "data"
+    static_dir = tmp_path / "static"
+
+    # Populate data subdirs
+    for subdir in clean_api_data.DATA_SUBDIRS_TO_CLEAN:
+        d = data_dir / subdir
+        d.mkdir(parents=True)
+        (d / "sample_file.graphml").write_text("dummy")
+        nested = d / "uid_subdir"
+        nested.mkdir()
+        (nested / "inner.txt").write_text("inner")
+
+    # Populate static subdirs and static files
+    for subdir in clean_api_data.STATIC_SUBDIRS_TO_CLEAN:
+        d = static_dir / subdir
+        d.mkdir(parents=True)
+        (d / "PPDr-for-ranking.graphml").write_text("dummy")
+
+    for fname in clean_api_data.STATIC_FILES_TO_CLEAN:
+        (static_dir / fname).write_text("gt_data")
+
+    # Non-derived static file should be preserved
+    preserved_static = static_dir / "lengths.map"
+    preserved_static.write_text("keep_me")
+
+    clean_api_data.clean_api_files(data_dir=data_dir, static_dir=static_dir)
+
+    for subdir in clean_api_data.DATA_SUBDIRS_TO_CLEAN:
+        d = data_dir / subdir
+        assert d.exists()
+        assert list(d.iterdir()) == []
+
+    for subdir in clean_api_data.STATIC_SUBDIRS_TO_CLEAN:
+        d = static_dir / subdir
+        assert d.exists()
+        assert list(d.iterdir()) == []
+
+    for fname in clean_api_data.STATIC_FILES_TO_CLEAN:
+        assert not (static_dir / fname).exists()
+
+    assert preserved_static.exists()
+
+
+def test_clean_api_files_skips_when_dirs_unconfigured(monkeypatch):
+    from nedrexdb.post_integration import clean_api_data
+
+    monkeypatch.setattr(clean_api_data._config, "get", lambda k: None)
+    clean_api_data.clean_api_files()  # must not raise
+
+
+def test_clean_api_db(monkeypatch):
+    from nedrexdb.post_integration import clean_api_data
+
+    mock_client = MagicMock()
+    mock_db = MagicMock()
+    collections = {
+        "graphs_": MagicMock(),
+        "bicon_": MagicMock(),
+        "api_keys_": MagicMock(),
+    }
+    mock_db.list_collection_names.return_value = list(collections.keys())
+    mock_db.__getitem__.side_effect = collections.__getitem__
+    mock_client.__getitem__.return_value = mock_db
+
+    monkeypatch.setattr(clean_api_data, "MongoClient", lambda **kwargs: mock_client)
+    monkeypatch.setattr(
+        clean_api_data._config,
+        "get",
+        lambda k: "open_nedrex_live" if k == "db.live.mongo_name" else None,
+    )
+
+    clean_api_data.clean_api_db()
+
+    collections["graphs_"].drop.assert_called_once()
+    collections["bicon_"].drop.assert_called_once()
+    collections["api_keys_"].drop.assert_not_called()
+
+
+_REDIS_CFG = {
+    "api.redis_host": "open-nedrex-redis",
+    "api.redis_port_internal": 6379,
+    "api.redis_nedrex_db": 1,
+}
+
+
+def test_reset_api_static_status_deletes_key(monkeypatch):
+    import sys
+    from nedrexdb.post_integration import clean_api_data
+
+    mock_redis_module = MagicMock()
+    monkeypatch.setitem(sys.modules, "redis", mock_redis_module)
+    monkeypatch.setattr(clean_api_data._config, "get", _REDIS_CFG.get)
+
+    clean_api_data.reset_api_static_status()
+
+    kwargs = mock_redis_module.Redis.call_args.kwargs
+    assert (kwargs["host"], kwargs["port"], kwargs["db"]) == ("open-nedrex-redis", 6379, 1)
+    mock_redis_module.Redis.return_value.delete.assert_called_once_with("static-file-status")
+
+
+def test_reset_api_static_status_survives_redis_failure(monkeypatch):
+    import sys
+    from nedrexdb.post_integration import clean_api_data
+
+    mock_redis_module = MagicMock()
+    mock_redis_module.Redis.return_value.delete.side_effect = ConnectionError("down")
+    monkeypatch.setitem(sys.modules, "redis", mock_redis_module)
+    monkeypatch.setattr(clean_api_data._config, "get", _REDIS_CFG.get)
+
+    clean_api_data.reset_api_static_status()  # must not raise
+
+    # Unconfigured Redis is skipped without connecting
+    mock_redis_module.Redis.reset_mock()
+    monkeypatch.setattr(clean_api_data._config, "get", lambda k: None)
+    clean_api_data.reset_api_static_status()
+    mock_redis_module.Redis.assert_not_called()
+
+
+def test_clean_after_update_runs_all_steps(monkeypatch):
+    from nedrexdb.post_integration import clean_api_data
+
+    calls = []
+    monkeypatch.setattr(clean_api_data, "clean_api_files", lambda **kw: calls.append("files"))
+    monkeypatch.setattr(clean_api_data, "reset_api_static_status", lambda: calls.append("redis"))
+    monkeypatch.setattr(clean_api_data, "clean_api_db", lambda: calls.append("db"))
+
+    clean_api_data.clean_after_update()
+
+    assert calls == ["files", "redis", "db"]
+
+
+@pytest.mark.parametrize("finalize_result, expect_clean", [(None, True), (False, False)])
+@patch("build.clean_api_data.clean_after_update")
+@patch("build.MongoInstance")
+@patch("build.NeDRexDevInstance")
+@patch("build.NeDRexLiveInstance")
+@patch("build.update_neo4j_image_version")
+@patch("build.update_versions")
+@patch("build.downloaders.download_all")
+@patch("build.run_parsers")
+@patch("build.mongo_to_neo.mongo_to_neo")
+@patch("build.drop_empty_collections.drop_empty_collections")
+@patch("build.collection_stats.profile_collections")
+@patch("build.collection_stats.verify_collections_after_profiling")
+@patch("build.create_constraints")
+@patch("build.EmbeddingController")
+@patch("subprocess.run")
+def test_update_keep_dev_cleans_only_when_promoted(
+    mock_subproc, mock_embed_controller, mock_constraints,
+    mock_verify, mock_profile, mock_drop, mock_m2n,
+    mock_parsers, mock_download, mock_upd_vers,
+    mock_upd_img, mock_live_inst, mock_dev_inst, mock_mongo,
+    mock_clean_after_update,
+    finalize_result, expect_clean,
+    runner, tmp_path
+):
+    conf_file = tmp_path / "test_config.toml"
+    conf_file.write_text("version_type='open'")
+
+    mock_mongo.DB = MagicMock()
+    mock_mongo.DB.list_collection_names.return_value = ["metadata"]
+    mock_embed_controller.return_value.validate_and_finalize.return_value = finalize_result
+
+    with patch.dict(os.environ, {"TEST_MINIMUM": "0"}):
+        result = runner.invoke(update, ["--conf", str(conf_file), "--create_embeddings", "--keep-dev"])
+
+    assert result.exit_code == 0
+    assert mock_clean_after_update.called is expect_clean
 
 @patch("build.NeDRexLiveInstance")
 @patch("build.nedrexdb.parse_config")
