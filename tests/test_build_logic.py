@@ -501,3 +501,47 @@ def test_restart_live(mock_parse, mock_live_inst, runner, tmp_path):
     assert result.exit_code == 0
     mock_live_inst.return_value.remove.assert_called_once()
     mock_live_inst.return_value.set_up.assert_called_once_with(use_existing_volume=True, neo4j_mode="db")
+
+
+@pytest.mark.parametrize("fail", [False, True])
+@patch("build.time.sleep")
+@patch("build.set_kg_target")
+@patch("build.create_vector_indices")
+@patch("build.create_constraints")
+@patch("build.NeDRexLiveInstance")
+@patch("build.nedrexdb.parse_config")
+def test_embed_only_targets_live_and_always_restores_it(
+    mock_parse, mock_live_inst, mock_constraints, mock_vectors, mock_target, mock_sleep,
+    fail, runner, tmp_path
+):
+    conf_file = tmp_path / "test_config.toml"
+    conf_file.write_text("version_type='open'")
+    if fail:
+        mock_constraints.side_effect = RuntimeError("Could not connect to Neo4j")
+
+    from build import embed_only
+    result = runner.invoke(embed_only, ["--conf", str(conf_file)])
+
+    assert (result.exit_code != 0) is fail
+    # Embedding work runs against the live instance, not dev
+    assert mock_target.call_args_list[0].args == ("live",)
+    assert mock_target.call_args_list[-1].args == ("dev",)
+    # Live is always brought back read-only (which also restarts its MongoDB)
+    set_up_calls = mock_live_inst.return_value.set_up.call_args_list
+    assert set_up_calls[0].kwargs == {"use_existing_volume": True, "neo4j_mode": "db-write"}
+    assert set_up_calls[-1].kwargs == {"use_existing_volume": True, "neo4j_mode": "db"}
+
+
+def test_kg_target_selects_neo4j_host(monkeypatch):
+    from nedrexdb.post_integration import neo4j_db_adjustments as adj
+
+    names = {"db.dev.neo4j_name": "open_nedrex_dev_neo4j", "db.live.neo4j_name": "open_nedrex_live_neo4j"}
+    monkeypatch.setattr(adj, "_config", names)
+    try:
+        assert adj._neo4j_host() == "open_nedrex_dev_neo4j"
+        adj.set_kg_target("live")
+        assert adj._neo4j_host() == "open_nedrex_live_neo4j"
+        with pytest.raises(ValueError):
+            adj.set_kg_target("prod")
+    finally:
+        adj.set_kg_target("dev")

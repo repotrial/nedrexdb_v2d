@@ -11,10 +11,28 @@ edge_keys = {key.lower(): key for key in EDGE_EMBEDDING_CONFIG.keys()}
 
 open_con = None
 
+# Which instance the helpers in this module talk to. The update pipeline works on
+# the dev instance; embed-only works on the live instance in write mode.
+_kg_target = "dev"
+
+
+def set_kg_target(version: str) -> None:
+    """Select the instance ("dev" or "live") that get_kg_connection() connects to."""
+    global _kg_target
+    if version not in ("dev", "live"):
+        raise ValueError(f"version given ({version!r}) should be 'dev' or 'live'")
+    if version != _kg_target:
+        close_kg_connection()
+    _kg_target = version
+
+
+def _neo4j_host() -> str:
+    return _config[f"db.{_kg_target}.neo4j_name"]
+
 
 def get_kg_connection() -> Neo4jGraph:
     global open_con
-    NEO4J_URI = f'bolt://{_config["db.dev.neo4j_name"]}:7687'
+    NEO4J_URI = f'bolt://{_neo4j_host()}:7687'
 
     retry = 10
     while retry > 0:
@@ -33,7 +51,7 @@ def get_kg_connection() -> Neo4jGraph:
                 try:
                     import docker as _docker
                     client = _docker.from_env()
-                    container = client.containers.get(_config["db.dev.neo4j_name"])
+                    container = client.containers.get(_neo4j_host())
                     logger.error(f"Neo4j container status: {container.status}")
                     logger.error("Last 20 lines of container logs:")
                     logger.error(container.logs(tail=20).decode('utf-8'))
@@ -72,7 +90,7 @@ def create_constraints():
     logger.info("Creating unique constraints for IDs")
     kg = get_kg_connection()
     if kg is None:
-        raise RuntimeError(f"Could not connect to Neo4j at bolt://{_config['db.dev.neo4j_name']}:7687 to create unique constraints.")
+        raise RuntimeError(f"Could not connect to Neo4j at bolt://{_neo4j_host()}:7687 to create unique constraints.")
 
     _add_drug_supertype_label(kg)
 
@@ -150,7 +168,7 @@ def create_vector_indices(tobuild=None):
 
     kg = get_kg_connection()
     if kg is None:
-        raise RuntimeError(f"Could not connect to Neo4j at bolt://{_config['db.dev.neo4j_name']}:7687 to create vector indices.")
+        raise RuntimeError(f"Could not connect to Neo4j at bolt://{_neo4j_host()}:7687 to create vector indices.")
 
     index_names = []
 

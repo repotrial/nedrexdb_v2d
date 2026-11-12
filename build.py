@@ -45,7 +45,7 @@ from nedrexdb.db.parsers import (
 )
 from nedrexdb.downloaders import get_versions, update_versions
 from nedrexdb.post_integration import (trim_uberon, drop_empty_collections, clean_api_data)
-from nedrexdb.post_integration.neo4j_db_adjustments import create_constraints, create_vector_indices
+from nedrexdb.post_integration.neo4j_db_adjustments import create_constraints, create_vector_indices, set_kg_target
 from nedrexdb.logger import logger
 
 
@@ -465,20 +465,18 @@ def embed_only(conf):
     live_instance.remove()
     live_instance.set_up(use_existing_volume=True, neo4j_mode="db-write")
 
-    time.sleep(60)
-    create_constraints()
-
-
-    # create embeddings
-    # try:
-    create_vector_indices(config.get("embeddings.embedding_dependencies") or [])
-    # except Exception as e:
-    #     print(e)
-    #     logger.warning("Failed to create vector indices")
-
-    live_instance = NeDRexLiveInstance()
-    live_instance.remove()
-    live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
+    # Write mode starts Neo4j only, so whatever happens below, live has to be
+    # brought back in read-only mode together with its MongoDB.
+    try:
+        set_kg_target("live")
+        time.sleep(60)
+        create_constraints()
+        create_vector_indices(config.get("embeddings.embedding_dependencies") or [])
+    finally:
+        set_kg_target("dev")
+        live_instance = NeDRexLiveInstance()
+        live_instance.remove()
+        live_instance.set_up(use_existing_volume=True, neo4j_mode="db")
 
 
 @click.option("--conf", required=True, type=click.Path(exists=True))

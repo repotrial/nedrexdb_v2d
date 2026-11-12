@@ -28,11 +28,12 @@ setup_db() {
     if [[ "$LOG_LEVEL" == "INFO" || "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | INFO |  build.sh - Starting setup of $db_type DB"; fi
 
     # Handle DB updates
+    local build_status=0
     if [[ "$SKIP_UPDATE" == "1" ]]; then
         if [[ "$CREATE_EMBEDDINGS" == "1" ]]; then
-          ./build.py embed-only --conf "$config_file"
+          ./build.py embed-only --conf "$config_file" || build_status=$?
         else
-          ./build.py restart-live --conf "$config_file"
+          ./build.py restart-live --conf "$config_file" || build_status=$?
         fi
     else
         local build_args=(update --conf "$config_file")
@@ -69,11 +70,14 @@ setup_db() {
           build_args+=(--keep-dev)
         fi
         if [[ "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | DEBUG |  build.sh - Running build with command: ./build.py ${build_args[@]}"; fi
-        ./build.py "${build_args[@]}"
+        ./build.py "${build_args[@]}" || build_status=$?
     fi
 
-    # Clean volumes if not skipped
-    if [[ "$SKIP_CLEAN" != "1" ]]; then
+    # Clean volumes if not skipped. Never after a failed build: a failure can leave
+    # live containers stopped, which makes their data volumes look unused.
+    if [[ "$build_status" != "0" ]]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') | ERROR |  build.sh - ${db_type} build failed (exit code $build_status), skipping volume cleanup"
+    elif [[ "$SKIP_CLEAN" != "1" ]]; then
         if [[ "$LOG_LEVEL" == "INFO" || "$LOG_LEVEL" == "DEBUG" ]]; then echo "$(date '+%Y-%m-%d %H:%M:%S') | INFO |  build.sh - Cleaning unused nedrex volumes"; fi
         ./clean_volumes.sh "$db_type"
     else
